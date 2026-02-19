@@ -51,6 +51,14 @@ export default function Consultant() {
         setTokenBalance(userData.tokenBalance || 100);
         setIsPremium(userData.subscriptionPlan === 'premium');
         await loadConversations(userData.id);
+      } else {
+        // For guest users, show welcome message immediately
+        const greeting = {
+          role: 'assistant',
+          content: "Hi! I'm your NextSchool education consultant. I help families across Canada, the US, and Europe find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you in a school?",
+          timestamp: new Date().toISOString()
+        };
+        setMessages([greeting]);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
