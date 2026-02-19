@@ -157,9 +157,19 @@ export default function NotesPanel({ userId, onClose }) {
           {/* AI Memories Section */}
           {memories.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Brain className="w-4 h-4 text-purple-600" />
-                <h3 className="text-sm font-semibold text-slate-700">AI Memories</h3>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-purple-600" />
+                  <h3 className="text-sm font-semibold text-slate-700">AI Memories</h3>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => setClearMemoryDialogOpen(true)}
+                  className="text-xs text-slate-500 hover:text-red-600"
+                >
+                  Clear
+                </Button>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-100">
                 <ul className="space-y-2">
