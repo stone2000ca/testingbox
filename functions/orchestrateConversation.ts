@@ -97,6 +97,7 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
               grade: { type: "number" },
               minTuition: { type: "number" },
               maxTuition: { type: "number" },
+              curriculumType: { type: "string" },
               specializations: { type: "array", items: { type: "string" } }
             }
           },
