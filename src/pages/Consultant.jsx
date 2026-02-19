@@ -906,9 +906,30 @@ export default function Consultant() {
               </div>
               <span className="font-semibold">AI Consultant</span>
             </div>
-            <div className="text-xs px-3 py-1 bg-teal-100 text-teal-700 rounded-full font-medium">
-              {isPremium ? '∞' : tokenBalance} tokens
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={`text-xs px-3 py-1 rounded-full font-medium cursor-help ${
+                    isPremium 
+                      ? 'bg-purple-100 text-purple-700' 
+                      : tokenBalance > 50 
+                        ? 'bg-green-100 text-green-700'
+                        : tokenBalance > 10
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-red-100 text-red-700'
+                  }`}>
+                    {isPremium ? '∞ tokens' : `${tokenBalance} tokens`}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isPremium ? (
+                    <p>Unlimited tokens</p>
+                  ) : (
+                    <p>+{getPlanLimits(user?.subscriptionPlan || 'free').dailyReplenishment} tomorrow</p>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           {/* Messages */}
@@ -964,18 +985,56 @@ export default function Consultant() {
       {/* Upgrade Modal */}
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h3 className="text-2xl font-bold mb-2">Out of Tokens</h3>
-            <p className="text-slate-600 mb-6">
-              {isAuthenticated 
-                ? "Upgrade to Premium for unlimited conversations and advanced features."
-                : "Sign in to continue your search or upgrade to Premium for unlimited access."
-              }
-            </p>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-3xl font-bold mb-2 text-slate-900">You've used all your tokens!</h3>
+              <p className="text-slate-600">
+                {isAuthenticated ? (
+                  <>
+                    Your tokens will replenish tomorrow with{' '}
+                    <span className="font-semibold text-teal-600">
+                      +{getPlanLimits(user?.subscriptionPlan || 'free').dailyReplenishment} tokens
+                    </span>
+                  </>
+                ) : (
+                  "Sign in to continue your search or upgrade for more tokens."
+                )}
+              </p>
+            </div>
+
+            {isAuthenticated && (
+              <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-xl p-6 mb-6 border border-teal-200">
+                <h4 className="font-semibold text-lg mb-3 text-slate-900">Upgrade for More Tokens</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-teal-500"></div>
+                    <span className="text-sm text-slate-700">
+                      <strong>Pro Plan:</strong> 1,000 tokens, replenish 33/day
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                    <span className="text-sm text-slate-700">
+                      <strong>Enterprise Plan:</strong> 5,000 tokens, replenish 166/day
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span className="text-sm text-slate-700">
+                      Priority support & advanced features
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
               {!isAuthenticated && (
                 <Button 
-                  className="w-full bg-teal-600 hover:bg-teal-700"
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-6"
                   onClick={() => base44.auth.redirectToLogin(window.location.pathname)}
                 >
                   Sign In
