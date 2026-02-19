@@ -294,8 +294,16 @@ Generate a natural, helpful response.`;
       prompt: responsePrompt
     });
 
+    // Replace school names with markdown links (school:slug format)
+    let messageWithLinks = aiResponse;
+    schoolsToDescribe.forEach(school => {
+      // Replace full school name with markdown link, case-insensitive
+      const regex = new RegExp(`\\b${school.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      messageWithLinks = messageWithLinks.replace(regex, `[${school.name}](school:${school.slug})`);
+    });
+
     return Response.json({
-      message: aiResponse,
+      message: messageWithLinks,
       intent: intentResponse.intent,
       shouldShowSchools: matchingSchools.length > 0,
       schools: matchingSchools,
