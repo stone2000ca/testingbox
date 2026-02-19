@@ -3,67 +3,68 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { message, conversationId, region } = await req.json();
+    const { message, conversationHistory, conversationContext, region, userId } = await req.json();
 
-    // Get conversation context
-    const conversation = conversationId ? 
-      await base44.entities.ChatHistory.filter({ id: conversationId })[0] : 
-      null;
+    const context = conversationContext || {};
+    const history = conversationHistory || [];
+    
+    // Get last 10 messages for context
+    const recentMessages = history.slice(-10);
+    const conversationSummary = recentMessages
+      .map(msg => `${msg.role === 'user' ? 'Parent' : 'Consultant'}: ${msg.content}`)
+      .join('\n');
 
-    const context = conversation?.conversationContext || {};
-    const shortTermContext = conversation?.shortTermContext || [];
-    const longTermSummary = conversation?.longTermSummary || '';
+    // Build AI prompt with Socratic coaching persona
+    const systemPrompt = `You are an experienced education consultant helping parents find the right private school for their child across Canada, the US, and Europe.
 
-    // Build AI prompt
-    const systemPrompt = `You are an experienced education consultant helping parents find the right private school for their child across ${region || 'multiple regions'}. 
+PERSONA: You are warm but professional, like a trusted advisor. You use Socratic questioning to help parents discover what truly matters for their child. You never sell schools - you guide discovery. You gently challenge assumptions ("Many parents prioritize X, but have you considered Y?"). You keep responses to 2-4 sentences, always ending with a probing question or clear next step.
 
-Your approach:
-- Use Socratic questioning to understand needs deeply
-- Be warm, empathetic, and non-pushy
-- Guide parents through priorities: academics, values, budget, location, programs
-- Ask clarifying questions before recommending
-- Acknowledge tradeoffs and help prioritize
+CONVERSATION CONTEXT:
+${conversationSummary || 'This is the start of a new conversation.'}
 
-Context from conversation:
-${longTermSummary || 'New conversation - learn about their needs first'}
-
-Recent context:
-${shortTermContext.join('\n') || 'Just starting'}
-
-Current state:
+CURRENT STATE:
 - Child grade: ${context.childGrade || 'unknown'}
-- Location: ${context.location || 'unknown'}
-- Region preference: ${context.region || region || 'unspecified'}
-- Priorities: ${context.priorities?.join(', ') || 'none identified yet'}
+- Location interest: ${context.location || 'not specified'}
+- Region preference: ${context.region || region || 'not specified'}
+- Stated priorities: ${context.priorities?.join(', ') || 'none identified yet'}
 - Schools viewed: ${context.viewedSchools?.length || 0}
 - Shortlisted: ${context.shortlist?.length || 0}
 
-Analyze their message and decide on an intent:
-- SHOW_SCHOOLS: They want to see matching schools (return school filters)
-- NARROW_DOWN: They're refining criteria (ask clarifying questions)
+TASK: Analyze the parent's message and:
+1. Classify the intent
+2. Generate a consultant-style response (2-4 sentences ending with a question)
+3. Determine what action to take (if any)
+
+INTENT OPTIONS:
+- SHOW_SCHOOLS: They want to see matching schools
+- NARROW_DOWN: They need to refine criteria (ask clarifying questions)
 - COMPARE_SCHOOLS: They want to compare specific schools
 - VIEW_DETAIL: They want details on a specific school
-- UPDATE_PREFERENCES: They're stating preferences
+- UPDATE_PREFERENCES: They're stating new preferences
 - ASK_QUESTION: General question about schools/process
 - MANAGE_SHORTLIST: Add/remove from shortlist
-- NO_ACTION: Just chatting
+- NO_ACTION: Just chatting/greeting
 
-Respond with JSON:
+RESPONSE FORMAT (JSON):
 {
-  "message": "Your warm, consultant-style response",
+  "message": "Your 2-4 sentence consultant response ending with a question or next step",
   "intent": "SHOW_SCHOOLS|NARROW_DOWN|etc",
   "command": {
-    "action": "search_schools|compare|view_detail|etc",
-    "params": {"filters or IDs"},
-    "reasoning": "Why this action"
-  }
-}`;
+    "action": "search_schools|compare|view_detail|null",
+    "params": {filters or school IDs},
+    "reasoning": "Brief explanation of why this action"
+  },
+  "shouldShowSchools": true/false,
+  "filterCriteria": {optional filters if SHOW_SCHOOLS}
+}
 
-    const userMessage = `User: ${message}`;
+Parent's message: "${message}"
 
-    // Call AI
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `${systemPrompt}\n\n${userMessage}`,
+Respond with JSON only.`;
+
+    // Call AI for intent classification and response generation
+    const aiResponse = await base44.integrations.Core.InvokeLLM({
+      prompt: systemPrompt,
       response_json_schema: {
         type: "object",
         properties: {
@@ -76,12 +77,40 @@ Respond with JSON:
               params: { type: "object" },
               reasoning: { type: "string" }
             }
-          }
-        }
+          },
+          shouldShowSchools: { type: "boolean" },
+          filterCriteria: { type: "object" }
+        },
+        required: ["message", "intent"]
       }
     });
 
-    return Response.json(response);
+    // If intent is SHOW_SCHOOLS, call searchSchools to get actual results
+    let schoolIds = [];
+    if (aiResponse.shouldShowSchools && aiResponse.filterCriteria) {
+      try {
+        const searchResult = await base44.functions.invoke('searchSchools', {
+          ...aiResponse.filterCriteria,
+          region: aiResponse.filterCriteria.region || region
+        });
+        
+        if (searchResult.data?.schools) {
+          schoolIds = searchResult.data.schools.map(s => s.id);
+        }
+      } catch (error) {
+        console.error('Search failed:', error);
+      }
+    }
+
+    return Response.json({
+      message: aiResponse.message,
+      intent: aiResponse.intent,
+      command: aiResponse.command,
+      schoolIds,
+      shouldShowSchools: aiResponse.shouldShowSchools || false,
+      filterCriteria: aiResponse.filterCriteria || null
+    });
+
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
