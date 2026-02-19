@@ -54,52 +54,13 @@ Deno.serve(async (req) => {
       'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
     };
 
-    // Region aliases - maps metro areas and regions to cities
-    const regionAliases = {
-      'gta': ['Toronto', 'Mississauga', 'Brampton', 'Oakville', 'Markham', 'Vaughan', 'Richmond Hill'],
-      'greater toronto area': ['Toronto', 'Mississauga', 'Brampton', 'Oakville', 'Markham', 'Vaughan', 'Richmond Hill'],
-      'lower mainland': ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam'],
-      'metro vancouver': ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam'],
-      'greater vancouver': ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam'],
-      'montreal': ['Montreal', 'Laval', 'Longueuil'],
-      'greater montreal': ['Montreal', 'Laval', 'Longueuil'],
-      'golden horseshoe': ['Toronto', 'Hamilton', 'Niagara Falls', 'St. Catharines'],
-      'new england': [], // States, not cities
-      'pacific northwest': []  // States/provinces, not cities
-    };
-
     // Build filter
     let schools = await base44.entities.School.filter({ status: 'active' });
 
-    // Handle region aliases (e.g., "GTA" -> cities list)
-    let aliasedCities = [];
-    if (region) {
-      const regionLower = region.toLowerCase().trim();
-      const aliasEntry = regionAliases[regionLower];
-      
-      if (aliasEntry) {
-        // It's a known alias - expand to cities or provinces
-        if (aliasEntry.length > 0 && aliasEntry[0] && !['Massachusetts', 'Connecticut', 'Rhode Island', 'Vermont', 'New Hampshire', 'Maine', 'British Columbia', 'Washington', 'Oregon'].includes(aliasEntry[0])) {
-          // City-based alias
-          aliasedCities = aliasEntry;
-        } else if (regionLower === 'new england') {
-          // States based alias
-          const neStates = ['Massachusetts', 'Connecticut', 'Rhode Island', 'Vermont', 'New Hampshire', 'Maine'];
-          schools = schools.filter(s => s.provinceState && neStates.some(state => s.provinceState.toLowerCase() === state.toLowerCase()));
-        } else if (regionLower === 'pacific northwest') {
-          // Provinces/states based alias
-          const pnwRegions = ['British Columbia', 'Washington', 'Oregon'];
-          schools = schools.filter(s => s.provinceState && pnwRegions.some(pr => s.provinceState.toLowerCase() === pr.toLowerCase()));
-        }
-      }
-    }
-
-    // Apply city filter (including aliased cities)
-    if (city || aliasedCities.length > 0) {
-      const citiesToMatch = aliasedCities.length > 0 ? aliasedCities : [city];
-      schools = schools.filter(s => 
-        citiesToMatch.some(c => s.city?.toLowerCase().includes(c.toLowerCase()))
-      );
+    // Apply location filters with smart matching
+    if (city) {
+      const cityLower = city.toLowerCase().trim();
+      schools = schools.filter(s => s.city?.toLowerCase().includes(cityLower));
     }
 
     if (provinceState) {
@@ -121,6 +82,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Apply region filter
+    if (region) {
+      schools = schools.filter(s => s.region === region);
+    }
     if (country) {
       schools = schools.filter(s => s.country === country);
     }
@@ -147,18 +112,19 @@ Deno.serve(async (req) => {
 
     // Calculate distances if user location provided
     if (userLat && userLng) {
-      const maxDist = maxDistanceKm || 100; // Default 100km
-      
-      schools = schools
-        .map(school => {
-          if (school.lat && school.lng) {
-            const distance = calculateDistance(userLat, userLng, school.lat, school.lng);
-            return { ...school, distanceKm: distance };
-          }
-          return school;
-        })
-        .filter(s => !s.distanceKm || s.distanceKm <= maxDist)
-        .sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
+      schools = schools.map(school => {
+        if (school.lat && school.lng) {
+          const distance = calculateDistance(userLat, userLng, school.lat, school.lng);
+          return { ...school, distanceKm: distance };
+        }
+        return school;
+      });
+
+      if (maxDistanceKm) {
+        schools = schools.filter(s => s.distanceKm && s.distanceKm <= maxDistanceKm);
+      }
+
+      schools.sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
     }
 
     // Limit results

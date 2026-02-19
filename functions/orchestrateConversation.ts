@@ -44,23 +44,13 @@ DECISION LOGIC:
 LOCATION EXTRACTION:
 - Extract province/state (BC, British Columbia, Ontario, California, etc.) to filterCriteria.provinceState
 - Extract city (Toronto, Vancouver, etc.) to filterCriteria.city
-- Extract metro areas/regions to filterCriteria.region, INCLUDING ALIASES:
-  * "GTA" or "Greater Toronto Area" → region: "gta"
-  * "Lower Mainland" or "Metro Vancouver" → region: "lower mainland"
-  * "Greater Vancouver" → region: "greater vancouver"
-  * "Montreal" or "Greater Montreal" → region: "montreal"
-  * "Golden Horseshoe" → region: "golden horseshoe"
-  * "New England" → region: "new england"
-  * "Pacific Northwest" → region: "pacific northwest"
 - Extract broad region (Canada, US, Europe) to filterCriteria.region
-- SPECIAL CASE: If user says "near me" or "near my location", set: nearMe: true
 - IMPORTANT: Recognize city names WITH OR WITHOUT prepositions:
   * "show me toronto schools" → city: Toronto
   * "show me schools in toronto" → city: Toronto
   * "show me schools in toronto, ontario" → city: Toronto, provinceState: Ontario
   * "schools near vancouver" → city: Vancouver
   * "schools in BC" → provinceState: BC
-  * "show me schools near the gta" → region: "gta"
 
 INTENT OPTIONS:
 - SHOW_SCHOOLS: Show matching schools (new search/filter request)
@@ -87,7 +77,6 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
               city: { type: "string" },
               provinceState: { type: "string" },
               region: { type: "string" },
-              nearMe: { type: "boolean" },
               grade: { type: "number" },
               minTuition: { type: "number" },
               maxTuition: { type: "number" },
@@ -99,43 +88,6 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
         required: ["intent", "shouldShowSchools"]
       }
     });
-
-    // DETERMINISTIC FALLBACK: Override LLM shouldShowSchools for clear location/school requests
-    const _msgL = message.toLowerCase();
-    const _locationKws = ['gta','greater toronto','lower mainland','metro vancouver','greater vancouver','toronto','vancouver','montreal','calgary','ottawa','edmonton','london','victoria','kelowna','hamilton','mississauga','brampton','burnaby','richmond','surrey','ontario','british columbia','alberta','quebec','bc','ab','on','qc','new york','california','massachusetts','connecticut','boston','los angeles','chicago','near me','near my','nearby','europe','london uk','paris','zurich'];
-    const _showKws = ['show','find','search','list','recommend','suggest','school','schools','near','in','around','within'];
-    const _hasLocation = _locationKws.some(kw => _msgL.includes(kw));
-    const _hasShowIntent = _showKws.some(kw => _msgL.includes(kw));
-    if (_hasLocation && _hasShowIntent && !intentResponse.shouldShowSchools) {
-      intentResponse.shouldShowSchools = true;
-      intentResponse.intent = intentResponse.intent || 'SHOW_SCHOOLS';
-      if (!intentResponse.filterCriteria) intentResponse.filterCriteria = {};
-      if (_msgL.includes('gta') || _msgL.includes('greater toronto')) {
-        intentResponse.filterCriteria.region = 'gta';
-      } else if (_msgL.includes('lower mainland') || _msgL.includes('metro vancouver') || _msgL.includes('greater vancouver')) {
-        intentResponse.filterCriteria.region = 'lower mainland';
-      } else if (_msgL.includes('toronto')) {
-        intentResponse.filterCriteria.city = 'Toronto';
-      } else if (_msgL.includes('vancouver')) {
-        intentResponse.filterCriteria.city = 'Vancouver';
-      } else if (_msgL.includes('montreal')) {
-        intentResponse.filterCriteria.city = 'Montreal';
-      } else if (_msgL.includes('calgary')) {
-        intentResponse.filterCriteria.city = 'Calgary';
-      } else if (_msgL.includes('ottawa')) {
-        intentResponse.filterCriteria.city = 'Ottawa';
-      } else if (_msgL.includes('edmonton')) {
-        intentResponse.filterCriteria.city = 'Edmonton';
-      } else if (_msgL.includes('ontario') || (_msgL.includes(' on ') && !_msgL.includes('on the'))) {
-        intentResponse.filterCriteria.provinceState = 'Ontario';
-      } else if (_msgL.includes('british columbia') || _msgL.endsWith(' bc') || _msgL.includes(' bc ')) {
-        intentResponse.filterCriteria.provinceState = 'British Columbia';
-      } else if (_msgL.includes('alberta') || _msgL.includes(' ab ')) {
-        intentResponse.filterCriteria.provinceState = 'Alberta';
-      } else if (_msgL.includes('near me') || _msgL.includes('near my') || _msgL.includes('nearby')) {
-        intentResponse.filterCriteria.nearMe = true;
-      }
-    }
 
     // Simple string-based comparison detection
     const msgLower = message.toLowerCase();
@@ -257,13 +209,9 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
       if (intentResponse.filterCriteria.specializations?.length > 0) {
         searchParams.specializations = intentResponse.filterCriteria.specializations;
       }
-      
-      // If user says "near me" or if we have userLocation, pass coordinates
-      if (intentResponse.filterCriteria.nearMe || (userLocation?.lat && userLocation?.lng)) {
-        if (userLocation?.lat && userLocation?.lng) {
-          searchParams.userLat = userLocation.lat;
-          searchParams.userLng = userLocation.lng;
-        }
+      if (userLocation?.lat && userLocation?.lng) {
+        searchParams.userLat = userLocation.lat;
+        searchParams.userLng = userLocation.lng;
       }
 
       const searchResult = await base44.functions.invoke('searchSchools', searchParams);
@@ -281,7 +229,7 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     const schoolContext = schoolsToDescribe.length > 0 
       ? `\n\nSCHOOLS AVAILABLE (${schoolsToDescribe.length} total):\n` + 
         schoolsToDescribe.map(s => 
-          `- ${s.name} (${s.city}, ${s.region}) | Grades ${s.lowestGrade}-${s.highestGrade} | ${s.tuition ? s.currency + ' ' + s.tuition.toLocaleString() : 'N/A'} | Curriculum: ${s.curriculumType || 'N/A'} | Specializations: ${s.specializations?.join(', ') || 'N/A'}${s.distanceKm ? ` | Distance: ${s.distanceKm.toFixed(1)} km` : ''}`
+          `- ${s.name} (${s.city}, ${s.region}) | Grades ${s.lowestGrade}-${s.highestGrade} | ${s.tuition ? s.currency + ' ' + s.tuition.toLocaleString() : 'N/A'} | Curriculum: ${s.curriculumType || 'N/A'} | Specializations: ${s.specializations?.join(', ') || 'N/A'}`
         ).join('\n')
       : '\n\n[NO SCHOOLS AVAILABLE TO SHOW]';
 
@@ -300,37 +248,47 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     // Second pass: Generate response with school context
     const responsePrompt = `You are an experienced education consultant helping parents find the right private school.
 
-CONVERSATION HISTORY:
-${conversationSummary || 'First message in conversation.'}
+CRITICAL RULES - NEVER BREAK THESE:
+1. YOU MAY ONLY MENTION SCHOOLS FROM THE "SCHOOLS AVAILABLE" LIST ABOVE. Never invent or fabricate school names, locations, or details.
+2. The number you state (e.g., "I found X schools") MUST EXACTLY match the number shown in "SCHOOLS AVAILABLE (X total)".
+3. If narrowing down from currently shown schools, say "Of the schools shown, here are X that match..."
+4. BE CONCISE: Maximum 2-3 sentences. Lead with value (school names from list only, specific recommendations).
+5. INCLUDE ACCURATE DETAILS: When mentioning a school, use its exact name, city, and details from the list above.
+6. VARY YOUR OPENINGS: Don't start every response with "It's great to hear..."
+7. CONSIDER USER CONTEXT: Reference the user's notes and shortlisted schools when relevant to provide personalized advice.
 
-${schoolContext}
+CONVERSATION CONTEXT:
+${conversationSummary || 'First message in conversation.'}
 ${userContextText}
 
-Parent just said: "${message}"
+INTENT DETECTED: ${isCompareIntent ? 'COMPARE_SCHOOLS' : intentResponse.intent}
+${schoolContext}
 
-Your role is to:
-1. Be warm, professional, and conversational
-2. If schools were found, describe them briefly and offer to help further
-3. If no schools found, ask clarifying questions about location, budget, or curriculum preferences
-4. Remember context from the conversation and personalize responses
-5. For "near me" searches, mention the distance if available
-6. Be helpful and guide them toward finding the right school
+Parent's message: "${message}"
 
-Respond naturally and conversationally. Keep responses concise (2-3 sentences max unless describing schools).`;
+${isCompareIntent ? 'Generate a brief response (1-2 sentences) confirming which schools are being compared.' : 'Generate a natural, helpful response (2-3 sentences max). State the CORRECT number of schools from the list above.'}`;
 
-    const responseResult = await base44.integrations.Core.InvokeLLM({
+    const finalResponse = await base44.integrations.Core.InvokeLLM({
       prompt: responsePrompt
     });
 
+    // Determine final intent and action
+    const finalIntent = isCompareIntent ? 'COMPARE_SCHOOLS' : intentResponse.intent;
+    
     return Response.json({
-      message: responseResult,
-      intent: intentResponse.intent,
-      action: intentResponse.intent === 'SHOW_SCHOOLS' ? 'SHOW_SCHOOLS' : null,
-      schools: matchingSchools,
-      shouldShowSchools: matchingSchools.length > 0 && (isCompareIntent || intentResponse.shouldShowSchools),
-      filterCriteria: intentResponse.filterCriteria || {},
-      matchingSchools: matchingSchools
+      message: finalResponse,
+      intent: finalIntent,
+      action: finalIntent === 'COMPARE_SCHOOLS' ? 'COMPARE' : 
+              finalIntent === 'VIEW_DETAIL' ? 'view_detail' : 
+              intentResponse.shouldShowSchools ? 'search_schools' : null,
+      schools: isCompareIntent && matchingSchools.length >= 2 
+        ? matchingSchools.slice(0, 2)  // Return full school objects
+        : matchingSchools,
+      shouldShowSchools: intentResponse.shouldShowSchools || intentResponse.intent === 'NARROW_DOWN',
+      filterCriteria: intentResponse.filterCriteria || null,
+      matchingSchools: matchingSchools.map(s => s.id)
     });
+
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
