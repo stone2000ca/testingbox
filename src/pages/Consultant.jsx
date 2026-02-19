@@ -547,6 +547,13 @@ export default function Consultant() {
               </div>
             </div>
           )}
+
+          {currentView === 'comparison' && comparisonData && (
+            <ComparisonView 
+              schools={comparisonData} 
+              onBack={() => setCurrentView(schools.length > 0 ? 'schools' : 'welcome')}
+            />
+          )}
           
           {currentView === 'comparison' && comparisonData && (
             <ComparisonView 
