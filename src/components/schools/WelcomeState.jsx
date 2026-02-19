@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 
 export default function WelcomeState({ onPromptClick }) {
   const prompts = [
-    "I'm looking for a Montessori school in Toronto for my 6-year-old",
-    "Show me IB schools in New York with strong STEM programs",
-    "Find schools in London under £20,000/year with good sports programs",
-    "I need a school with special education support in Vancouver"
+    "Find schools near me",
+    "Compare boarding schools",
+    "Explore IB programs"
   ];
 
   return (
@@ -17,7 +16,7 @@ export default function WelcomeState({ onPromptClick }) {
         </div>
         <h1 className="text-3xl font-bold mb-3">Welcome to NextSchool</h1>
         <p className="text-lg text-slate-600 mb-8">
-          I'm your AI education consultant. Let's find the perfect school for your child through conversation.
+          Start by telling me about your child and what matters most in a school...
         </p>
 
         <div className="grid gap-3 mb-8">
@@ -45,17 +44,18 @@ export default function WelcomeState({ onPromptClick }) {
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-slate-700 mb-3">Try these examples:</p>
-          {prompts.map((prompt, index) => (
-            <Button
-              key={index}
-              variant="outline"
-              className="w-full text-left justify-start h-auto py-3 px-4 hover:bg-teal-50 hover:border-teal-300"
-              onClick={() => onPromptClick(prompt)}
-            >
-              <span className="text-sm text-slate-700">{prompt}</span>
-            </Button>
-          ))}
+          <p className="text-sm font-medium text-slate-700 mb-3">Quick start suggestions:</p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {prompts.map((prompt, index) => (
+              <button
+                key={index}
+                onClick={() => onPromptClick(prompt)}
+                className="px-4 py-2 bg-white border-2 border-teal-200 text-teal-700 rounded-full hover:bg-teal-50 hover:border-teal-400 transition-colors text-sm font-medium"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
