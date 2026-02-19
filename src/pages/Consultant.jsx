@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Plus, Heart, FileText, Sparkles, LogIn, Menu, ArrowLeft, Badge } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Heart, FileText, Sparkles, LogIn, Menu, ArrowLeft, Badge, Trash2, MapPin } from "lucide-react";
 import MessageBubble from '@/components/chat/MessageBubble';
 import ChatInput from '@/components/chat/ChatInput';
 import TypingIndicator from '@/components/chat/TypingIndicator';
@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function Consultant() {
   const [user, setUser] = useState(null);
@@ -41,11 +42,60 @@ export default function Consultant() {
   const [showShortlistPanel, setShowShortlistPanel] = useState(false);
   const [showNotesPanel, setShowNotesPanel] = useState(false);
   
+  // Distance feature
+  const [showDistances, setShowDistances] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  
+  // Delete conversation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState(null);
+  
+  // Funny thinking messages
+  const [thinkingMessage, setThinkingMessage] = useState('');
+  const thinkingMessages = [
+    "Checking if the principal is cool...",
+    "Cross-referencing with helicopter parents...",
+    "Calculating recess-to-homework ratio...",
+    "Asking the school mascots for opinions...",
+    "Reviewing cafeteria food quality...",
+    "Counting how many Nobel laureates graduated...",
+    "Measuring distance to nearest ice cream shop...",
+    "Checking if they allow nap time...",
+    "Consulting with PTA parents...",
+    "Evaluating playground slide quality...",
+    "Analyzing teacher coffee consumption levels...",
+    "Checking WiFi speed in classrooms...",
+    "Rating school bus comfort levels...",
+    "Investigating library book collection size...",
+    "Surveying student happiness index...",
+    "Determining optimal snack break times...",
+    "Assessing playground equipment awesomeness..."
+  ];
+  
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Rotate thinking messages
+  useEffect(() => {
+    if (isTyping) {
+      setThinkingMessage(thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)]);
+      const interval = setInterval(() => {
+        setThinkingMessage(thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)]);
+      }, 2500);
+      return () => clearInterval(interval);
+    }
+  }, [isTyping]);
+
+  // Auto-focus input after AI response
+  useEffect(() => {
+    if (!isTyping && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isTyping]);
 
   const checkAuth = async () => {
     try {
