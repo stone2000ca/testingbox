@@ -185,10 +185,28 @@ Deno.serve(async (req) => {
       schools.sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
     }
 
-    // Limit results
-    schools = schools.slice(0, limit);
+    // Limit to max 20 results and return only essential fields for LLM
+    const maxResults = Math.min(schools.length, 20);
+    const condensedSchools = schools.slice(0, maxResults).map(s => ({
+      id: s.id,
+      name: s.name,
+      slug: s.slug,
+      city: s.city,
+      region: s.region,
+      lowestGrade: s.lowestGrade,
+      highestGrade: s.highestGrade,
+      tuition: s.tuition,
+      currency: s.currency,
+      curriculumType: s.curriculumType,
+      specializations: s.specializations,
+      distanceKm: s.distanceKm
+    }));
 
-    return Response.json({ schools, total: schools.length });
+    return Response.json({ 
+      schools: condensedSchools, 
+      total: schools.length,
+      returned: condensedSchools.length
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
