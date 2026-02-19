@@ -311,6 +311,9 @@ Generate a natural, helpful response.`;
       prompt: responsePrompt
     });
 
+    // Update user memory with insights from this message
+    await base44.functions.invoke('updateUserMemory', { userId, userMessage: message });
+
     // Replace school names with markdown links (school:slug format)
     let messageWithLinks = aiResponse;
     schoolsToDescribe.forEach(school => {
