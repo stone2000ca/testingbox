@@ -272,13 +272,22 @@ export default function Consultant() {
         shortlistedSchools
       });
 
+      console.log('=== ORCHESTRATE RESPONSE ===', response.data);
+      console.log('Action:', response.data.action);
+      console.log('Intent:', response.data.intent);
+      console.log('Schools returned:', response.data.schools);
+      console.log('Schools count:', response.data.schools?.length);
+
       // Handle different response actions
       const action = response.data.action;
       
       // Handle COMPARE action - render ComparisonView immediately
       if (action === 'COMPARE' && response.data.schools?.length >= 2) {
+        console.log('✅ SETTING COMPARISON VIEW with schools:', response.data.schools);
         setComparisonData(response.data.schools);
         setCurrentView('comparison');
+      } else if (action === 'COMPARE') {
+        console.error('⚠️ COMPARE action but insufficient schools:', response.data.schools);
       }
       // Only fetch schools if intent is SHOW_SCHOOLS or NARROW_DOWN
       else if ((response.data.intent === 'SHOW_SCHOOLS' || response.data.intent === 'NARROW_DOWN') && response.data.matchingSchools) {
