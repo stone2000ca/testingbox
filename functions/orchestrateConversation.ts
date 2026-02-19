@@ -51,6 +51,13 @@ LOCATION EXTRACTION:
   * "show me schools in toronto, ontario" → city: Toronto, provinceState: Ontario
   * "schools near vancouver" → city: Vancouver
   * "schools in BC" → provinceState: BC
+- IMPORTANT: Recognize region aliases (GTA, Lower Mainland, Greater Vancouver, Montreal, Golden Horseshoe, New England, Pacific Northwest):
+   * "show me schools near GTA" → region: GTA
+   * "schools in lower mainland" → region: Lower Mainland
+   * "greater vancouver schools" → region: Greater Vancouver
+   * "new england schools" → region: New England
+   * "pacific northwest" → region: Pacific Northwest
+
 
 INTENT OPTIONS:
 - SHOW_SCHOOLS: Show matching schools (new search/filter request)
