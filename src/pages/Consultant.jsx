@@ -749,6 +749,29 @@ Return empty array if user didn't provide any of these facts.`;
             />
           )}
 
+           {currentView === 'profile' && selectedSchool && (
+             <div className="h-full flex flex-col">
+               <div className="p-4 border-b flex items-center gap-2">
+                 <button
+                   onClick={handleBackToResults}
+                   className="text-slate-600 hover:text-slate-900"
+                 >
+                   <ArrowLeft className="h-5 w-5" />
+                 </button>
+                 <h2 className="text-lg font-semibold text-slate-900">{selectedSchool.name}</h2>
+               </div>
+               <div className="flex-1 overflow-auto">
+                 <SchoolDetail
+                   school={selectedSchool}
+                   onClose={handleBackToResults}
+                   onToggleShortlist={handleToggleShortlist}
+                   isShortlisted={user?.shortlist?.includes(selectedSchool.id) || false}
+                 />
+               </div>
+             </div>
+           )}
+
+
            {currentView === 'comparison-table' && comparisonData && (
              <div className="flex flex-col h-full">
                <div className="flex items-center justify-between p-4 border-b">
