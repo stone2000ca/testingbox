@@ -240,6 +240,26 @@ export default function Consultant() {
     setIsTyping(true);
 
     try {
+      // Fetch user notes and shortlist for AI context
+      let userNotes = [];
+      let shortlistedSchools = [];
+      if (isAuthenticated && user) {
+        try {
+          const notes = await base44.entities.Notes.filter({ userId: user.id });
+          userNotes = notes.map(n => n.content);
+          
+          const shortlistData = currentConversation?.conversationContext?.shortlist || [];
+          if (shortlistData.length > 0) {
+            const shortlistSchoolsData = await base44.entities.School.filter({
+              id: { $in: shortlistData }
+            });
+            shortlistedSchools = shortlistSchoolsData.map(s => s.name);
+          }
+        } catch (e) {
+          console.error('Failed to fetch notes/shortlist:', e);
+        }
+      }
+
       // Call orchestrateConversation with current schools context
       const response = await base44.functions.invoke('orchestrateConversation', {
         message: messageText,
@@ -247,7 +267,9 @@ export default function Consultant() {
         conversationContext: currentConversation?.conversationContext || {},
         region: user?.profileRegion || 'Canada',
         userId: user?.id,
-        currentSchools: schools
+        currentSchools: schools,
+        userNotes,
+        shortlistedSchools
       });
 
       // Handle different response actions
@@ -280,6 +302,46 @@ export default function Consultant() {
       const finalMessages = [...updatedMessages, aiMessage];
       setMessages(finalMessages);
       setIsTyping(false);
+
+      // Extract and save AI memories
+      if (isAuthenticated && user) {
+        try {
+          const memoryPrompt = `Based on this conversation, extract key facts about the user/family. Return ONLY the facts as a JSON array of strings. Facts should include: child's age/grade, location preferences, budget range, school philosophy preferences, specific requirements, family values. Message: "${messageText}". AI Response: "${response.data.message}"`;
+          
+          const memoryResult = await base44.integrations.Core.InvokeLLM({
+            prompt: memoryPrompt,
+            response_json_schema: {
+              type: "object",
+              properties: {
+                facts: {
+                  type: "array",
+                  items: { type: "string" }
+                }
+              }
+            }
+          });
+
+          if (memoryResult.facts && memoryResult.facts.length > 0) {
+            const existingMemories = await base44.entities.UserMemory.filter({ userId: user.id });
+            if (existingMemories.length > 0) {
+              const existingMem = existingMemories[0];
+              const updatedMemories = [...new Set([...existingMem.memories, ...memoryResult.facts])];
+              await base44.entities.UserMemory.update(existingMem.id, {
+                memories: updatedMemories,
+                lastUpdated: new Date().toISOString()
+              });
+            } else {
+              await base44.entities.UserMemory.create({
+                userId: user.id,
+                memories: memoryResult.facts,
+                lastUpdated: new Date().toISOString()
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Failed to save memories:', e);
+        }
+      }
 
       // Update conversation if authenticated
       if (isAuthenticated && currentConversation) {
