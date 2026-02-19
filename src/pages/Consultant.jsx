@@ -798,10 +798,19 @@ Return empty array if user didn't provide any of these facts.`;
                 key={index}
                 message={msg}
                 isUser={msg.role === 'user'}
-                onViewSchoolProfile={(slug) => {
+                onViewSchoolProfile={async (slug) => {
                   const school = schools.find(s => s.slug === slug);
                   if (school) {
                     handleViewSchoolDetail(school);
+                  } else {
+                    try {
+                      const results = await base44.entities.School.filter({ slug });
+                      if (results.length > 0) {
+                        handleViewSchoolDetail(results[0]);
+                      }
+                    } catch (error) {
+                      console.error('Error finding school:', error);
+                    }
                   }
                 }}
               />
