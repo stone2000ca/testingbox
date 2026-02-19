@@ -77,11 +77,66 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
       }
     });
 
+    // Simple string-based comparison detection
+    const msgLower = message.toLowerCase();
+    const isCompareIntent = msgLower.includes('compare') || 
+                           msgLower.includes(' vs ') || 
+                           msgLower.includes('versus') ||
+                           msgLower.includes('side by side') ||
+                           msgLower.includes('difference between');
+
     // Fetch matching schools if needed
     let matchingSchools = [];
     
+    // COMPARE SCHOOLS - Extract school names and find them
+    if (isCompareIntent) {
+      // Extract potential school names from the message
+      const extractedNames = [];
+      
+      // Try patterns: "compare X and Y", "X vs Y", "difference between X and Y"
+      const patterns = [
+        /compare\s+(.+?)\s+(?:and|with|vs|versus)\s+(.+?)(?:\.|$|,)/i,
+        /(.+?)\s+vs\s+(.+?)(?:\.|$|,)/i,
+        /difference\s+between\s+(.+?)\s+and\s+(.+?)(?:\.|$|,)/i
+      ];
+      
+      for (const pattern of patterns) {
+        const match = message.match(pattern);
+        if (match) {
+          extractedNames.push(match[1].trim());
+          extractedNames.push(match[2].trim());
+          break;
+        }
+      }
+      
+      // Try fuzzy matching against currentSchools first
+      if (currentSchools && currentSchools.length > 0 && extractedNames.length > 0) {
+        for (const searchName of extractedNames) {
+          const found = currentSchools.find(s => 
+            s.name.toLowerCase().includes(searchName.toLowerCase()) ||
+            searchName.toLowerCase().includes(s.name.toLowerCase().split(' ')[0]) // match first word
+          );
+          if (found && !matchingSchools.some(ms => ms.id === found.id)) {
+            matchingSchools.push(found);
+          }
+        }
+      }
+      
+      // Fallback: search all schools if not found in currentSchools
+      if (matchingSchools.length < 2 && extractedNames.length > 0) {
+        const allSchools = await base44.asServiceRole.entities.School.filter({});
+        for (const searchName of extractedNames) {
+          const found = allSchools.find(s => 
+            s.name.toLowerCase().includes(searchName.toLowerCase())
+          );
+          if (found && !matchingSchools.some(ms => ms.id === found.id)) {
+            matchingSchools.push(found);
+          }
+        }
+      }
+    }
     // If narrowing from current schools, filter those instead of searching database
-    if (intentResponse.intent === 'NARROW_DOWN' && currentSchools && currentSchools.length > 0) {
+    else if (intentResponse.intent === 'NARROW_DOWN' && currentSchools && currentSchools.length > 0) {
       // Filter from currently displayed schools
       let filtered = currentSchools;
       
@@ -115,22 +170,6 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
       }
       
       matchingSchools = filtered;
-    } else if (intentResponse.intent === 'COMPARE_SCHOOLS') {
-      // Extract school names from the message
-      const schoolNamesPattern = /compare\s+(.+?)\s+and\s+(.+?)(?:\.|$)/i;
-      const match = message.match(schoolNamesPattern);
-      
-      if (match) {
-        const school1Name = match[1].trim();
-        const school2Name = match[2].trim();
-        
-        // Search for these schools in database
-        const allSchools = await base44.asServiceRole.entities.School.filter({});
-        matchingSchools = allSchools.filter(s => 
-          s.name.toLowerCase().includes(school1Name.toLowerCase()) ||
-          s.name.toLowerCase().includes(school2Name.toLowerCase())
-        );
-      }
     } else if (intentResponse.shouldShowSchools && intentResponse.filterCriteria) {
       const filters = {};
       if (intentResponse.filterCriteria.city) filters.city = intentResponse.filterCriteria.city;
