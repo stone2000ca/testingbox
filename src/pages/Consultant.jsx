@@ -27,6 +27,7 @@ export default function Consultant() {
   // View states
   const [currentView, setCurrentView] = useState('welcome');
   const [schools, setSchools] = useState([]);
+  const [previousSearchResults, setPreviousSearchResults] = useState([]);
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   
