@@ -90,32 +90,39 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     
     // COMPARE SCHOOLS - Extract school names and find them
     if (isCompareIntent) {
+      // Helper function to normalize text by stripping punctuation
+      const normalize = (text) => text.replace(/[^a-zA-Z0-9 ]/g, '').toLowerCase();
+      
       // Extract potential school names from the message
-      const extractedNames = [];
+      let extractedNames = [];
       
-      // Try patterns: "compare X and Y", "X vs Y", "difference between X and Y"
-      const patterns = [
-        /compare\s+(.+?)\s+(?:and|with|vs|versus)\s+(.+?)(?:\.|$|,)/i,
-        /(.+?)\s+vs\s+(.+?)(?:\.|$|,)/i,
-        /difference\s+between\s+(.+?)\s+and\s+(.+?)(?:\.|$|,)/i
-      ];
+      // Split on comparison keywords: with, and, vs, versus, to
+      let remainingText = message.toLowerCase();
       
-      for (const pattern of patterns) {
-        const match = message.match(pattern);
-        if (match) {
-          extractedNames.push(match[1].trim());
-          extractedNames.push(match[2].trim());
-          break;
+      // Remove "compare" prefix if present
+      remainingText = remainingText.replace(/^compare\s+/i, '');
+      
+      // Split on any of the comparison keywords
+      const splitRegex = /\s+(with|and|vs|versus|to)\s+/i;
+      const parts = remainingText.split(splitRegex);
+      
+      // Extract non-keyword parts as school names
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i].trim();
+        // Skip if it's a keyword or empty
+        if (part && !['with', 'and', 'vs', 'versus', 'to'].includes(part)) {
+          extractedNames.push(part);
         }
       }
       
-      // Try fuzzy matching against currentSchools first
+      // Try fuzzy matching against currentSchools first with punctuation normalization
       if (currentSchools && currentSchools.length > 0 && extractedNames.length > 0) {
-        for (const searchName of extractedNames) {
-          const found = currentSchools.find(s => 
-            s.name.toLowerCase().includes(searchName.toLowerCase()) ||
-            searchName.toLowerCase().includes(s.name.toLowerCase().split(' ')[0]) // match first word
-          );
+        for (const searchTerm of extractedNames) {
+          const normalizedSearch = normalize(searchTerm);
+          const found = currentSchools.find(s => {
+            const normalizedSchoolName = normalize(s.name);
+            return normalizedSchoolName.includes(normalizedSearch);
+          });
           if (found && !matchingSchools.some(ms => ms.id === found.id)) {
             matchingSchools.push(found);
           }
@@ -125,10 +132,12 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
       // Fallback: search all schools if not found in currentSchools
       if (matchingSchools.length < 2 && extractedNames.length > 0) {
         const allSchools = await base44.asServiceRole.entities.School.filter({});
-        for (const searchName of extractedNames) {
-          const found = allSchools.find(s => 
-            s.name.toLowerCase().includes(searchName.toLowerCase())
-          );
+        for (const searchTerm of extractedNames) {
+          const normalizedSearch = normalize(searchTerm);
+          const found = allSchools.find(s => {
+            const normalizedSchoolName = normalize(s.name);
+            return normalizedSchoolName.includes(normalizedSearch);
+          });
           if (found && !matchingSchools.some(ms => ms.id === found.id)) {
             matchingSchools.push(found);
           }
