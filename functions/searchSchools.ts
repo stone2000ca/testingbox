@@ -1,7 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const TIMEOUT_MS = 25000; // 25 second timeout
+
 Deno.serve(async (req) => {
   try {
+    // Race against timeout
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Search request timeout')), TIMEOUT_MS)
+    );
+    
+    const searchPromise = performSearch(req);
     const base44 = createClientFromRequest(req);
     const { 
       region, 
