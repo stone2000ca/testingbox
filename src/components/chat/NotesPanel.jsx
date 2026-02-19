@@ -72,6 +72,19 @@ export default function NotesPanel({ userId, onClose }) {
     }
   };
 
+  const handleClearMemory = async () => {
+    try {
+      const userMemories = await base44.entities.UserMemory.filter({ userId });
+      if (userMemories.length > 0) {
+        await base44.entities.UserMemory.delete(userMemories[0].id);
+        setMemories([]);
+      }
+      setClearMemoryDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to clear memories:', error);
+    }
+  };
+
   return (
     <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-2xl z-50 flex flex-col border-l border-slate-200">
       <div className="flex items-center justify-between p-4 border-b border-slate-200">
