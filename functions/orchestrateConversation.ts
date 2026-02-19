@@ -90,8 +90,8 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     
     // COMPARE SCHOOLS - Extract school names and find them
     if (isCompareIntent) {
-      // Helper function to normalize text by stripping punctuation
-      const normalize = (text) => text.replace(/[^a-zA-Z0-9 ]/g, '').toLowerCase();
+      // Helper function to normalize text by stripping periods and apostrophes
+      const normalize = (text) => text.replace(/[.']/g, '').toLowerCase();
       
       // Extract potential school names from the message
       let extractedNames = [];
