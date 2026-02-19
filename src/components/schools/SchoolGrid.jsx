@@ -11,10 +11,11 @@ export default function SchoolGrid({ schools, onViewDetails, onToggleShortlist, 
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {schools.map((school) => (
+      {schools.map((school, index) => (
         <SchoolCard
           key={school.id}
           school={school}
+          index={index}
           onViewDetails={() => onViewDetails(school.id)}
           onToggleShortlist={onToggleShortlist}
           isShortlisted={shortlistedIds.includes(school.id)}
