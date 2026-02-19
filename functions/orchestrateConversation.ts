@@ -266,7 +266,7 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
         }
       }
 
-      const searchResult = await base44.functions.invoke('searchSchools', searchParams);
+      const searchResult = await base44.asServiceRole.functions.invoke('searchSchools', searchParams);
       let schools = searchResult.data.schools || [];
       
       matchingSchools = schools.slice(0, 10); // Limit to 10 results
