@@ -50,12 +50,14 @@
 import Home from './pages/Home';
 import Pricing from './pages/Pricing';
 import Consultant from './pages/Consultant';
+import SchoolProfile from './pages/SchoolProfile';
 
 
 export const PAGES = {
     "Home": Home,
     "Pricing": Pricing,
     "Consultant": Consultant,
+    "SchoolProfile": SchoolProfile,
 }
 
 export const pagesConfig = {
