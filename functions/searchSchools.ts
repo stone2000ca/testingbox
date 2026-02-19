@@ -205,9 +205,8 @@ async function performSearch(req) {
       schools.sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
     }
 
-    // Limit to max 20 results and return only essential fields for LLM
-    const maxResults = Math.min(schools.length, 20);
-    const condensedSchools = schools.slice(0, maxResults).map(s => ({
+    // Return ALL matching schools with condensed data (no cap), limit only to LLM response
+    const condensedSchools = schools.map(s => ({
       id: s.id,
       name: s.name,
       slug: s.slug,
