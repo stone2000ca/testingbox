@@ -245,9 +245,11 @@ export default function Consultant() {
   };
 
   const loadConversation = async (convo) => {
+    // Set current conversation FIRST
     setCurrentConversation(convo);
+    
+    // Then set messages from this conversation
     const msgs = convo.messages || [];
-    // If no messages, add initial greeting
     if (msgs.length === 0) {
       const greeting = {
         role: 'assistant',
@@ -258,7 +260,11 @@ export default function Consultant() {
     } else {
       setMessages(msgs);
     }
+    
+    // Reset view to welcome for this conversation
     setCurrentView('welcome');
+    setSchools(convo.conversationContext?.schools || []);
+    setSelectedSchool(null);
   };
 
   const handleBackToResults = () => {
