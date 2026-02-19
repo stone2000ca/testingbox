@@ -220,9 +220,13 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
       if (intentResponse.filterCriteria.specializations?.length > 0) {
         searchParams.specializations = intentResponse.filterCriteria.specializations;
       }
-      if (userLocation?.lat && userLocation?.lng) {
-        searchParams.userLat = userLocation.lat;
-        searchParams.userLng = userLocation.lng;
+      
+      // If user says "near me" or if we have userLocation, pass coordinates
+      if (intentResponse.filterCriteria.nearMe || (userLocation?.lat && userLocation?.lng)) {
+        if (userLocation?.lat && userLocation?.lng) {
+          searchParams.userLat = userLocation.lat;
+          searchParams.userLng = userLocation.lng;
+        }
       }
 
       const searchResult = await base44.functions.invoke('searchSchools', searchParams);
@@ -240,7 +244,7 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     const schoolContext = schoolsToDescribe.length > 0 
       ? `\n\nSCHOOLS AVAILABLE (${schoolsToDescribe.length} total):\n` + 
         schoolsToDescribe.map(s => 
-          `- ${s.name} (${s.city}, ${s.region}) | Grades ${s.lowestGrade}-${s.highestGrade} | ${s.tuition ? s.currency + ' ' + s.tuition.toLocaleString() : 'N/A'} | Curriculum: ${s.curriculumType || 'N/A'} | Specializations: ${s.specializations?.join(', ') || 'N/A'}`
+          `- ${s.name} (${s.city}, ${s.region}) | Grades ${s.lowestGrade}-${s.highestGrade} | ${s.tuition ? s.currency + ' ' + s.tuition.toLocaleString() : 'N/A'} | Curriculum: ${s.curriculumType || 'N/A'} | Specializations: ${s.specializations?.join(', ') || 'N/A'}${s.distanceKm ? ` | Distance: ${s.distanceKm.toFixed(1)} km` : ''}`
         ).join('\n')
       : '\n\n[NO SCHOOLS AVAILABLE TO SHOW]';
 
@@ -259,47 +263,37 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     // Second pass: Generate response with school context
     const responsePrompt = `You are an experienced education consultant helping parents find the right private school.
 
-CRITICAL RULES - NEVER BREAK THESE:
-1. YOU MAY ONLY MENTION SCHOOLS FROM THE "SCHOOLS AVAILABLE" LIST ABOVE. Never invent or fabricate school names, locations, or details.
-2. The number you state (e.g., "I found X schools") MUST EXACTLY match the number shown in "SCHOOLS AVAILABLE (X total)".
-3. If narrowing down from currently shown schools, say "Of the schools shown, here are X that match..."
-4. BE CONCISE: Maximum 2-3 sentences. Lead with value (school names from list only, specific recommendations).
-5. INCLUDE ACCURATE DETAILS: When mentioning a school, use its exact name, city, and details from the list above.
-6. VARY YOUR OPENINGS: Don't start every response with "It's great to hear..."
-7. CONSIDER USER CONTEXT: Reference the user's notes and shortlisted schools when relevant to provide personalized advice.
-
-CONVERSATION CONTEXT:
+CONVERSATION HISTORY:
 ${conversationSummary || 'First message in conversation.'}
+
+${schoolContext}
 ${userContextText}
 
-INTENT DETECTED: ${isCompareIntent ? 'COMPARE_SCHOOLS' : intentResponse.intent}
-${schoolContext}
+Parent just said: "${message}"
 
-Parent's message: "${message}"
+Your role is to:
+1. Be warm, professional, and conversational
+2. If schools were found, describe them briefly and offer to help further
+3. If no schools found, ask clarifying questions about location, budget, or curriculum preferences
+4. Remember context from the conversation and personalize responses
+5. For "near me" searches, mention the distance if available
+6. Be helpful and guide them toward finding the right school
 
-${isCompareIntent ? 'Generate a brief response (1-2 sentences) confirming which schools are being compared.' : 'Generate a natural, helpful response (2-3 sentences max). State the CORRECT number of schools from the list above.'}`;
+Respond naturally and conversationally. Keep responses concise (2-3 sentences max unless describing schools).`;
 
-    const finalResponse = await base44.integrations.Core.InvokeLLM({
+    const responseResult = await base44.integrations.Core.InvokeLLM({
       prompt: responsePrompt
     });
 
-    // Determine final intent and action
-    const finalIntent = isCompareIntent ? 'COMPARE_SCHOOLS' : intentResponse.intent;
-    
     return Response.json({
-      message: finalResponse,
-      intent: finalIntent,
-      action: finalIntent === 'COMPARE_SCHOOLS' ? 'COMPARE' : 
-              finalIntent === 'VIEW_DETAIL' ? 'view_detail' : 
-              intentResponse.shouldShowSchools ? 'search_schools' : null,
-      schools: isCompareIntent && matchingSchools.length >= 2 
-        ? matchingSchools.slice(0, 2)  // Return full school objects
-        : matchingSchools,
-      shouldShowSchools: intentResponse.shouldShowSchools || intentResponse.intent === 'NARROW_DOWN',
-      filterCriteria: intentResponse.filterCriteria || null,
-      matchingSchools: matchingSchools.map(s => s.id)
+      message: responseResult,
+      intent: intentResponse.intent,
+      action: intentResponse.intent === 'SHOW_SCHOOLS' ? 'SHOW_SCHOOLS' : null,
+      schools: matchingSchools,
+      shouldShowSchools: matchingSchools.length > 0 && (isCompareIntent || intentResponse.shouldShowSchools),
+      filterCriteria: intentResponse.filterCriteria || {},
+      matchingSchools: matchingSchools
     });
-
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
