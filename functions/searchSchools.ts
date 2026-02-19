@@ -54,6 +54,20 @@ Deno.serve(async (req) => {
       'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
     };
 
+    // Region aliases - maps metro areas and regions to cities
+    const regionAliases = {
+      'gta': ['Toronto', 'Mississauga', 'Brampton', 'Oakville', 'Markham', 'Vaughan', 'Richmond Hill'],
+      'greater toronto area': ['Toronto', 'Mississauga', 'Brampton', 'Oakville', 'Markham', 'Vaughan', 'Richmond Hill'],
+      'lower mainland': ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam'],
+      'metro vancouver': ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam'],
+      'greater vancouver': ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam'],
+      'montreal': ['Montreal', 'Laval', 'Longueuil'],
+      'greater montreal': ['Montreal', 'Laval', 'Longueuil'],
+      'golden horseshoe': ['Toronto', 'Hamilton', 'Niagara Falls', 'St. Catharines'],
+      'new england': [], // States, not cities
+      'pacific northwest': []  // States/provinces, not cities
+    };
+
     // Build filter
     let schools = await base44.entities.School.filter({ status: 'active' });
 
