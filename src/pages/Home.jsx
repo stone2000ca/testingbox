@@ -156,6 +156,8 @@ export default function Home() {
           <p className="text-sm">© 2026 NextSchool. Helping families find the right school.</p>
         </div>
       </footer>
+
+      <Footer />
     </div>
   );
 }
