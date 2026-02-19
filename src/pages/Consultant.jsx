@@ -8,6 +8,9 @@ import TypingIndicator from '@/components/chat/TypingIndicator';
 import WelcomeState from '@/components/schools/WelcomeState';
 import SchoolGrid from '@/components/schools/SchoolGrid';
 import SchoolDetail from '@/components/schools/SchoolDetail';
+import ShortlistPanel from '@/components/chat/ShortlistPanel';
+import NotesPanel from '@/components/chat/NotesPanel';
+import ComparisonView from '@/components/schools/ComparisonView';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
@@ -33,6 +36,10 @@ export default function Consultant() {
   const [tokenBalance, setTokenBalance] = useState(100);
   const [isPremium, setIsPremium] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  
+  // Panel states
+  const [showShortlistPanel, setShowShortlistPanel] = useState(false);
+  const [showNotesPanel, setShowNotesPanel] = useState(false);
   
   const messagesEndRef = useRef(null);
 
@@ -175,13 +182,14 @@ export default function Consultant() {
     setIsTyping(true);
 
     try {
-      // Call orchestrateConversation
+      // Call orchestrateConversation with current schools context
       const response = await base44.functions.invoke('orchestrateConversation', {
         message: messageText,
         conversationHistory: messages,
         conversationContext: currentConversation?.conversationContext || {},
         region: user?.profileRegion || 'Canada',
-        userId: user?.id
+        userId: user?.id,
+        currentSchools: schools
       });
 
       // Only fetch schools if intent is SHOW_SCHOOLS or NARROW_DOWN
@@ -218,6 +226,13 @@ export default function Consultant() {
         await base44.entities.ChatHistory.update(currentConversation.id, {
           messages: finalMessages
         });
+
+        // Generate title after 2 messages
+        if (finalMessages.length === 2) {
+          base44.functions.invoke('generateConversationTitle', {
+            conversationId: currentConversation.id
+          }).then(() => loadConversations());
+        }
 
         // Trigger summarization every 8 messages
         if (finalMessages.length % 8 === 0) {
@@ -326,10 +341,13 @@ export default function Consultant() {
   const handleCompareSchools = async (params) => {
     try {
       const schoolIds = params.schoolIds || params;
-      const result = await base44.functions.invoke('generateComparison', {
-        schoolIds: Array.isArray(schoolIds) ? schoolIds : [schoolIds]
+      
+      // Fetch schools to compare
+      const schoolsToCompare = await base44.entities.School.filter({
+        id: { $in: Array.isArray(schoolIds) ? schoolIds : [schoolIds] }
       });
-      setComparisonData(result.data);
+      
+      setComparisonData({ schools: schoolsToCompare });
       setCurrentView('comparison');
     } catch (error) {
       console.error('Comparison failed:', error);
@@ -504,55 +522,10 @@ export default function Consultant() {
           )}
           
           {currentView === 'comparison' && comparisonData && (
-            <div className="p-6">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">School Comparison</h2>
-                <Button variant="outline" onClick={() => setCurrentView('schools')}>
-                  Back to Results
-                </Button>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="text-left p-4 font-semibold">Criteria</th>
-                      {comparisonData.schools.map((school) => (
-                        <th key={school.id} className="text-left p-4 font-semibold">{school.name}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {comparisonData.categories.map((category) => (
-                      <>
-                        <tr key={category.name} className="bg-slate-50">
-                          <td colSpan={comparisonData.schools.length + 1} className="p-3 font-semibold text-sm text-slate-700">
-                            {category.name}
-                          </td>
-                        </tr>
-                        {category.rows.map((row, idx) => (
-                          <tr key={idx} className="border-t">
-                            <td className="p-4 text-sm text-slate-600">{row.label}</td>
-                            {row.values.map((value, vIdx) => (
-                              <td key={vIdx} className="p-4 text-sm">{value}</td>
-                            ))}
-                          </tr>
-                        ))}
-                      </>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {comparisonData.insights && (
-                <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-6">
-                  <h3 className="font-semibold mb-3 text-amber-900">Key Insights</h3>
-                  <ul className="space-y-2">
-                    {comparisonData.insights.map((insight, idx) => (
-                      <li key={idx} className="text-sm text-amber-900">• {insight}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+            <ComparisonView 
+              schools={comparisonData.schools} 
+              onBack={() => setCurrentView('schools')} 
+            />
           )}
           
           {currentView === 'shortlist' && (
