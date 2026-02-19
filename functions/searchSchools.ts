@@ -54,16 +54,77 @@ Deno.serve(async (req) => {
       'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
     };
 
+    // Regional aliases for expanded search
+    const regionAliases = {
+      'gta': {
+        cities: ['Toronto', 'Mississauga', 'Brampton', 'Oakville', 'Markham', 'Vaughan', 'Richmond Hill']
+      },
+      'greater toronto area': {
+        cities: ['Toronto', 'Mississauga', 'Brampton', 'Oakville', 'Markham', 'Vaughan', 'Richmond Hill']
+      },
+      'lower mainland': {
+        cities: ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam']
+      },
+      'metro vancouver': {
+        cities: ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam']
+      },
+      'greater vancouver': {
+        cities: ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam']
+      },
+      'montreal': {
+        cities: ['Montreal', 'Laval', 'Longueuil']
+      },
+      'greater montreal': {
+        cities: ['Montreal', 'Laval', 'Longueuil']
+      },
+      'golden horseshoe': {
+        cities: ['Toronto', 'Hamilton', 'Niagara Falls', 'St. Catharines']
+      },
+      'new england': {
+        provinces: ['Massachusetts', 'Connecticut', 'Rhode Island', 'Vermont', 'New Hampshire', 'Maine']
+      },
+      'pacific northwest': {
+        provinces: ['British Columbia', 'Washington', 'Oregon']
+      }
+    };
+
     // Build filter
     let schools = await base44.entities.School.filter({ status: 'active' });
 
-    // Apply location filters with smart matching
-    if (city) {
+    // Check for regional aliases first
+    let aliasedCities = [];
+    let aliasedProvinces = [];
+    if (region) {
+      const regionLower = region.toLowerCase().trim();
+      const alias = regionAliases[regionLower];
+      if (alias) {
+        if (alias.cities) aliasedCities = alias.cities;
+        if (alias.provinces) aliasedProvinces = alias.provinces;
+      }
+    }
+
+    // Apply aliased cities filter
+    if (aliasedCities.length > 0) {
+      schools = schools.filter(s => 
+        aliasedCities.some(c => s.city?.toLowerCase().includes(c.toLowerCase()))
+      );
+    }
+    // Apply aliased provinces filter
+    else if (aliasedProvinces.length > 0) {
+      schools = schools.filter(s => {
+        if (!s.provinceState) return false;
+        const schoolPS = s.provinceState.toLowerCase();
+        return aliasedProvinces.some(p => schoolPS === p.toLowerCase() || schoolPS.includes(p.toLowerCase()));
+      });
+    }
+
+    // Apply city filter (if no aliases matched)
+    if (city && aliasedCities.length === 0) {
       const cityLower = city.toLowerCase().trim();
       schools = schools.filter(s => s.city?.toLowerCase().includes(cityLower));
     }
 
-    if (provinceState) {
+    if (provinceState && aliasedProvinces.length === 0) {
       const psUpper = provinceState.toUpperCase().trim();
       const psLower = provinceState.toLowerCase().trim();
       
@@ -82,8 +143,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Apply region filter
-    if (region) {
+    // Apply general region filter (Canada, US, Europe) - only if no aliases were used
+    if (region && !aliasedCities.length && !aliasedProvinces.length) {
       schools = schools.filter(s => s.region === region);
     }
     if (country) {
