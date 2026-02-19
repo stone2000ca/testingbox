@@ -515,6 +515,89 @@ export default function Consultant() {
     handleSendMessage(prompt);
   };
 
+  const handleDeleteConversation = async () => {
+    if (!conversationToDelete) return;
+    
+    try {
+      await base44.entities.ChatHistory.delete(conversationToDelete.id);
+      
+      // Remove from conversations list
+      setConversations(conversations.filter(c => c.id !== conversationToDelete.id));
+      
+      // If deleting current conversation, reset to welcome
+      if (currentConversation?.id === conversationToDelete.id) {
+        setCurrentConversation(null);
+        setMessages([]);
+        setCurrentView('welcome');
+      }
+      
+      setDeleteDialogOpen(false);
+      setConversationToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+    }
+  };
+
+  const handleToggleDistances = () => {
+    if (!showDistances) {
+      // Get user location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            setUserLocation(location);
+            
+            // Calculate distances for all schools
+            const schoolsWithDistance = schools.map(school => {
+              if (school.lat && school.lng) {
+                const distance = calculateHaversineDistance(
+                  location.lat,
+                  location.lng,
+                  school.lat,
+                  school.lng
+                );
+                return { ...school, distanceKm: distance };
+              }
+              return school;
+            });
+            
+            // Sort by distance
+            const sorted = schoolsWithDistance.sort((a, b) => 
+              (a.distanceKm || Infinity) - (b.distanceKm || Infinity)
+            );
+            
+            setSchools(sorted);
+            setShowDistances(true);
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            alert('Unable to get your location. Please enable location services.');
+          }
+        );
+      } else {
+        alert('Geolocation is not supported by your browser.');
+      }
+    } else {
+      setShowDistances(false);
+    }
+  };
+
+  // Haversine formula to calculate distance between two coordinates
+  const calculateHaversineDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -577,20 +660,31 @@ export default function Consultant() {
                   Chat History
                 </div>
                 {conversations.map((convo) => (
-                  <button
-                    key={convo.id}
-                    onClick={() => loadConversation(convo)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors text-sm ${
-                      currentConversation?.id === convo.id
-                        ? 'bg-teal-50 text-teal-700 border border-teal-200'
-                        : 'hover:bg-white border border-transparent'
-                    }`}
-                  >
-                    <div className="font-medium truncate">{convo.title}</div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      {new Date(convo.updated_date).toLocaleDateString()}
-                    </div>
-                  </button>
+                  <div key={convo.id} className="relative group">
+                    <button
+                      onClick={() => loadConversation(convo)}
+                      className={`w-full text-left p-3 rounded-lg transition-colors text-sm ${
+                        currentConversation?.id === convo.id
+                          ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                          : 'hover:bg-white border border-transparent'
+                      }`}
+                    >
+                      <div className="font-medium truncate pr-6">{convo.title}</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {new Date(convo.updated_date).toLocaleDateString()}
+                      </div>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConversationToDelete(convo);
+                        setDeleteDialogOpen(true);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-100 rounded"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                    </button>
+                  </div>
                 ))}
               </div>
             </>
@@ -617,9 +711,19 @@ export default function Consultant() {
           
           {currentView === 'schools' && (
             <div className="p-6">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Recommended Schools</h2>
-                <p className="text-slate-600">Found {schools.length} schools matching your criteria</p>
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Recommended Schools</h2>
+                  <p className="text-slate-600">Found {schools.length} schools matching your criteria</p>
+                </div>
+                <Button
+                  variant={showDistances ? "default" : "outline"}
+                  onClick={handleToggleDistances}
+                  className={showDistances ? "bg-teal-600 hover:bg-teal-700" : ""}
+                >
+                  <MapPin className="h-4 w-4 mr-2" />
+                  {showDistances ? 'Showing Distances' : 'Show Distances'}
+                </Button>
               </div>
               <SchoolGrid
                 schools={schools}
