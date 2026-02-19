@@ -775,6 +775,12 @@ Return empty array if user didn't provide any of these facts.`;
                 key={index}
                 message={msg}
                 isUser={msg.role === 'user'}
+                onViewSchoolProfile={(slug) => {
+                  const school = schools.find(s => s.slug === slug);
+                  if (school) {
+                    handleViewSchoolDetail(school);
+                  }
+                }}
               />
             ))}
             {isTyping && <TypingIndicator message={thinkingMessage} />}
