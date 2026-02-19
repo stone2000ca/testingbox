@@ -4,10 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { MapPin, Users, DollarSign, Calendar, Award, Globe2, Heart, Mail, Phone, ExternalLink, Sparkles } from "lucide-react";
+import { MapPin, Users, DollarSign, Calendar, Award, Globe2, Heart, Mail, Phone, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import ContactSchoolModal from '@/components/schools/ContactSchoolModal';
+import Navbar from '@/components/navigation/Navbar';
 
 export default function SchoolProfile() {
   const location = useLocation();
