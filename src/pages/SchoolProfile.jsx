@@ -16,6 +16,7 @@ export default function SchoolProfile() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [isShortlisted, setIsShortlisted] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     loadSchool();
