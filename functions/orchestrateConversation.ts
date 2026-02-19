@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { message, conversationHistory, conversationContext, region, userId, currentSchools, userNotes, shortlistedSchools } = await req.json();
+    const { message, conversationHistory, conversationContext, region, userId, currentSchools, userNotes, shortlistedSchools, userLocation } = await req.json();
 
     const context = conversationContext || {};
     const history = conversationHistory || [];
