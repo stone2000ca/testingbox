@@ -284,6 +284,21 @@ export default function Consultant() {
     setCurrentView('schools');
   };
 
+  const handleViewSchoolProfile = async (slug) => {
+    try {
+      // Fetch full school data by slug
+      const allSchools = await base44.asServiceRole.entities.School.list('', 1000);
+      const school = allSchools.find(s => s.slug === slug);
+      
+      if (school) {
+        setSelectedSchool(school);
+        setCurrentView('profile');
+      }
+    } catch (error) {
+      console.error('Failed to fetch school profile:', error);
+    }
+  };
+
   const handleSendMessage = async (messageText) => {
     // Check if user has tokens (skip for premium)
     if (!isPremium && tokenBalance <= 0) {
