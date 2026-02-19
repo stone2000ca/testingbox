@@ -211,6 +211,12 @@ Generate a natural, helpful response (2-3 sentences max). State the CORRECT numb
       prompt: responsePrompt
     });
 
+    // For COMPARE intent, extract school IDs for comparison
+    let comparisonSchoolIds = [];
+    if (intentResponse.intent === 'COMPARE_SCHOOLS' && matchingSchools.length >= 2) {
+      comparisonSchoolIds = matchingSchools.slice(0, 2).map(s => s.id);
+    }
+
     return Response.json({
       message: finalResponse,
       intent: intentResponse.intent,
@@ -218,10 +224,12 @@ Generate a natural, helpful response (2-3 sentences max). State the CORRECT numb
         action: intentResponse.intent === 'COMPARE_SCHOOLS' ? 'compare' : 
                 intentResponse.intent === 'VIEW_DETAIL' ? 'view_detail' : 
                 intentResponse.shouldShowSchools ? 'search_schools' : null,
-        params: intentResponse.filterCriteria || intentResponse.schoolIds || {},
+        params: intentResponse.intent === 'COMPARE_SCHOOLS' 
+          ? { schoolIds: comparisonSchoolIds }
+          : (intentResponse.filterCriteria || {}),
         reasoning: `Intent: ${intentResponse.intent}`
       },
-      shouldShowSchools: intentResponse.shouldShowSchools,
+      shouldShowSchools: intentResponse.shouldShowSchools || intentResponse.intent === 'NARROW_DOWN',
       filterCriteria: intentResponse.filterCriteria || null,
       matchingSchools: matchingSchools.map(s => s.id)
     });
