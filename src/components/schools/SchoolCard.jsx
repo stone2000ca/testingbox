@@ -1,9 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Heart, DollarSign, Users } from "lucide-react";
+import { MapPin, Heart, DollarSign, Users, Navigation } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-export default function SchoolCard({ school, onViewDetails, onToggleShortlist, isShortlisted }) {
+export default function SchoolCard({ school, onViewDetails, onToggleShortlist, isShortlisted, index = 0 }) {
   const getCurrencySymbol = (currency) => {
     const symbols = { CAD: 'CA$', USD: '$', EUR: '€', GBP: '£' };
     return symbols[currency] || '$';
@@ -21,7 +21,26 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
   const badge = getRegionBadge(school.region);
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
+    <Card 
+      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group school-card"
+      style={{
+        animation: 'fadeSlideUp 0.4s ease-out',
+        animationDelay: `${index * 0.1}s`,
+        animationFillMode: 'backwards'
+      }}
+    >
+      <style jsx>{`
+        @keyframes fadeSlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
       <div onClick={onViewDetails}>
         {/* Image */}
         <div className="relative h-48 bg-slate-200 overflow-hidden">
@@ -57,10 +76,16 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
           <div className="flex items-center gap-1 text-sm text-slate-600 mb-3">
             <MapPin className="h-3 w-3" />
             <span className="line-clamp-1">{school.city}, {school.provinceState}</span>
-            {school.distanceKm && (
-              <span className="text-xs text-slate-500">• {school.distanceKm.toFixed(1)} km</span>
-            )}
           </div>
+          
+          {school.distanceKm && (
+            <div className="mb-3">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-teal-50 text-teal-700 rounded-md text-xs font-medium">
+                <Navigation className="h-3 w-3" />
+                {school.distanceKm.toFixed(1)} km away
+              </span>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2 mb-3 text-xs">
             <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-md">

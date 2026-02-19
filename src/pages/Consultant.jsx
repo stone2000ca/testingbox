@@ -811,7 +811,7 @@ export default function Consultant() {
                 isUser={msg.role === 'user'}
               />
             ))}
-            {isTyping && <TypingIndicator />}
+            {isTyping && <TypingIndicator message={thinkingMessage} />}
             <div ref={messagesEndRef} />
           </div>
 
