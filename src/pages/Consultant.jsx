@@ -273,38 +273,7 @@ export default function Consultant() {
       return;
     }
 
-    // Deduct token first
-    if (!isAuthenticated) {
-      const guestTokens = parseInt(localStorage.getItem('guestTokenBalance') || '100');
-      if (guestTokens <= 0) {
-        setShowUpgradeModal(true);
-        return;
-      }
-      const newBalance = guestTokens - 1;
-      localStorage.setItem('guestTokenBalance', newBalance.toString());
-      setTokenBalance(newBalance);
-    } else {
-      try {
-        const tokenResult = await base44.functions.invoke('processTokenTransaction', {
-          action: 'message_sent',
-          sessionId: currentConversation?.id || 'guest'
-        });
 
-        if (tokenResult.data.needsUpgrade) {
-          setShowUpgradeModal(true);
-          return;
-        }
-
-        // Update token balance in state
-        setTokenBalance(tokenResult.data.remainingBalance);
-        
-        // Also refresh user data to sync
-        const userData = await base44.auth.me();
-        setUser(userData);
-      } catch (error) {
-        console.error('Token transaction failed:', error);
-      }
-    }
 
     // Add user message
     const userMessage = {
