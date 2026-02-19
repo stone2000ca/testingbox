@@ -1,31 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MessageSquare, Search, Heart, Globe2, Users, Sparkles } from "lucide-react";
+import { ArrowRight, MessageSquare, Search, Heart, Globe2, Users } from "lucide-react";
 import { createPageUrl } from "../utils";
 import { Link } from "react-router-dom";
+import Navbar from "@/components/navigation/Navbar";
+import Footer from "@/components/navigation/Footer";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-slate-900">NextSchool</span>
-          </div>
-          <nav className="hidden md:flex gap-6">
-            <a href="#how-it-works" className="text-slate-600 hover:text-teal-600">How it Works</a>
-            <Link to={createPageUrl('Pricing')} className="text-slate-600 hover:text-teal-600">Pricing</Link>
-          </nav>
-          <Link to={createPageUrl('Consultant')}>
-            <Button className="bg-teal-600 hover:bg-teal-700">
-              Start Searching <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
