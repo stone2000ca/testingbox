@@ -182,6 +182,7 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     } else if (intentResponse.shouldShowSchools && intentResponse.filterCriteria) {
       const filters = {};
       if (intentResponse.filterCriteria.city) filters.city = intentResponse.filterCriteria.city;
+      if (intentResponse.filterCriteria.provinceState) filters.provinceState = intentResponse.filterCriteria.provinceState;
       if (intentResponse.filterCriteria.region) filters.region = intentResponse.filterCriteria.region;
       
       let schools = await base44.asServiceRole.entities.School.filter(filters);
@@ -211,6 +212,20 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
           intentResponse.filterCriteria.specializations.some(spec => s.specializations.includes(spec))
         );
       }
+
+      // Calculate distances if user location provided
+      if (userLocation?.lat && userLocation?.lng) {
+        schools = schools.map(school => {
+          if (school.lat && school.lng) {
+            const distance = calculateDistance(userLocation.lat, userLocation.lng, school.lat, school.lng);
+            return { ...school, distanceKm: distance };
+          }
+          return school;
+        });
+        
+        // Sort by distance (closest first)
+        schools.sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
+      }
       
       // Fallback: if no results, show all in region
       if (schools.length === 0 && intentResponse.filterCriteria.region) {
@@ -220,6 +235,18 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
       }
       
       matchingSchools = schools.slice(0, 10); // Limit to 10 results
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
     }
 
     // Build school context for AI
@@ -242,6 +269,9 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     }
     if (shortlistedSchools && shortlistedSchools.length > 0) {
       userContextText += `\n\nUSER'S SHORTLISTED SCHOOLS:\n${shortlistedSchools.map(school => `- ${school}`).join('\n')}`;
+    }
+    if (userLocation?.address) {
+      userContextText += `\n\nUSER'S LOCATION: ${userLocation.address}`;
     }
 
     // Second pass: Generate response with school context
