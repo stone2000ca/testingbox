@@ -144,19 +144,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-slate-400 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="h-6 w-6 rounded-lg bg-teal-600 flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-lg font-bold text-white">NextSchool</span>
-          </div>
-          <p className="text-sm">© 2026 NextSchool. Helping families find the right school.</p>
-        </div>
-      </footer>
-
       <Footer />
     </div>
   );
