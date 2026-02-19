@@ -414,10 +414,12 @@ export default function Consultant() {
 
               {/* Shortlisted & Notes - Above History */}
               <div className="border-b bg-white p-3 space-y-2">
-                <Link to={createPageUrl('ParentDashboard')}>
-                  <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 text-sm transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Heart className="h-4 w-4 text-teal-600" />
+                <button 
+                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 text-sm transition-colors"
+                  onClick={() => setShowShortlistPanel(true)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-teal-600" />
                       <span className="font-medium">Shortlisted</span>
                     </div>
                     <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">
