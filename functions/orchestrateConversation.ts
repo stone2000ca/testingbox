@@ -44,20 +44,19 @@ DECISION LOGIC:
 LOCATION EXTRACTION:
 - Extract province/state (BC, British Columbia, Ontario, California, etc.) to filterCriteria.provinceState
 - Extract city (Toronto, Vancouver, etc.) to filterCriteria.city
-- Extract broad region (Canada, US, Europe) to filterCriteria.region
+- Extract broad region (Canada, US, Europe) OR region aliases to filterCriteria.region
 - IMPORTANT: Recognize city names WITH OR WITHOUT prepositions:
-  * "show me toronto schools" → city: Toronto
-  * "show me schools in toronto" → city: Toronto
-  * "show me schools in toronto, ontario" → city: Toronto, provinceState: Ontario
-  * "schools near vancouver" → city: Vancouver
-  * "schools in BC" → provinceState: BC
+   * "show me toronto schools" → city: Toronto
+   * "show me schools in toronto" → city: Toronto
+   * "show me schools in toronto, ontario" → city: Toronto, provinceState: Ontario
+   * "schools near vancouver" → city: Vancouver
+   * "schools in BC" → provinceState: BC
 - IMPORTANT: Recognize region aliases (GTA, Lower Mainland, Greater Vancouver, Montreal, Golden Horseshoe, New England, Pacific Northwest):
    * "show me schools near GTA" → region: GTA
    * "schools in lower mainland" → region: Lower Mainland
    * "greater vancouver schools" → region: Greater Vancouver
    * "new england schools" → region: New England
    * "pacific northwest" → region: Pacific Northwest
-
 
 INTENT OPTIONS:
 - SHOW_SCHOOLS: Show matching schools (new search/filter request)
@@ -216,24 +215,19 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
       if (intentResponse.filterCriteria.specializations?.length > 0) {
         searchParams.specializations = intentResponse.filterCriteria.specializations;
       }
-       
-       // Check if user is asking for schools "near me" or similar
-       const isNearMe = message.toLowerCase().includes('near me') || 
-                        message.toLowerCase().includes('near my location') ||
-                        message.toLowerCase().includes('closest');
-       
-       // For "near me" requests, pass coordinates to search by distance
-       if (isNearMe && userLocation?.lat && userLocation?.lng) {
-         searchParams.userLat = userLocation.lat;
-         searchParams.userLng = userLocation.lng;
-         searchParams.maxDistanceKm = 100; // Default 100km radius for "near me"
-       } else if (userLocation?.lat && userLocation?.lng) {
-         // Still include coordinates if location exists (for reference/context)
-         searchParams.userLat = userLocation.lat;
-         searchParams.userLng = userLocation.lng;
-       }
-
-      if (userLocation?.lat && userLocation?.lng) {
+      
+      // Check if user is asking for schools "near me" or similar
+      const isNearMe = message.toLowerCase().includes('near me') || 
+                       message.toLowerCase().includes('near my location') ||
+                       message.toLowerCase().includes('closest');
+      
+      // For "near me" requests, pass coordinates to search by distance
+      if (isNearMe && userLocation?.lat && userLocation?.lng) {
+        searchParams.userLat = userLocation.lat;
+        searchParams.userLng = userLocation.lng;
+        searchParams.maxDistanceKm = 100; // Default 100km radius for "near me"
+      } else if (userLocation?.lat && userLocation?.lng) {
+        // Still include coordinates if location exists (for reference/context)
         searchParams.userLat = userLocation.lat;
         searchParams.userLng = userLocation.lng;
       }
@@ -272,47 +266,41 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     // Second pass: Generate response with school context
     const responsePrompt = `You are an experienced education consultant helping parents find the right private school.
 
-CRITICAL RULES - NEVER BREAK THESE:
-1. YOU MAY ONLY MENTION SCHOOLS FROM THE "SCHOOLS AVAILABLE" LIST ABOVE. Never invent or fabricate school names, locations, or details.
-2. The number you state (e.g., "I found X schools") MUST EXACTLY match the number shown in "SCHOOLS AVAILABLE (X total)".
-3. If narrowing down from currently shown schools, say "Of the schools shown, here are X that match..."
-4. BE CONCISE: Maximum 2-3 sentences. Lead with value (school names from list only, specific recommendations).
-5. INCLUDE ACCURATE DETAILS: When mentioning a school, use its exact name, city, and details from the list above.
-6. VARY YOUR OPENINGS: Don't start every response with "It's great to hear..."
-7. CONSIDER USER CONTEXT: Reference the user's notes and shortlisted schools when relevant to provide personalized advice.
+CONTEXT:
+- You are responding to the parent's message
+- This is message in a longer conversation with the user
+- Your goal is to be helpful, conversational, and guide them toward finding the right school(s)
 
-CONVERSATION CONTEXT:
-${conversationSummary || 'First message in conversation.'}
+CURRENT CONVERSATION SUMMARY:
+${conversationSummary}
+
+${schoolContext}
 ${userContextText}
 
-INTENT DETECTED: ${isCompareIntent ? 'COMPARE_SCHOOLS' : intentResponse.intent}
-${schoolContext}
+RESPONSE GUIDELINES:
+- If showing schools: Briefly describe each school, highlight relevant matches to their criteria
+- If no schools found: Suggest alternative searches or ask clarifying questions
+- If asked about specific school: Provide relevant details
+- If comparing: Highlight key differences between schools
+- Keep responses concise but informative (2-4 sentences if showing schools, up to 1 paragraph for other responses)
+- Be conversational and friendly
+- If they asked a question about shown schools, answer it directly
 
 Parent's message: "${message}"
 
-${isCompareIntent ? 'Generate a brief response (1-2 sentences) confirming which schools are being compared.' : 'Generate a natural, helpful response (2-3 sentences max). State the CORRECT number of schools from the list above.'}`;
+Generate a natural, helpful response.`;
 
-    const finalResponse = await base44.integrations.Core.InvokeLLM({
+    const aiResponse = await base44.integrations.Core.InvokeLLM({
       prompt: responsePrompt
     });
 
-    // Determine final intent and action
-    const finalIntent = isCompareIntent ? 'COMPARE_SCHOOLS' : intentResponse.intent;
-    
     return Response.json({
-      message: finalResponse,
-      intent: finalIntent,
-      action: finalIntent === 'COMPARE_SCHOOLS' ? 'COMPARE' : 
-              finalIntent === 'VIEW_DETAIL' ? 'view_detail' : 
-              intentResponse.shouldShowSchools ? 'search_schools' : null,
-      schools: isCompareIntent && matchingSchools.length >= 2 
-        ? matchingSchools.slice(0, 2)  // Return full school objects
-        : matchingSchools,
-      shouldShowSchools: intentResponse.shouldShowSchools || intentResponse.intent === 'NARROW_DOWN',
-      filterCriteria: intentResponse.filterCriteria || null,
-      matchingSchools: matchingSchools.map(s => s.id)
+      message: aiResponse,
+      intent: intentResponse.intent,
+      shouldShowSchools: matchingSchools.length > 0,
+      schools: matchingSchools,
+      filterCriteria: intentResponse.filterCriteria || {}
     });
-
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
