@@ -745,17 +745,10 @@ Return empty array if user didn't provide any of these facts.`;
           )}
 
            {currentView === 'comparison-table' && comparisonData && (
-             <div className="flex flex-col h-full">
-               <div className="flex items-center justify-between p-4 border-b">
-                 <h2 className="text-xl font-bold">School Comparison</h2>
-                 <button onClick={() => setCurrentView('schools')} className="text-slate-500 hover:text-slate-700">
-                   <ChevronLeft className="h-5 w-5" />
-                 </button>
-               </div>
-               <div className="flex-1 overflow-auto">
-                 <ComparisonTable schools={comparisonData} />
-               </div>
-             </div>
+             <ComparisonView 
+               schools={comparisonData} 
+               onBack={handleComparisonBack}
+             />
            )}
 
           
