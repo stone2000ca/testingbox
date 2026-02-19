@@ -216,6 +216,23 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
       if (intentResponse.filterCriteria.specializations?.length > 0) {
         searchParams.specializations = intentResponse.filterCriteria.specializations;
       }
+       
+       // Check if user is asking for schools "near me" or similar
+       const isNearMe = message.toLowerCase().includes('near me') || 
+                        message.toLowerCase().includes('near my location') ||
+                        message.toLowerCase().includes('closest');
+       
+       // For "near me" requests, pass coordinates to search by distance
+       if (isNearMe && userLocation?.lat && userLocation?.lng) {
+         searchParams.userLat = userLocation.lat;
+         searchParams.userLng = userLocation.lng;
+         searchParams.maxDistanceKm = 100; // Default 100km radius for "near me"
+       } else if (userLocation?.lat && userLocation?.lng) {
+         // Still include coordinates if location exists (for reference/context)
+         searchParams.userLat = userLocation.lat;
+         searchParams.userLng = userLocation.lng;
+       }
+
       if (userLocation?.lat && userLocation?.lng) {
         searchParams.userLat = userLocation.lat;
         searchParams.userLng = userLocation.lng;
