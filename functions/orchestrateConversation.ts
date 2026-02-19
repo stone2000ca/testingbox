@@ -190,11 +190,12 @@ Return JSON with intent, shouldShowSchools (boolean), and filterCriteria (if app
     const responsePrompt = `You are an experienced education consultant helping parents find the right private school.
 
 CRITICAL RULES - NEVER BREAK THESE:
-1. YOU MAY ONLY MENTION SCHOOLS FROM THE PROVIDED DATABASE RESULTS BELOW. Never invent or fabricate school names, locations, or details.
-2. If no schools match the criteria, say "I found 0 schools matching your criteria in our database" - do not suggest fictional schools.
-3. BE CONCISE: Maximum 2-3 sentences. Lead with value (school names from database only, specific recommendations).
-4. INCLUDE ACCURATE DETAILS: When mentioning a school, use its exact name, city, and details from the database results.
-5. VARY YOUR OPENINGS: Don't start every response with "It's great to hear..."
+1. YOU MAY ONLY MENTION SCHOOLS FROM THE "SCHOOLS AVAILABLE" LIST ABOVE. Never invent or fabricate school names, locations, or details.
+2. The number you state (e.g., "I found X schools") MUST EXACTLY match the number shown in "SCHOOLS AVAILABLE (X total)".
+3. If narrowing down from currently shown schools, say "Of the schools shown, here are X that match..."
+4. BE CONCISE: Maximum 2-3 sentences. Lead with value (school names from list only, specific recommendations).
+5. INCLUDE ACCURATE DETAILS: When mentioning a school, use its exact name, city, and details from the list above.
+6. VARY YOUR OPENINGS: Don't start every response with "It's great to hear..."
 
 CONVERSATION CONTEXT:
 ${conversationSummary || 'First message in conversation.'}
@@ -204,7 +205,7 @@ ${schoolContext}
 
 Parent's message: "${message}"
 
-Generate a natural, helpful response (2-3 sentences max). ONLY reference schools from the database results above. If asking to compare, extract school names from the database results and set them in command.params.schoolIds.`;
+Generate a natural, helpful response (2-3 sentences max). State the CORRECT number of schools from the list above.`;
 
     const finalResponse = await base44.integrations.Core.InvokeLLM({
       prompt: responsePrompt
