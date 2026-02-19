@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageSquare, Search, Heart, Globe2, Users, Sparkles } from "lucide-react";
-import { createPageUrl } from "./utils";
+import { createPageUrl } from "../utils";
 import { Link } from "react-router-dom";
 
 export default function Home() {

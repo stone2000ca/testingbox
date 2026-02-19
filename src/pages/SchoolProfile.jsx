@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { MapPin, Users, DollarSign, Calendar, Award, Globe2, Heart, Mail, Phone, ExternalLink, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "./utils";
+import { createPageUrl } from "../utils";
 
 export default function SchoolProfile() {
   const location = useLocation();

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "./utils";
+import { createPageUrl } from "../utils";
 
 export default function Pricing() {
   return (

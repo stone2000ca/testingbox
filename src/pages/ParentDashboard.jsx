@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart, FileText, MessageSquare, Settings, Sparkles, Coins } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "./utils";
+import { createPageUrl } from "../utils";
 import SchoolCard from '@/components/schools/SchoolCard';
 
 export default function ParentDashboard() {

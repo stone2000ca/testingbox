@@ -8,7 +8,7 @@ import TypingIndicator from '@/components/chat/TypingIndicator';
 import WelcomeState from '@/components/schools/WelcomeState';
 import SchoolGrid from '@/components/schools/SchoolGrid';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from './utils';
+import { createPageUrl } from '../utils';
 
 export default function Consultant() {
   const [user, setUser] = useState(null);
