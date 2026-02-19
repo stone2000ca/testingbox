@@ -341,6 +341,7 @@ export default function Consultant() {
         const msgLower = messageText.toLowerCase();
         const isCompareIntent = msgLower.includes('compare') || msgLower.includes(' vs ') || msgLower.includes('versus');
         if (isCompareIntent && response.data.schools?.length >= 2) {
+          setPreviousSearchResults(response.data.schools);
           setComparisonData(response.data.schools.slice(0, 3));
           setCurrentView('comparison-table');
         } else {
