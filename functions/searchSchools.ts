@@ -147,19 +147,18 @@ Deno.serve(async (req) => {
 
     // Calculate distances if user location provided
     if (userLat && userLng) {
-      schools = schools.map(school => {
-        if (school.lat && school.lng) {
-          const distance = calculateDistance(userLat, userLng, school.lat, school.lng);
-          return { ...school, distanceKm: distance };
-        }
-        return school;
-      });
-
-      if (maxDistanceKm) {
-        schools = schools.filter(s => s.distanceKm && s.distanceKm <= maxDistanceKm);
-      }
-
-      schools.sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
+      const maxDist = maxDistanceKm || 100; // Default 100km
+      
+      schools = schools
+        .map(school => {
+          if (school.lat && school.lng) {
+            const distance = calculateDistance(userLat, userLng, school.lat, school.lng);
+            return { ...school, distanceKm: distance };
+          }
+          return school;
+        })
+        .filter(s => !s.distanceKm || s.distanceKm <= maxDist)
+        .sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
     }
 
     // Limit results
