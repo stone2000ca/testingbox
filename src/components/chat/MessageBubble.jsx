@@ -29,9 +29,6 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
                    const childText = typeof children === 'string' ? children : 
                      Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
                    
-                   // Debug logging
-                   console.log('MessageBubble <a> handler:', { childText, href, schoolsCount: schools?.length });
-                   
                    // Check if href is a school link (format: school:slug)
                    const isSchoolLink = href && href.startsWith('school:');
                    const slugFromHref = isSchoolLink ? href.replace('school:', '') : null;
@@ -41,26 +38,28 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
                      s.name && childText && s.name.toLowerCase().trim() === childText.toLowerCase().trim()
                    );
                    
-                   console.log('School match result:', { isSchoolLink, matchingSchool: matchingSchool?.name });
-                   
-                   // If it's a school link OR matches a school name, intercept it
-                   if (isSchoolLink || matchingSchool) {
-                     const slug = slugFromHref || matchingSchool?.slug;
-                     return (
-                       <button
-                         onClick={(e) => {
-                           e.preventDefault();
-                           e.stopPropagation();
+                   // BULLETPROOF: Always return a button, never a regular <a> tag
+                   // Prevents default navigation in all cases
+                   return (
+                     <button
+                       onClick={(e) => {
+                         e.preventDefault();
+                         e.stopPropagation();
+                         
+                         // If it's a school link or matches a school name, call onViewSchoolProfile
+                         if (isSchoolLink || matchingSchool) {
+                           const slug = slugFromHref || matchingSchool?.slug;
                            onViewSchoolProfile && onViewSchoolProfile(slug);
-                         }}
-                         className="text-teal-600 hover:underline cursor-pointer font-semibold inline"
-                       >
-                         {children}
-                       </button>
-                     );
-                   }
-                   
-                   return <a href={href} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">{children}</a>;
+                         } else if (href) {
+                           // Otherwise, open the link in a new tab
+                           window.open(href, '_blank');
+                         }
+                       }}
+                       className="text-teal-600 hover:underline cursor-pointer font-semibold inline bg-transparent border-none p-0"
+                     >
+                       {children}
+                     </button>
+                   );
                  }
               }}
             >
