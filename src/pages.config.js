@@ -47,41 +47,43 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import About from './pages/About';
 import Admin from './pages/Admin';
 import ClaimSchool from './pages/ClaimSchool';
 import Consultant from './pages/Consultant';
+import Contact from './pages/Contact';
+import ForSchools from './pages/ForSchools';
 import Home from './pages/Home';
+import HowItWorks from './pages/HowItWorks';
 import ParentDashboard from './pages/ParentDashboard';
 import Pricing from './pages/Pricing';
+import Privacy from './pages/Privacy';
 import SchoolAdmin from './pages/SchoolAdmin';
+import SchoolAdminDashboard from './pages/SchoolAdminDashboard';
 import SchoolDirectory from './pages/SchoolDirectory';
 import SchoolProfile from './pages/SchoolProfile';
-import SchoolAdminDashboard from './pages/SchoolAdminDashboard';
-import HowItWorks from './pages/HowItWorks';
-import About from './pages/About';
-import ForSchools from './pages/ForSchools';
-import Contact from './pages/Contact';
-import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import Blog from './pages/Blog';
 
 
 export const PAGES = {
+    "About": About,
     "Admin": Admin,
     "ClaimSchool": ClaimSchool,
     "Consultant": Consultant,
+    "Contact": Contact,
+    "ForSchools": ForSchools,
     "Home": Home,
+    "HowItWorks": HowItWorks,
     "ParentDashboard": ParentDashboard,
     "Pricing": Pricing,
+    "Privacy": Privacy,
     "SchoolAdmin": SchoolAdmin,
+    "SchoolAdminDashboard": SchoolAdminDashboard,
     "SchoolDirectory": SchoolDirectory,
     "SchoolProfile": SchoolProfile,
-    "SchoolAdminDashboard": SchoolAdminDashboard,
-    "HowItWorks": HowItWorks,
-    "About": About,
-    "ForSchools": ForSchools,
-    "Contact": Contact,
-    "Privacy": Privacy,
     "Terms": Terms,
+    "Blog": Blog,
 }
 
 export const pagesConfig = {
