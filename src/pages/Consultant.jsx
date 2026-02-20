@@ -331,7 +331,16 @@ export default function Consultant() {
         } : null
       });
 
-      // Handle view switching based on response
+      const aiMessage = {
+        role: 'assistant',
+        content: response.data.message,
+        timestamp: new Date().toISOString()
+      };
+
+      const finalMessages = [...updatedMessages, aiMessage];
+      setMessages(finalMessages);
+      
+      // Handle view switching based on response - FIXED ORDER
       if (response.data.currentView === 'comparison' && response.data.schools?.length >= 2) {
         setPreviousSearchResults(schools);
         setComparisonData(response.data.schools);
@@ -343,15 +352,7 @@ export default function Consultant() {
         // Keep showing existing schools
         setCurrentView('schools');
       }
-
-      const aiMessage = {
-        role: 'assistant',
-        content: response.data.message,
-        timestamp: new Date().toISOString()
-      };
-
-      const finalMessages = [...updatedMessages, aiMessage];
-      setMessages(finalMessages);
+      
       setIsTyping(false);
 
        // Deduct 1 token and persist to database (skip for premium)
