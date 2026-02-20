@@ -33,16 +33,15 @@ Deno.serve(async (req) => {
 
         // If in BRIEF_DELIVERY phase, handle confirmation/adjustment
         if (familyProfile && familyProfile.onboardingPhase === 'BRIEF_DELIVERY') {
-          const confirmingKeywords = ['exactly right', 'sounds good', 'yes', 'proceed', 'start search', "that's right", 'correct', 'perfect', 'great'];
-          const adjustingKeywords = ['adjust', 'change', 'edit', 'not right', 'add context', 'add more'];
+          const msgLower = message.toLowerCase().trim();
           
-          const msgLower = message.toLowerCase();
-          const isConfirming = confirmingKeywords.some(keyword => msgLower.includes(keyword));
-          const isAdjusting = adjustingKeywords.some(keyword => msgLower.includes(keyword));
+          // Robust confirmation detection - check word boundaries
+          const isConfirming = /\b(exactly right|sounds good|yes|proceed|start search|that's right|thats right|correct|perfect|great|looks good|go ahead|let's go|let's search|sounds perfect)\b/i.test(msgLower);
+          const isAdjusting = /\b(adjust|change|edit|not right|add context|add more|wait|hold on|actually|let me|different)\b/i.test(msgLower);
 
           if (isConfirming) {
             // Brief confirmed - proceed to school search
-            await base44.entities.FamilyProfile.update(familyProfile.id, { onboardingPhase: 'BRIEF_CONFIRMED' });
+            const updatedProfile = await base44.entities.FamilyProfile.update(familyProfile.id, { onboardingPhase: 'BRIEF_CONFIRMED' });
 
             // Build search params from family profile
             const searchParams = {
@@ -77,7 +76,7 @@ Deno.serve(async (req) => {
               shouldShowSchools: true,
               schools: schools,
               onboardingPhase: 'BRIEF_CONFIRMED',
-              familyProfile: familyProfile,
+              familyProfile: updatedProfile,
               onboardingComplete: true
             });
           } else if (isAdjusting) {
@@ -91,7 +90,7 @@ Deno.serve(async (req) => {
               onboardingComplete: true
             });
           } else {
-            // Unclear response - re-present the brief
+            // Unclear response - re-present the brief with actual data
             const briefResult = await base44.functions.invoke('generateResponse', {
               message: 're-present brief',
               intent: 'GENERATE_BRIEF',
