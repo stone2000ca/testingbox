@@ -22,6 +22,25 @@ Deno.serve(async (req) => {
 
       const context = conversationContext || {};
       const history = conversationHistory || [];
+
+      // Format grade helper
+      function formatGrade(grade) {
+        if (grade === null || grade === undefined) return '';
+        const num = Number(grade);
+        if (num <= -2) return 'PK';
+        if (num === -1) return 'JK';
+        if (num === 0) return 'K';
+        return String(num);
+      }
+
+      function formatGradeRange(gradeFrom, gradeTo) {
+        const from = formatGrade(gradeFrom);
+        const to = formatGrade(gradeTo);
+        if (!from && !to) return '';
+        if (!from) return to;
+        if (!to) return from;
+        return `${from}-${to}`;
+      }
       
       // Get last 10 messages for context
       const recentMessages = history.slice(-10);
@@ -33,7 +52,7 @@ Deno.serve(async (req) => {
       const schoolContext = schools.length > 0 
         ? `\n\nSCHOOLS (${schools.length}):\n` + 
           schools.map(s => 
-            `${s.name}|${s.city}|Gr${s.lowestGrade}-${s.highestGrade}|${s.curriculumType||'Trad'}|${s.tuition||'N/A'}`
+            `${s.name}|${s.city}|Gr${formatGradeRange(s.lowestGrade, s.highestGrade)}|${s.curriculumType||'Trad'}|${s.tuition||'N/A'}`
           ).join('\n')
         : '';
       
