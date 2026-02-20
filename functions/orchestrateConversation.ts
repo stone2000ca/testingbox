@@ -28,8 +28,9 @@ Deno.serve(async (req) => {
     let shouldShowSchools = true;
     let filterCriteria = {};
     
-    // Compare intent
-    if (msgLower.includes('compare') || msgLower.includes(' vs ') || msgLower.includes('versus')) {
+    // Compare intent - FIX #4: Trigger comparison table view
+    if (msgLower.includes('compare') || msgLower.includes(' vs ') || msgLower.includes('versus') || 
+        msgLower.includes('side by side') || msgLower.includes('side-by-side')) {
       intent = 'COMPARE_SCHOOLS';
       shouldShowSchools = false;
     }
