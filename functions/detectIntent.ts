@@ -75,6 +75,17 @@ Deno.serve(async (req) => {
     else if (msgLower.includes('arts')) filterCriteria.specializations = ['Arts'];
     else if (msgLower.includes('sports')) filterCriteria.specializations = ['Sports'];
     
+    // FIX #5: ESL/Language support filter - detect and trigger NARROW_DOWN
+    if (msgLower.includes('esl') || msgLower.includes('english as a second language') || msgLower.includes('language support')) {
+      filterCriteria.specializations = filterCriteria.specializations || [];
+      if (!filterCriteria.specializations.includes('Languages')) {
+        filterCriteria.specializations.push('Languages');
+      }
+      // If we have current schools, treat this as a NARROW_DOWN intent
+      intent = 'NARROW_DOWN';
+      shouldShowSchools = false;
+    }
+    
     // FIX #2: GENDER FILTERING
     let genderPreference = null;
     if (msgLower.includes(' son') || msgLower.includes('boy') || msgLower.includes('boys')) {
