@@ -101,6 +101,13 @@ Deno.serve(async (req) => {
         filtered = filtered.filter(s => s.schoolType !== 'Special Needs');
       }
       
+      // FIX #5: ESL/Language support filter
+      if (msgLower.includes('esl') || msgLower.includes('english as second') || msgLower.includes('language support')) {
+        filtered = filtered.filter(s => 
+          s.languages?.length > 0 || s.specializations?.includes('Languages')
+        );
+      }
+      
       if (intentResponse.filterCriteria?.specializations?.length > 0) {
         filtered = filtered.filter(s =>
           s.specializations && 
