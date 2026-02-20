@@ -391,9 +391,9 @@ export default function Consultant() {
         setOnboardingPhase(response.data.onboardingPhase);
       }
 
-      // Handle BRIEF_DELIVERY state - no schools shown
-      if (response.data.onboardingPhase === 'BRIEF_DELIVERY') {
-        setCurrentView('brief-review');
+      // Handle confirm_brief state - showing The Brief for confirmation
+      if (response.data.onboardingPhase === 'confirm_brief') {
+        setCurrentView('welcome'); // Show in chat view with suggested response chips
         setSchools([]);
       }
       // FIX #3: First priority - if schools are returned, display them
