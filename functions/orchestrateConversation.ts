@@ -24,14 +24,94 @@ Deno.serve(async (req) => {
     // FIX #1: Check if intent is SCHOOL_SEARCH - if yes, skip onboarding entirely
     const isSchoolSearchIntent = intentResponse.intent === 'SEARCH_SCHOOLS';
     
-    // STEP 2: Check for onboarding - only run if NOT doing school search
-    if (!isSchoolSearchIntent && userId) {
+    // STEP 2: Check for onboarding and brief delivery - only run if NOT doing school search
+    let familyProfile = null;
+    if (userId) {
       try {
         const familyProfiles = await base44.entities.FamilyProfile.filter({ userId });
-        const familyProfile = familyProfiles.length > 0 ? familyProfiles[0] : null;
+        familyProfile = familyProfiles.length > 0 ? familyProfiles[0] : null;
+
+        // If in BRIEF_DELIVERY phase, handle confirmation/adjustment
+        if (familyProfile && familyProfile.onboardingPhase === 'BRIEF_DELIVERY') {
+          const confirmingKeywords = ['exactly right', 'sounds good', 'yes', 'proceed', 'start search', "that's right", 'correct', 'perfect', 'great'];
+          const adjustingKeywords = ['adjust', 'change', 'edit', 'not right', 'add context', 'add more'];
+          
+          const msgLower = message.toLowerCase();
+          const isConfirming = confirmingKeywords.some(keyword => msgLower.includes(keyword));
+          const isAdjusting = adjustingKeywords.some(keyword => msgLower.includes(keyword));
+
+          if (isConfirming) {
+            // Brief confirmed - proceed to school search
+            await base44.entities.FamilyProfile.update(familyProfile.id, { onboardingPhase: 'BRIEF_CONFIRMED' });
+
+            // Build search params from family profile
+            const searchParams = {
+              region: familyProfile.region || 'Canada',
+              city: familyProfile.locationArea,
+              minGrade: familyProfile.childGrade,
+              maxGrade: familyProfile.childGrade,
+              maxTuition: familyProfile.maxTuition,
+              curriculumType: familyProfile.curriculumPreference?.[0],
+              specializations: familyProfile.interests,
+              userLat: familyProfile.locationLat,
+              userLng: familyProfile.locationLng,
+              limit: 20
+            };
+
+            const searchResult = await base44.functions.invoke('searchSchools', searchParams);
+            const schools = searchResult.data?.schools || [];
+
+            // Generate response acknowledging the brief confirmation
+            const responseResult = await base44.functions.invoke('generateResponse', {
+              message: 'Excellent, let me show you the schools that match.',
+              intent: 'SCHOOL_SEARCH_CONFIRMED',
+              schools: schools,
+              conversationHistory: conversationHistory || [],
+              conversationContext: context,
+              userNotes: userNotes || [],
+              shortlistedSchools: shortlistedSchools || []
+            });
+
+            return Response.json({
+              message: responseResult.data.message,
+              shouldShowSchools: true,
+              schools: schools,
+              onboardingPhase: 'BRIEF_CONFIRMED',
+              familyProfile: familyProfile,
+              onboardingComplete: true
+            });
+          } else if (isAdjusting) {
+            // User wants to adjust - ask what needs adjusting
+            return Response.json({
+              message: 'No problem! What would you like to adjust or add?',
+              shouldShowSchools: false,
+              schools: [],
+              onboardingPhase: 'BRIEF_DELIVERY_ADJUSTING',
+              familyProfile: familyProfile,
+              onboardingComplete: true
+            });
+          } else {
+            // Unclear response - re-present the brief
+            const briefResult = await base44.functions.invoke('generateResponse', {
+              message: 're-present brief',
+              intent: 'GENERATE_BRIEF',
+              familyProfileData: familyProfile,
+              conversationHistory: conversationHistory || []
+            });
+
+            return Response.json({
+              message: briefResult.data.message,
+              shouldShowSchools: false,
+              schools: [],
+              onboardingPhase: 'BRIEF_DELIVERY',
+              familyProfile: familyProfile,
+              onboardingComplete: true
+            });
+          }
+        }
 
         // If onboarding is not complete, delegate to onboardUser
-        if (!familyProfile || !familyProfile.onboardingComplete) {
+        if (!familyProfile || (!familyProfile.onboardingComplete && familyProfile.onboardingPhase !== 'BRIEF_DELIVERY')) {
           const onboardResult = await base44.functions.invoke('onboardUser', {
             message,
             userId,
