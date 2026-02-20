@@ -30,7 +30,11 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile }) 
                     const slug = href.replace('school:', '');
                     return (
                       <button
-                        onClick={() => onViewSchoolProfile && onViewSchoolProfile(slug)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onViewSchoolProfile && onViewSchoolProfile(slug);
+                        }}
                         className="text-teal-600 hover:underline cursor-pointer font-semibold inline"
                       >
                         {children}
