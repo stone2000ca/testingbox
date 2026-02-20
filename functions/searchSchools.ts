@@ -249,6 +249,32 @@ async function performSearch(req) {
       schools.sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
     }
 
+    // FILTER OUT DEALBREAKER SCHOOLS (if FamilyProfile available)
+    if (familyProfile) {
+      schools = schools.filter(school => {
+        // Dealbreaker 1: Commute exceeds tolerance by 50%+ minutes
+        if (familyProfile.commuteToleranceMinutes && school.distanceKm) {
+          // Rough estimate: 1 km ≈ 2 min commute
+          const estimatedCommute = school.distanceKm * 2;
+          const tolerance = familyProfile.commuteToleranceMinutes;
+          if (estimatedCommute > tolerance + 50) {
+            console.log(`Filtered out ${school.name}: commute ${estimatedCommute}min exceeds tolerance ${tolerance}min by 50+min`);
+            return false;
+          }
+        }
+
+        // Dealbreaker 2: Tuition is 2x+ the budget
+        if (familyProfile.maxTuition && school.tuition) {
+          if (school.tuition > familyProfile.maxTuition * 2) {
+            console.log(`Filtered out ${school.name}: tuition $${school.tuition} is 2x+ budget $${familyProfile.maxTuition}`);
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }
+
     // Limit to max 20 results and return minimal fields
     const maxResults = Math.min(schools.length, 20);
     const condensedSchools = schools.slice(0, maxResults).map(s => ({
