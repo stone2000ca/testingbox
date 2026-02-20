@@ -55,6 +55,7 @@ import Pricing from './pages/Pricing';
 import SchoolAdmin from './pages/SchoolAdmin';
 import SchoolProfile from './pages/SchoolProfile';
 import SchoolDirectory from './pages/SchoolDirectory';
+import ClaimSchool from './pages/ClaimSchool';
 
 
 export const PAGES = {
@@ -66,6 +67,7 @@ export const PAGES = {
     "SchoolAdmin": SchoolAdmin,
     "SchoolProfile": SchoolProfile,
     "SchoolDirectory": SchoolDirectory,
+    "ClaimSchool": ClaimSchool,
 }
 
 export const pagesConfig = {
