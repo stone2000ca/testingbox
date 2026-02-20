@@ -226,29 +226,40 @@ Deno.serve(async (req) => {
     let aiMessage = '';
     let responseTimedOut = false;
     
-    try {
-      const generateResult = await base44.functions.invoke('generateResponse', {
-        message,
-        intent: intentResponse.intent,
-        schools: matchingSchools,
-        conversationHistory: conversationHistory || [],
-        conversationContext: context,
-        userNotes: userNotes || [],
-        shortlistedSchools: shortlistedSchools || []
-      });
-      
-      if (generateResult.data.timeout) {
+    // Handle greetings with friendly response (skip search logic)
+    if (intentResponse.intent === 'GREETING') {
+      aiMessage = "Hi! I'm your NextSchool education consultant. I help families across Canada, the US, and Europe find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you in a school?";
+    } else {
+      try {
+        const generateResult = await base44.functions.invoke('generateResponse', {
+          message,
+          intent: intentResponse.intent,
+          schools: matchingSchools,
+          conversationHistory: conversationHistory || [],
+          conversationContext: context,
+          userNotes: userNotes || [],
+          shortlistedSchools: shortlistedSchools || []
+        });
+        
+        if (generateResult.data.timeout) {
+          responseTimedOut = true;
+          // FIX #4: If schools exist, use the AI message even if timed out
+          aiMessage = generateResult.data.message || 'Here are the schools I found:';
+        } else {
+          aiMessage = generateResult.data.message;
+        }
+      } catch (error) {
+        console.error('generateResponse error:', error);
         responseTimedOut = true;
-        // FIX #4: If schools exist, use the AI message even if timed out
-        aiMessage = generateResult.data.message || 'Here are the schools I found:';
-      } else {
-        aiMessage = generateResult.data.message;
+        // FIX #4: Don't contradict the display - if schools exist, acknowledge them
+        aiMessage = matchingSchools.length > 0 ? 'Here are the schools I found:' : 'I don\'t have any schools matching that criteria.';
       }
-    } catch (error) {
-      console.error('generateResponse error:', error);
-      responseTimedOut = true;
-      // FIX #4: Don't contradict the display - if schools exist, acknowledge them
-      aiMessage = matchingSchools.length > 0 ? 'Here are the schools I found:' : 'I don\'t have any schools matching that criteria.';
+
+      // FIX #4: Ensure AI message matches the schools array
+      // If no schools found, AI should say so. If schools exist, AI should acknowledge them.
+      if (matchingSchools.length === 0 && !aiMessage.includes('don\'t have') && !aiMessage.includes('no ')) {
+        aiMessage = 'I don\'t have any schools matching that criteria yet. Our database is growing - try a nearby city or broader criteria.';
+      }
     }
 
     // Update user memory with insights from this message (non-blocking)
@@ -256,12 +267,6 @@ Deno.serve(async (req) => {
       await base44.functions.invoke('updateUserMemory', { userId, userMessage: message });
     } catch (e) {
       console.error('updateUserMemory failed:', e);
-    }
-
-    // FIX #4: Ensure AI message matches the schools array
-    // If no schools found, AI should say so. If schools exist, AI should acknowledge them.
-    if (matchingSchools.length === 0 && !aiMessage.includes('don\'t have') && !aiMessage.includes('no ')) {
-      aiMessage = 'I don\'t have any schools matching that criteria yet. Our database is growing - try a nearby city or broader criteria.';
     }
 
     // DEBUG: Log critical values before returning
