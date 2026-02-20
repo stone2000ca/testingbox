@@ -138,26 +138,10 @@ async function performSearch(req) {
       });
     }
 
-    // Apply city filter (if no aliases matched) - FIX #2: Also filter by distance if city is mentioned
+    // Apply city filter (if no aliases matched) - exact match
     if (city && aliasedCities.length === 0) {
       const cityLower = city.toLowerCase().trim();
       schools = schools.filter(s => s.city?.toLowerCase() === cityLower);
-      
-      // FIX #2: If user mentions a location, apply 50km radius filter
-      // First calculate distances for all schools if not already done
-      if (schools.length > 0 && userLat && userLng) {
-        schools = schools.map(school => {
-          if (school.lat && school.lng && !school.distanceKm) {
-            const distance = calculateDistance(userLat, userLng, school.lat, school.lng);
-            return { ...school, distanceKm: distance };
-          }
-          return school;
-        });
-        
-        // Filter to 50km radius
-        schools = schools.filter(s => s.distanceKm && s.distanceKm <= 50);
-        schools.sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
-      }
     }
 
     if (provinceState && aliasedProvinces.length === 0) {
