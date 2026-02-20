@@ -598,6 +598,18 @@ Return empty array if user didn't provide any of these facts.`;
     setConversationToDelete(null);
   };
 
+  const toggleStarConversation = async (convo, e) => {
+    e.stopPropagation();
+    try {
+      await base44.entities.ChatHistory.update(convo.id, {
+        starred: !convo.starred
+      });
+      await loadConversations(user.id);
+    } catch (error) {
+      console.error('Failed to toggle star:', error);
+    }
+  };
+
   const applyDistancesToSchools = (location) => {
     // Calculate distances for all schools
     const schoolsWithDistance = schools.map(school => {
