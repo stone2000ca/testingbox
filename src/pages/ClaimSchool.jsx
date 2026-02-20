@@ -30,6 +30,10 @@ export default function ClaimSchool() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!schoolId) {
+      setLoading(false);
+      return;
+    }
     loadSchool();
   }, [schoolId]);
 
