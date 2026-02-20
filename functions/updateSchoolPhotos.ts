@@ -68,12 +68,12 @@ Deno.serve(async (req) => {
         headerPhotoUrl = await tryFetchOgImage(websiteUrl);
       }
 
-      // Step 2: If no website or og:image, try common patterns
-      if (!headerPhotoUrl && !websiteUrl) {
+      // Step 2: If no website or og:image, try possible domain patterns
+      if (!headerPhotoUrl) {
         const slug = school.slug || school.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        const domains = [`https://www.${slug}.ca`, `https://www.${slug}.com`, `https://www.${slug}.org`];
+        const possibleDomains = generatePossibleDomains(school.name, slug);
         
-        for (const domain of domains) {
+        for (const domain of possibleDomains) {
           headerPhotoUrl = await tryFetchOgImage(domain);
           if (headerPhotoUrl) {
             websiteUrl = domain;
@@ -82,22 +82,21 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Step 3: Generate image if still no photo
-      if (!headerPhotoUrl) {
+      // Step 3: Try Clearbit logo as last resort for real image
+      if (!headerPhotoUrl && websiteUrl) {
         try {
-          const prompt = `High-quality photo of ${school.name} school in ${school.city}, ${school.provinceState || school.country}. ` +
-            `${school.schoolType} with beautiful campus or building exterior. Professional school photo.`;
-          
-          const imageResult = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt });
-          if (imageResult.url) {
-            headerPhotoUrl = imageResult.url;
+          const domain = new URL(websiteUrl).hostname;
+          const clearbitUrl = `https://logo.clearbit.com/${domain}`;
+          const response = await fetch(clearbitUrl, { redirect: 'follow' });
+          if (response.ok && response.status === 200) {
+            headerPhotoUrl = clearbitUrl;
           }
         } catch (e) {
-          console.error(`Image generation failed for ${school.name}`);
+          // Clearbit fetch failed
         }
       }
 
-      // Step 4: Update school
+      // Step 4: Update school only if we found a real image
       if (headerPhotoUrl) {
         try {
           await base44.asServiceRole.entities.School.update(school.id, {
@@ -107,7 +106,7 @@ Deno.serve(async (req) => {
           
           updated.push({
             name: school.name,
-            source: headerPhotoUrl.includes('openai') ? 'generated' : 'og:image'
+            source: headerPhotoUrl.includes('clearbit') ? 'clearbit' : 'og:image'
           });
         } catch (e) {
           console.error(`Update failed for ${school.name}`);
