@@ -18,17 +18,25 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
     return badges[region] || { emoji: '🌍', color: 'bg-slate-50 text-slate-700' };
   };
 
-  const badge = getRegionBadge(school.region);
+  function formatGrade(grade) {
+    if (grade === null || grade === undefined) return '';
+    const num = Number(grade);
+    if (num <= -2) return 'PK';
+    if (num === -1) return 'JK';
+    if (num === 0) return 'K';
+    return String(num);
+  }
 
-  // Format grade range to show PK/K instead of -1/0
-  const formatGradeRange = (gradesServed, lowestGrade, highestGrade) => {
-    if (gradesServed && gradesServed !== '-1-12' && gradesServed !== '0-12') {
-      return gradesServed;
-    }
-    const low = lowestGrade === -1 ? 'PK' : lowestGrade === 0 ? 'K' : lowestGrade;
-    const high = highestGrade;
-    return `${low}-${high}`;
-  };
+  function formatGradeRange(gradeFrom, gradeTo) {
+    const from = formatGrade(gradeFrom);
+    const to = formatGrade(gradeTo);
+    if (!from && !to) return '';
+    if (!from) return to;
+    if (!to) return from;
+    return `${from}-${to}`;
+  }
+
+  const badge = getRegionBadge(school.region);
 
   return (
     <Card 
