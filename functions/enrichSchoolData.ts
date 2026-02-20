@@ -82,10 +82,19 @@ Make sure the URL starts with http:// or https://.`,
       console.log('No website content available, will use AI general knowledge');
     }
 
-    // Define extraction schema
+    // Step 4: Define comprehensive extraction schema
     const extractionSchema = {
       type: "object",
       properties: {
+        missionStatement: { type: ["string", "null"], description: "School's mission statement" },
+        description: { type: ["string", "null"], description: "School description" },
+        teachingPhilosophy: { type: ["string", "null"], description: "Teaching philosophy and approach" },
+        genderPolicy: { type: ["string", "null"], enum: ["Co-ed", "All-Boys", "All-Girls", "Co-ed with single-gender classes", null], description: "Gender policy" },
+        transportationOptions: { type: ["string", "null"], description: "Bus routes, shuttle, or transit information" },
+        beforeAfterCare: { type: ["string", "null"], description: "Before and after school care hours" },
+        uniformRequired: { type: ["boolean", "null"], description: "Whether uniform is required" },
+        campusFeel: { type: ["string", "null"], enum: ["Warm and nurturing", "Rigorous and structured", "Progressive and creative", "Traditional and formal", null], description: "Overall campus atmosphere" },
+        entranceRequirements: { type: ["string", "null"], description: "Entrance requirements (SSAT, interviews, etc.)" },
         avgClassSize: { type: ["number", "null"], description: "Average class size" },
         studentTeacherRatio: { type: ["string", "null"], description: "Student-to-teacher ratio (e.g., '1:10')" },
         financialAidAvailable: { type: ["boolean", "null"], description: "True if financial aid available" },
@@ -94,39 +103,50 @@ Make sure the URL starts with http:// or https://.`,
         applicationDeadline: { type: ["string", "null"], description: "Application deadline" },
         phone: { type: ["string", "null"], description: "School phone number" },
         email: { type: ["string", "null"], description: "School email" },
-        genderPolicy: { type: ["string", "null"], enum: ["Co-ed", "All-Boys", "All-Girls", "Co-ed with single-gender classes", null] },
-        artsPrograms: { type: ["array", "null"], items: { type: "string" } },
-        sportsPrograms: { type: ["array", "null"], items: { type: "string" } },
-        clubs: { type: ["array", "null"], items: { type: "string" } },
-        languages: { type: ["array", "null"], items: { type: "string" } },
-        teachingPhilosophy: { type: ["string", "null"] },
-        highlights: { type: ["array", "null"], items: { type: "string" } },
-        openHouseDates: { type: ["array", "null"], items: { type: "string" } },
-        enrollment: { type: ["number", "null"] },
-        founded: { type: ["number", "null"] },
-        transportationOptions: { type: ["string", "null"] },
-        beforeAfterCare: { type: ["string", "null"] },
-        uniformRequired: { type: ["boolean", "null"] },
-        campusFeel: { type: ["string", "null"], enum: ["Warm and nurturing", "Rigorous and structured", "Progressive and creative", "Traditional and formal", null] },
-        entranceRequirements: { type: ["string", "null"] },
-        accreditations: { type: ["array", "null"], items: { type: "string" } },
-        facilities: { type: ["array", "null"], items: { type: "string" } }
+        artsPrograms: { type: ["array", "null"], items: { type: "string" }, description: "Arts and music programs" },
+        sportsPrograms: { type: ["array", "null"], items: { type: "string" }, description: "Sports and athletic programs" },
+        clubs: { type: ["array", "null"], items: { type: "string" }, description: "Student clubs and organizations" },
+        languages: { type: ["array", "null"], items: { type: "string" }, description: "Languages offered" },
+        highlights: { type: ["array", "null"], items: { type: "string" }, description: "3 short highlight sentences about the school" },
+        openHouseDates: { type: ["array", "null"], items: { type: "string" }, description: "Open house dates" },
+        enrollment: { type: ["number", "null"], description: "Total student enrollment" },
+        founded: { type: ["number", "null"], description: "Year school was founded" },
+        accreditations: { type: ["array", "null"], items: { type: "string" }, description: "Accreditations and certifications" },
+        facilities: { type: ["array", "null"], items: { type: "string" }, description: "Facilities (gym, library, labs, etc.)" }
       }
     };
 
-    const prompt = `Extract school information from this website content. Only extract information that is explicitly stated or clearly inferable. For fields not found, return null. 
-    
-For "religiousAffiliation": if no religion is mentioned and the school appears secular, use "None".
-For "financialAidAvailable": true only if financial aid, scholarships, or bursaries are explicitly mentioned.
-For "uniformRequired": true only if uniform/dress code is explicitly mandatory.
-For boolean fields, return null if unclear.
-For arrays, return empty array if nothing found.
+    // Step 5: Extract data using AI - combining website content if available with AI's general knowledge
+    const extractionPrompt = websiteContent 
+      ? `Extract school information from this website content. Prioritize information from the website, but supplement with your general knowledge about the school if available.
+      
+Only extract information that is explicitly stated or clearly inferable. For fields not found, return null.
 
-Website content (first 5000 chars):
-${websiteContent.substring(0, 5000)}`;
+Instructions:
+- For "religiousAffiliation": if no religion is mentioned and the school appears secular, use "None".
+- For "financialAidAvailable": true only if financial aid, scholarships, or bursaries are explicitly mentioned.
+- For "uniformRequired": true only if uniform/dress code is explicitly mandatory.
+- For boolean fields, return null if unclear.
+- For arrays, return empty array if nothing found.
+- For "genderPolicy" and "campusFeel": only use the exact enum values provided, return null otherwise.
+
+Website content:
+${websiteContent.substring(0, 8000)}`
+      : `Based on your knowledge of the school "${school.name}" in ${school.city}, ${school.country || school.provinceState}, extract the following information. 
+      
+For fields you're confident about, provide the information. For uncertain fields, return null.
+
+Instructions:
+- For "religiousAffiliation": if no religion is associated, use "None".
+- For "financialAidAvailable": true only if the school is known to offer financial aid.
+- For "uniformRequired": true only if the school is known to require uniforms.
+- For boolean fields, return null if uncertain.
+- For arrays, return empty array if nothing found.
+- For "genderPolicy" and "campusFeel": only use the exact enum values provided, return null otherwise.`;
 
     const aiResponse = await base44.integrations.Core.InvokeLLM({
-      prompt,
+      prompt: extractionPrompt,
+      add_context_from_internet: !websiteContent, // Use internet context if we don't have website content
       response_json_schema: extractionSchema
     });
 
