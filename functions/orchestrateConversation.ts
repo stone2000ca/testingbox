@@ -153,6 +153,12 @@ Deno.serve(async (req) => {
       // Filter from currently displayed schools
       let filtered = currentSchools;
       
+      // RULE: Exclude special needs schools unless explicitly mentioned
+      if (!msgLower.includes('special needs') && !msgLower.includes('learning disabilities') && 
+          !msgLower.includes('adhd') && !msgLower.includes('autism')) {
+        filtered = filtered.filter(s => s.schoolType !== 'Special Needs');
+      }
+      
       if (intentResponse.filterCriteria?.specializations?.length > 0) {
         filtered = filtered.filter(s =>
           s.specializations && 
