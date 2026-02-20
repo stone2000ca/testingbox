@@ -78,13 +78,7 @@ Deno.serve(async (req) => {
     
     const intentResponse = { intent, shouldShowSchools, filterCriteria };
 
-    // Simple string-based comparison detection
-    const msgLower = message.toLowerCase();
-    const isCompareIntent = msgLower.includes('compare') || 
-                           msgLower.includes(' vs ') || 
-                           msgLower.includes('versus') ||
-                           msgLower.includes('side by side') ||
-                           msgLower.includes('difference between');
+    const isCompareIntent = intent === 'COMPARE_SCHOOLS';
 
     // Fetch matching schools if needed
     let matchingSchools = [];
