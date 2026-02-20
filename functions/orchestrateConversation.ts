@@ -150,25 +150,32 @@ Deno.serve(async (req) => {
        if (intentResponse.filterCriteria?.schoolType) searchParams.schoolType = intentResponse.filterCriteria.schoolType;
 
 
+      // FIX #2: GENDER FILTERING - filter by schoolType
+      const genderPref = intentResponse.filterCriteria?.genderPreference;
+      if (genderPref === 'boy') {
+        searchParams.schoolType = 'All-Boys';
+      } else if (genderPref === 'girl') {
+        searchParams.schoolType = 'All-Girls';
+      }
+
       if (intentResponse.filterCriteria?.specializations?.length > 0) {
         searchParams.specializations = intentResponse.filterCriteria.specializations;
       }
       
+      // FIX #3: DISTANCE CALCULATION - Use user's actual location
       // Check if user is asking for schools "near me" or similar
       const isNearMe = message.toLowerCase().includes('near me') || 
                        message.toLowerCase().includes('near my location') ||
                        message.toLowerCase().includes('closest') ||
                        message.toLowerCase().includes('find schools near me');
       
-      // For "near me" requests, pass coordinates to search by distance
-      if (isNearMe && userLocation?.lat && userLocation?.lng) {
+      // Always pass user's location for proper distance calculation
+      if (userLocation?.lat && userLocation?.lng) {
         searchParams.userLat = userLocation.lat;
         searchParams.userLng = userLocation.lng;
-        searchParams.maxDistanceKm = 100; // Default 100km radius for "near me"
-      } else if (userLocation?.lat && userLocation?.lng) {
-        // Still include coordinates if location exists (for reference/context)
-        searchParams.userLat = userLocation.lat;
-        searchParams.userLng = userLocation.lng;
+        if (isNearMe) {
+          searchParams.maxDistanceKm = 100; // Default 100km radius for "near me"
+        }
       }
 
       console.log('searchParams:', JSON.stringify(searchParams));
