@@ -470,7 +470,7 @@ export default function SchoolProfile() {
               </Button>
 
                {/* Claim Button / Badge */}
-               {school.claimStatus === 'unclaimed' && (
+               {(!school.claimStatus || school.claimStatus === 'unclaimed') && (
                  <Link to={`${createPageUrl('ClaimSchool')}?schoolId=${schoolId}`} className="block w-full">
                    <Button className="w-full bg-blue-600 hover:bg-blue-700 mb-4">
                      Claim This School
