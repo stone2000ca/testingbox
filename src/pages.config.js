@@ -64,6 +64,7 @@ import SchoolDirectory from './pages/SchoolDirectory';
 import SchoolProfile from './pages/SchoolProfile';
 import Terms from './pages/Terms';
 import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
 
 
 export const PAGES = {
@@ -84,6 +85,7 @@ export const PAGES = {
     "SchoolProfile": SchoolProfile,
     "Terms": Terms,
     "Blog": Blog,
+    "BlogPost": BlogPost,
 }
 
 export const pagesConfig = {
