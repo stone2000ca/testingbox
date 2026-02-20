@@ -17,6 +17,8 @@ export default function ParentDashboard() {
   const [notes, setNotes] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [tokenHistory, setTokenHistory] = useState([]);
+  const [clearMemoryDialogOpen, setClearMemoryDialogOpen] = useState(false);
+  const [clearingMemory, setClearingMemory] = useState(false);
 
   useEffect(() => {
     loadData();
