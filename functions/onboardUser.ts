@@ -96,6 +96,9 @@ Deno.serve(async (req) => {
 });
 
 async function extractPhaseData(base44, message, currentPhase, profile) {
+  // CRITICAL: Extract from the CURRENT message only, not profile history
+  // Fresh extraction replaces old data - no merging
+  
   const schemas = {
     open_warm: {
       type: 'object',
