@@ -21,6 +21,10 @@ Deno.serve(async (req) => {
   }
 });
 
+function toTitleCase(str) {
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 async function performSearch(req) {
   const base44 = createClientFromRequest(req);
     const { 
@@ -143,8 +147,8 @@ async function performSearch(req) {
 
     // Apply city filter (if no aliases matched) - FIX #2: Also filter by distance if city is mentioned
     if (city && aliasedCities.length === 0) {
-      const cityLower = city.toLowerCase().trim();
-      schools = schools.filter(s => s.city?.toLowerCase().trim() === cityLower);
+      const normalizedCity = toTitleCase(city.trim());
+      schools = schools.filter(s => s.city === normalizedCity);
       
       // FIX #2: If user mentions a location, apply 50km radius filter
       // First calculate distances for all schools if not already done
@@ -165,17 +169,16 @@ async function performSearch(req) {
 
     if (provinceState && aliasedProvinces.length === 0) {
       const psUpper = provinceState.toUpperCase().trim();
-      const psLower = provinceState.toLowerCase().trim();
       
       // Check if it's an abbreviation
       const fullProvinceName = provinceAbbreviations[psUpper] || stateAbbreviations[psUpper];
+      const normalizedProvince = fullProvinceName || toTitleCase(provinceState.trim());
       
       schools = schools.filter(s => {
         if (!s.provinceState) return false;
-        const schoolPS = s.provinceState.toLowerCase();
         
-        // Match full name or abbreviation - exact match
-        return schoolPS === psLower || schoolPS === fullProvinceName?.toLowerCase();
+        // Match exact Title Case or full name
+        return s.provinceState === normalizedProvince;
       });
     }
 
