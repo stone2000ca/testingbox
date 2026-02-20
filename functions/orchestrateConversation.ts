@@ -212,56 +212,45 @@ Deno.serve(async (req) => {
         searchParams.userLng = userLocation.lng;
       }
 
+      console.log('searchParams:', JSON.stringify(searchParams));
+      
       const searchResult = await base44.functions.invoke('searchSchools', searchParams);
       let schools = searchResult.data.schools || [];
+      
+      console.log('schools found:', schools.length);
       
       matchingSchools = schools.slice(0, 20); // Show up to 20 results
     }
 
-    // Build school context for AI - ULTRA CONDENSED
-    const schoolsToDescribe = isCompareIntent ? matchingSchools :
-                              (intentResponse.intent === 'NARROW_DOWN' && currentSchools?.length > 0) 
-                                ? currentSchools 
-                                : matchingSchools;
+    // SIMPLIFIED PROMPT FOR TESTING
+    const responsePrompt = `You are a helpful school consultant. The user said: "${message}". Reply helpfully in 2-3 sentences.`;
     
-    const schoolContext = schoolsToDescribe.length > 0 
-      ? `\n\nSCHOOLS (${schoolsToDescribe.length}):\n` + 
-        schoolsToDescribe.map(s => 
-          `${s.name}|${s.city}|Gr${s.lowestGrade}-${s.highestGrade}|${s.curriculumType||'Trad'}|${s.tuition||'N/A'}`
-        ).join('\n')
-      : '\n\n[NONE]';
+    console.log('prompt length:', responsePrompt.length);
 
-    // Add user context - MINIMAL
-    let userContextText = '';
-    if (shortlistedSchools?.length > 0) {
-      userContextText += `\nShortlist: ${shortlistedSchools.join(', ')}`;
+    let aiResponse;
+    try {
+      aiResponse = await base44.integrations.Core.InvokeLLM({
+        prompt: responsePrompt
+      });
+      console.log('LLM response received successfully');
+    } catch (error) {
+      console.error('InvokeLLM error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      throw error;
     }
-
-    // Second pass: Generate response - SHORTENED PROMPT
-    const responsePrompt = `Education consultant helping parents find private schools.
-
-Recent chat:
-${conversationSummary}
-${schoolContext}${userContextText}
-
-Parent: "${message}"
-
-Reply naturally (2-3 sentences if showing schools). Describe schools, answer questions, or suggest next steps.`;
-
-    const aiResponse = await base44.integrations.Core.InvokeLLM({
-      prompt: responsePrompt
-    });
 
     // Update user memory with insights from this message
     await base44.functions.invoke('updateUserMemory', { userId, userMessage: message });
 
     // Replace school names with markdown links (school:slug format)
     let messageWithLinks = aiResponse;
-    schoolsToDescribe.forEach(school => {
-      // Replace full school name with markdown link, case-insensitive
-      const regex = new RegExp(`\\b${school.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      messageWithLinks = messageWithLinks.replace(regex, `[${school.name}](school:${school.slug})`);
-    });
+    if (matchingSchools.length > 0) {
+      matchingSchools.forEach(school => {
+        // Replace full school name with markdown link, case-insensitive
+        const regex = new RegExp(`\\b${school.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        messageWithLinks = messageWithLinks.replace(regex, `[${school.name}](school:${school.slug})`);
+      });
+    }
 
     return Response.json({
       message: messageWithLinks,
