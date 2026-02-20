@@ -50,6 +50,10 @@ export default function Consultant() {
   const [showDistances, setShowDistances] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   
+  // Sorting
+  const [sortField, setSortField] = useState('relevance');
+  const [sortDirection, setSortDirection] = useState('asc');
+  
   // Delete conversation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState(null);
