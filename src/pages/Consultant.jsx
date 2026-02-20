@@ -331,23 +331,35 @@ export default function Consultant() {
         } : null
       });
 
+      // DEBUG: Log response to understand view switching issue
+      console.log('orchestrateConversation response:', {
+        shouldShowSchools: response.data.shouldShowSchools,
+        schoolsLength: response.data.schools?.length,
+        currentView: currentView
+      });
+
       // CRITICAL FIX #1: Always update schools when search returns results
       if (response.data.schools && response.data.schools.length > 0) {
+        console.log('Setting schools and changing view to schools/comparison');
         setSchools(response.data.schools);
         const msgLower = messageText.toLowerCase();
         const isCompareIntent = msgLower.includes('compare') || msgLower.includes(' vs ') || msgLower.includes('versus');
         if (isCompareIntent && response.data.schools?.length >= 2) {
           setPreviousSearchResults(response.data.schools);
           setComparisonData(response.data.schools.slice(0, 3));
+          console.log('Setting currentView to comparison-table');
           setCurrentView('comparison-table');
         } else {
+          console.log('Setting currentView to schools');
           setCurrentView('schools');
         }
       } else if (response.data.shouldShowSchools === false && schools.length === 0) {
         // Keep welcome view if no schools to show
+        console.log('Keeping welcome view (no schools to show)');
         setCurrentView('welcome');
       } else if (schools.length > 0) {
         // Show existing schools if we have them
+        console.log('Showing existing schools');
         setCurrentView('schools');
       }
 
