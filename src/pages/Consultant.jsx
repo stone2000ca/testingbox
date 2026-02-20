@@ -375,6 +375,7 @@ export default function Consultant() {
         conversationContext: currentConversation?.conversationContext || {},
         region: user?.profileRegion || 'Canada',
         userId: user?.id,
+        currentOnboardingPhase: onboardingPhase,
         currentSchools: schools,
         userNotes,
         shortlistedSchools,
