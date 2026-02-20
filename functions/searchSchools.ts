@@ -38,6 +38,8 @@ async function performSearch(req) {
       maxTuition, 
       curriculumType,
       specializations,
+       schoolType,
+
       userLat,
       userLng,
       maxDistanceKm,
