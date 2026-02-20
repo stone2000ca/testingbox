@@ -111,26 +111,11 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Try fuzzy matching against currentSchools first with punctuation normalization
+      // SIMPLIFIED: Only search in currentSchools (avoid expensive DB query)
       if (currentSchools && currentSchools.length > 0 && extractedNames.length > 0) {
         for (const searchTerm of extractedNames) {
           const normalizedSearch = normalize(searchTerm);
           const found = currentSchools.find(s => {
-            const normalizedSchoolName = normalize(s.name);
-            return normalizedSchoolName.includes(normalizedSearch);
-          });
-          if (found && !matchingSchools.some(ms => ms.id === found.id)) {
-            matchingSchools.push(found);
-          }
-        }
-      }
-      
-      // Fallback: search all schools if not found in currentSchools
-      if (matchingSchools.length < 2 && extractedNames.length > 0) {
-        const allSchools = await base44.asServiceRole.entities.School.filter({});
-        for (const searchTerm of extractedNames) {
-          const normalizedSearch = normalize(searchTerm);
-          const found = allSchools.find(s => {
             const normalizedSchoolName = normalize(s.name);
             return normalizedSchoolName.includes(normalizedSearch);
           });
@@ -292,12 +277,21 @@ Reply naturally and empathetically. Describe schools, answer questions, or sugge
       });
     }
 
+    // FIX: Return proper currentView signal
+    let currentViewSignal = 'welcome';
+    if (isCompareIntent && matchingSchools.length >= 2) {
+      currentViewSignal = 'comparison';
+    } else if (matchingSchools.length > 0) {
+      currentViewSignal = 'schools';
+    }
+    
     return Response.json({
       message: messageWithLinks,
       intent: intentResponse.intent,
       shouldShowSchools: matchingSchools.length > 0,
       schools: matchingSchools,
-      filterCriteria: intentResponse.filterCriteria || {}
+      filterCriteria: intentResponse.filterCriteria || {},
+      currentView: currentViewSignal
     });
   };
 
