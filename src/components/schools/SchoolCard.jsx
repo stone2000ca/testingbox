@@ -118,6 +118,27 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
               <span className="text-xs text-slate-500 font-normal">/year</span>
             </div>
           </div>
+
+          {/* Match Explanations */}
+          {school.matchExplanations && school.matchExplanations.length > 0 && (
+            <>
+              <div className="my-3 border-t border-slate-200" />
+              <div className="space-y-2 text-xs">
+                {school.matchExplanations.map((match, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    {match.type === 'positive' ? (
+                      <Check className="h-3.5 w-3.5 text-green-600 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    )}
+                    <span className={match.type === 'positive' ? 'text-slate-700' : 'text-slate-600'}>
+                      {match.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
