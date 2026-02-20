@@ -129,6 +129,8 @@ Deno.serve(async (req) => {
             conversationHistory: conversationHistory || [],
             familyProfileData: familyProfile
           });
+          // CRITICAL FIX: Update local familyProfile with fresh data from onboardUser
+          familyProfile = onboardResult.data.familyProfile;
           // Map aiMessage to message for frontend consistency
           return Response.json({
             message: onboardResult.data.aiMessage,
