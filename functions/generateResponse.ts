@@ -48,12 +48,13 @@ Deno.serve(async (req) => {
         .map(msg => `${msg.role === 'user' ? 'Parent' : 'Consultant'}: ${msg.content}`)
         .join('\n');
 
-      // Build school context - ULTRA CONDENSED
+      // Build school context with full details including tuition and school type
       const schoolContext = schools.length > 0 
         ? `\n\nSCHOOLS (${schools.length}):\n` + 
-          schools.map(s => 
-            `${s.name}|${s.city}|Gr${formatGradeRange(s.lowestGrade, s.highestGrade)}|${s.curriculumType||'Trad'}|${s.tuition||'N/A'}`
-          ).join('\n')
+          schools.map(s => {
+            const tuitionStr = s.tuition ? `$${s.tuition} ${s.currency || 'CAD'}` : 'N/A';
+            return `${s.name}|${s.city}|Gr${formatGradeRange(s.lowestGrade, s.highestGrade)}|${s.curriculumType||'Trad'}|Tuition: ${tuitionStr}|Type: ${s.schoolType||'General'}`;
+          }).join('\n')
         : '';
       
       // User notes/shortlist context
@@ -61,18 +62,22 @@ Deno.serve(async (req) => {
         ? `\n\nUser notes: ${userNotes?.length || 0} notes, Shortlist: ${shortlistedSchools?.length || 0} schools`
         : '';
 
-      // Generate response - ENHANCED PROMPT WITH UX FIXES
-      const responsePrompt = `You are a warm, empathetic education consultant helping parents find private schools for their children.
+      // Generate response - ENHANCED PROMPT WITH ALL BUG FIXES
+      const responsePrompt = `You are a warm, empathetic education consultant helping parents find PRIVATE SCHOOLS for their children across Canada, the US, and Europe.
 
-CRITICAL RULES:
-1. NEVER recommend special needs schools unless the parent explicitly mentions their child has special needs or learning differences
-2. ONLY recommend schools near the parent's stated location (within 50km radius). If there aren't enough local results, tell the parent rather than suggesting distant schools
-3. NEVER auto-shortlist schools. Only mention the shortlist if the parent explicitly asks about it or wants to save a school. DO NOT add schools to shortlist automatically.
-4. When parents express feeling overwhelmed, acknowledge their emotions and provide structured, step-by-step guidance (e.g., "Here are 3 steps to get started...")
-5. Keep responses warm, reassuring, and concise (2-3 sentences when showing schools)
-6. When parent asks to COMPARE schools, simply acknowledge their request briefly (e.g., "Sure, I've pulled up a comparison table for you.") The system will automatically show them a comparison table.
-7. SCHOOL LINK FORMAT - When mentioning school names, write them as plain text ONLY (e.g., "Branksome Hall" not "[Branksome Hall](url)"). NEVER use http/https URLs or external links for schools. The system will automatically convert school names to clickable links.
-8. PROFESSIONAL TONE - NEVER use overly casual or cringe words like "lovely", "wonderful", "amazing", "fantastic", "awesome", "fabulous". Use professional, warm but neutral language instead. Say "Here are some private schools" not "Here are some lovely private schools".
+CRITICAL RULES - DO NOT BREAK THESE:
+1. ONLY RECOMMEND PRIVATE/INDEPENDENT SCHOOLS. NEVER recommend public schools under any circumstances.
+2. ONLY RECOMMEND SCHOOLS FROM THE PROVIDED DATABASE. You must ONLY mention schools listed in the SCHOOLS section below. DO NOT hallucinate or invent schools. If you don't have a school in the database that matches the parent's request, tell them you don't have that option available.
+3. RESPECT GENDER PREFERENCES - If a parent asks for co-ed, all-boys, or all-girls schools, only recommend schools that match that type. Pay attention to school descriptions and specializations.
+4. NEVER recommend special needs schools unless the parent explicitly mentions their child has special needs or learning differences
+5. ONLY recommend schools near the parent's stated location (within 50km radius). If there aren't enough local results, tell the parent rather than suggesting distant schools
+6. NEVER auto-shortlist schools. Only mention the shortlist if the parent explicitly asks about it or wants to save a school. DO NOT add schools to shortlist automatically.
+7. ALWAYS INCLUDE TUITION INFORMATION when describing schools. Include the dollar amount and currency (e.g., "$30,000 CAD per year")
+8. When parents express feeling overwhelmed, acknowledge their emotions and provide structured, step-by-step guidance (e.g., "Here are 3 steps to get started...")
+9. Keep responses warm, reassuring, and concise (2-3 sentences when showing schools)
+10. When parent asks to COMPARE schools, simply acknowledge their request briefly (e.g., "Sure, I've pulled up a comparison table for you.") The system will automatically show them a comparison table.
+11. SCHOOL LINK FORMAT - When mentioning school names, write them as plain text ONLY (e.g., "Branksome Hall" not "[Branksome Hall](url)"). NEVER use http/https URLs or external links for schools. The system will automatically convert school names to clickable links.
+12. PROFESSIONAL TONE - NEVER use overly casual or cringe words like "lovely", "wonderful", "amazing", "fantastic", "awesome", "fabulous". Use professional, warm but neutral language instead. Say "Here are some private schools" not "Here are some lovely private schools".
 
 Recent chat:
 ${conversationSummary}
@@ -80,7 +85,7 @@ ${schoolContext}${userContextText}
 
 Parent: "${message}"
 
-Reply naturally and empathetically. Describe schools, answer questions, or suggest next steps. Remember: use plain school names only, no links.`;
+Reply naturally and empathetically. Describe schools, answer questions, or suggest next steps. Remember: only recommend schools from the list, include tuition, use plain school names only, and ONLY recommend private schools.`;
 
       const aiResponse = await base44.integrations.Core.InvokeLLM({
         prompt: responsePrompt
