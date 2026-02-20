@@ -684,6 +684,42 @@ Return empty array if user didn't provide any of these facts.`;
     return R * c;
   };
 
+  const getSortedSchools = () => {
+    if (sortField === 'relevance' || schools.length === 0) {
+      return schools;
+    }
+
+    const sorted = [...schools];
+    
+    switch (sortField) {
+      case 'name':
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'distance':
+        sorted.sort((a, b) => {
+          const distA = a.distanceKm ?? Infinity;
+          const distB = b.distanceKm ?? Infinity;
+          return distA - distB;
+        });
+        break;
+      case 'tuition':
+        sorted.sort((a, b) => {
+          const tuitionA = a.tuition ?? Infinity;
+          const tuitionB = b.tuition ?? Infinity;
+          return tuitionA - tuitionB;
+        });
+        break;
+      default:
+        return sorted;
+    }
+
+    if (sortDirection === 'desc') {
+      sorted.reverse();
+    }
+
+    return sorted;
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
