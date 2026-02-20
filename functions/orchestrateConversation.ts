@@ -37,8 +37,17 @@ Deno.serve(async (req) => {
           conversationId: conversationId
         });
         conversationFamilyProfile = profiles.length > 0 ? profiles[0] : null;
+        
+        // If no profile exists, CREATE ONE (first message in conversation)
+        if (!conversationFamilyProfile) {
+          conversationFamilyProfile = await base44.entities.FamilyProfile.create({
+            userId,
+            conversationId: conversationId
+          });
+          console.log('Created new conversation-scoped FamilyProfile:', conversationFamilyProfile.id);
+        }
       } catch (e) {
-        console.error('Failed to fetch conversation-scoped FamilyProfile:', e);
+        console.error('Failed to fetch/create conversation-scoped FamilyProfile:', e);
       }
     }
     
