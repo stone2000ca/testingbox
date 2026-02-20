@@ -369,6 +369,7 @@ export default function Consultant() {
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setIsTyping(true);
+    setShowResponseChips(false);
 
     try {
       // Fetch user notes and shortlist for AI context
@@ -392,6 +393,7 @@ export default function Consultant() {
         conversationContext: currentConversation?.conversationContext || {},
         region: user?.profileRegion || 'Canada',
         userId: user?.id,
+        consultantName: selectedConsultant,
         currentOnboardingPhase: onboardingPhase,
         currentSchools: schools,
         userNotes,
