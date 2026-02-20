@@ -78,8 +78,11 @@ export default function Navbar({ variant = "default" }) {
         </Link>
         <nav className="hidden md:flex gap-6 items-center">
           <a href="#how-it-works" className="text-slate-600 hover:text-teal-600">How it Works</a>
+          <Link to={createPageUrl('SchoolDirectory')} className="text-slate-600 hover:text-teal-600">
+            Schools
+          </Link>
           <Link to={createPageUrl('Consultant')} className="text-slate-600 hover:text-teal-600">
-            Browse Schools
+            Consultant
           </Link>
           <Link to={createPageUrl('Pricing')} className="text-slate-600 hover:text-teal-600">Pricing</Link>
         </nav>
