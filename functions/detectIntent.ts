@@ -35,6 +35,13 @@ Deno.serve(async (req) => {
       intent = 'NO_ACTION';
       shouldShowSchools = false;
     }
+    // SEARCH_SCHOOLS intent - when user is actively looking for schools
+    else if (msgLower.includes('show') || msgLower.includes('find') || msgLower.includes('search') ||
+             msgLower.includes('schools in') || msgLower.includes('schools near') ||
+             msgLower.includes('private school') || msgLower.includes('looking for')) {
+      intent = 'SEARCH_SCHOOLS';
+      shouldShowSchools = true;
+    }
     
     // Extract filter criteria using regex/string matching
     // City extraction

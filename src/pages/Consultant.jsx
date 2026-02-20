@@ -396,6 +396,14 @@ export default function Consultant() {
 
       const finalMessages = [...updatedMessages, aiMessage];
       setMessages(finalMessages);
+      
+      // FALLBACK: If AI response contains numbered schools but schools array is empty, keep showing previous schools
+      const hasNumberedSchools = /\d+\.\s*[A-Z][a-zA-Z\s]+/g.test(response.data.message);
+      if (hasNumberedSchools && (!response.data.schools || response.data.schools.length === 0) && schools.length > 0) {
+        console.log('Fallback: AI response has numbered schools but no school array, keeping current view');
+        setCurrentView('schools');
+      }
+      
       setIsTyping(false);
 
        // Deduct 1 token and persist to database (skip for premium)
