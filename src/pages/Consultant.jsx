@@ -669,19 +669,28 @@ Return empty array if user didn't provide any of these facts.`;
                   ))
                 )}
               </div>
+              {/* Collapse button */}
+              <div className="border-t bg-white p-2">
+                <button
+                  onClick={() => setSidebarCollapsed(true)}
+                  className="w-full p-2 rounded hover:bg-slate-50 transition flex items-center justify-center"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              </div>
             </>
           )}
-
-          {/* Toggle sidebar button */}
-          <div className="border-t bg-white p-2">
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="w-full p-2 rounded hover:bg-slate-50 transition"
-            >
-              {sidebarCollapsed ? <ChevronRight className="h-5 w-5 mx-auto" /> : <ChevronLeft className="h-5 w-5 mx-auto" />}
-            </button>
-          </div>
         </aside>
+
+        {/* Expand button when collapsed */}
+        {sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            className="fixed left-0 top-1/2 -translate-y-1/2 z-50 bg-white border border-l-0 border-slate-200 rounded-r-lg p-2 shadow-lg hover:bg-slate-50 transition-all"
+          >
+            <ChevronRight className="h-5 w-5 text-slate-600" />
+          </button>
+        )}
 
         {/* CENTER CONTENT AREA */}
         <main className="flex-1 overflow-hidden bg-white">
