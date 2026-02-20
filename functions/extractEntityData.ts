@@ -77,12 +77,18 @@ Return ONLY valid JSON. Do NOT explain.`;
       }
     });
 
+    // Regex extraction overrides LLM result if grade was found
+    let finalResult = result;
+    if (extractedGrade !== null && !result.childGrade) {
+     finalResult = { ...result, childGrade: extractedGrade };
+    }
+
     // Clean up nulls and empty arrays
     const cleaned = {};
-    for (const [key, value] of Object.entries(result)) {
-      if (value !== null && value !== undefined && !(Array.isArray(value) && value.length === 0)) {
-        cleaned[key] = value;
-      }
+    for (const [key, value] of Object.entries(finalResult)) {
+     if (value !== null && value !== undefined && !(Array.isArray(value) && value.length === 0)) {
+       cleaned[key] = value;
+     }
     }
 
     return Response.json({ extracted: cleaned });
