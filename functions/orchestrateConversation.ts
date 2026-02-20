@@ -169,7 +169,6 @@ Deno.serve(async (req) => {
         state: STATES.INTAKE,
         familyProfile: conversationFamilyProfile,
         conversationContext: context,
-        shouldShowSchools: false,
         schools: []
       });
     }
@@ -191,7 +190,6 @@ Deno.serve(async (req) => {
         state: STATES.BRIEF,
         familyProfile: conversationFamilyProfile,
         conversationContext: context,
-        shouldShowSchools: false,
         schools: []
       });
     }
@@ -203,7 +201,6 @@ Deno.serve(async (req) => {
         state: STATES.BRIEF_EDIT,
         familyProfile: conversationFamilyProfile,
         conversationContext: context,
-        shouldShowSchools: false,
         schools: []
       });
     }
@@ -486,8 +483,11 @@ Deno.serve(async (req) => {
       }
       
       currentState = STATES.RESULTS;
+    } else if (currentState === STATES.INTAKE || currentState === STATES.BRIEF_EDIT) {
+      // Already handled above—should not reach here
+      aiMessage = 'I encountered an unexpected state. Please try again.';
     } else {
-      // Fallback for unknown state
+      // Fallback for any other state
       aiMessage = 'I encountered an unexpected state. Please try again.';
     }
 
@@ -513,20 +513,10 @@ Deno.serve(async (req) => {
       console.error('updateUserMemory failed:', e);
     }
 
-    // DEBUG: Log critical values before returning
-    console.log('RETURN DEBUG:', {
-      intent: intentResponse.intent,
-      schoolsLength: matchingSchools.length,
-      shouldShowSchools: matchingSchools.length > 0
-    });
-
-    const finalShouldShowSchools = currentState === STATES.RESULTS && matchingSchools.length > 0;
-
     return Response.json({
       message: aiMessage,
       state: currentState,
       intent: intentResponse.intent,
-      shouldShowSchools: finalShouldShowSchools,
       schools: matchingSchools,
       familyProfile: conversationFamilyProfile,
       filterCriteria: intentResponse.filterCriteria || {},
