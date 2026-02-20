@@ -545,18 +545,17 @@ Deno.serve(async (req) => {
       shouldShowSchools: matchingSchools.length > 0
     });
 
-    // FORCE shouldShowSchools=true for SEARCH_SCHOOLS intent
-    const finalShouldShowSchools = intentResponse.intent === 'SEARCH_SCHOOLS' 
-      ? true 
-      : matchingSchools.length > 0;
+    const finalShouldShowSchools = currentState === STATES.RESULTS && matchingSchools.length > 0;
 
     return Response.json({
       message: aiMessage,
+      state: currentState,
       intent: intentResponse.intent,
       shouldShowSchools: finalShouldShowSchools,
       schools: matchingSchools,
+      familyProfile: conversationFamilyProfile,
       filterCriteria: intentResponse.filterCriteria || {},
-      conversationContext: context  // Return updated context with latest information
+      conversationContext: context
     });
   };
 
