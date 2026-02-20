@@ -32,7 +32,7 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
 
   return (
     <Card 
-      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group school-card"
+      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group school-card h-full flex flex-col"
       style={{
         animation: 'fadeSlideUp 0.4s ease-out',
         animationDelay: `${index * 0.1}s`,
@@ -51,7 +51,7 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
           }
         }
       `}</style>
-      <div onClick={onViewDetails}>
+      <div onClick={onViewDetails} className="flex-1 flex flex-col">
         {/* Image */}
         <div className="relative h-48 bg-slate-200 overflow-hidden">
           {school.heroImage ? (
@@ -72,17 +72,8 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
         </div>
 
         {/* Content */}
-        <div className="p-4">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <h3 className="font-bold text-lg mb-1 line-clamp-2 cursor-default">{school.name}</h3>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-xs">{school.name}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="p-4 flex-1 flex flex-col">
+          <h3 className="font-bold text-lg mb-1 line-clamp-2 min-h-[3.5rem]">{school.name}</h3>
           <div className="flex items-center gap-1 text-sm text-slate-600 mb-3">
             <MapPin className="h-3 w-3" />
             <span className="line-clamp-1">{school.city}, {school.provinceState}</span>

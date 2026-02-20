@@ -229,6 +229,13 @@ Deno.serve(async (req) => {
       console.error('updateUserMemory failed:', e);
     }
 
+    // DEBUG: Log critical values before returning
+    console.log('RETURN DEBUG:', {
+      intent: intentResponse.intent,
+      schoolsLength: matchingSchools.length,
+      shouldShowSchools: matchingSchools.length > 0
+    });
+
     return Response.json({
       message: aiMessage,
       intent: intentResponse.intent,
