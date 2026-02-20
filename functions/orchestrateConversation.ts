@@ -111,140 +111,94 @@ Deno.serve(async (req) => {
     // Update context with new state
     context.state = currentState;
 
-    // STEP 1: Detect intent (fast string parsing)
+    // STEP 3: Detect intent
     const intentResult = await base44.functions.invoke('detectIntent', {
       message,
       conversationHistory: conversationHistory || []
     });
     const intentResponse = intentResult.data;
-
-    // FIX #1: Check if intent is SCHOOL_SEARCH - if yes, skip onboarding entirely
-    const isSchoolSearchIntent = intentResponse.intent === 'SEARCH_SCHOOLS';
     
-    // STEP 2: Check for onboarding and brief delivery - only run if NOT doing school search
-    let familyProfile = null;
-    if (userId) {
-      try {
-        const familyProfiles = await base44.entities.FamilyProfile.filter({ userId });
-        familyProfile = familyProfiles.length > 0 ? familyProfiles[0] : null;
-
-        // If in confirm_brief phase (user is confirming The Brief), handle confirmation/adjustment
-        if (familyProfile && familyProfile.onboardingPhase === 'confirm_brief') {
-          console.log('🔍 BRIEF CONFIRMATION DETECTED');
-          console.log('📊 Current phase:', familyProfile.onboardingPhase);
-          console.log('💬 User message:', message);
-          
-          const msgLower = message.toLowerCase().trim();
-          
-          // Robust confirmation detection - check word boundaries
-          const isConfirming = /\b(exactly right|sounds good|yes|proceed|start search|that's right|thats right|correct|perfect|great|looks good|go ahead|let's go|let's search|sounds perfect)\b/i.test(msgLower);
-          const isAdjusting = /\b(adjust|change|edit|not right|add context|add more|wait|hold on|actually|let me|different)\b/i.test(msgLower);
-
-          console.log('✅ Is confirming:', isConfirming);
-          console.log('❌ Is adjusting:', isAdjusting);
-
-          if (isConfirming) {
-            console.log('🎯 BRIEF CONFIRMED - Triggering school search');
-            // Brief confirmed - proceed to school search
-            const updatedProfile = await base44.entities.FamilyProfile.update(familyProfile.id, { onboardingPhase: 'BRIEF_CONFIRMED' });
-
-            // Build search params from family profile
-            const searchParams = {
-              region: familyProfile.region || 'Canada',
-              city: familyProfile.locationArea,
-              minGrade: familyProfile.childGrade,
-              maxGrade: familyProfile.childGrade,
-              maxTuition: familyProfile.maxTuition,
-              curriculumType: familyProfile.curriculumPreference?.[0],
-              specializations: familyProfile.interests,
-              userLat: familyProfile.locationLat,
-              userLng: familyProfile.locationLng,
-              limit: 20
-            };
-
-            console.log('🔎 Search params:', JSON.stringify(searchParams));
-            const searchResult = await base44.functions.invoke('searchSchools', searchParams);
-            const schools = searchResult.data?.schools || [];
-            console.log('📚 Schools found:', schools.length);
-
-            // Generate response acknowledging the brief confirmation
-            const responseResult = await base44.functions.invoke('generateResponse', {
-              message: 'Excellent, let me show you the schools that match.',
-              intent: 'SCHOOL_SEARCH_CONFIRMED',
-              schools: schools,
-              conversationHistory: conversationHistory || [],
-              conversationContext: context,
-              userNotes: userNotes || [],
-              shortlistedSchools: shortlistedSchools || []
-            });
-
-            return Response.json({
-              message: responseResult.data.message,
-              shouldShowSchools: true,
-              schools: schools,
-              onboardingPhase: 'BRIEF_CONFIRMED',
-              familyProfile: updatedProfile,
-              onboardingComplete: true
-            });
-          } else if (isAdjusting) {
-            console.log('🔄 User wants to adjust The Brief');
-            // User wants to adjust - ask what needs adjusting
-            return Response.json({
-              message: 'No problem! What would you like to adjust or add?',
-              shouldShowSchools: false,
-              schools: [],
-              onboardingPhase: 'confirm_brief',
-              familyProfile: familyProfile,
-              onboardingComplete: false
-            });
-          } else {
-            console.log('❓ Unclear response to The Brief - re-presenting');
-            // Unclear response - re-present the brief with actual data
-            const briefResult = await base44.functions.invoke('generateResponse', {
-              message: 're-present brief',
-              intent: 'GENERATE_BRIEF',
-              familyProfileData: familyProfile,
-              conversationHistory: conversationHistory || []
-            });
-
-            return Response.json({
-              message: briefResult.data.message,
-              shouldShowSchools: false,
-              schools: [],
-              onboardingPhase: 'confirm_brief',
-              familyProfile: familyProfile,
-              onboardingComplete: false
-            });
-          }
-        }
-
-        // If onboarding is not complete, delegate to onboardUser
-        if (!familyProfile || (!familyProfile.onboardingComplete && familyProfile.onboardingPhase !== 'BRIEF_DELIVERY')) {
-          const onboardResult = await base44.functions.invoke('onboardUser', {
-            message,
-            userId,
-            conversationHistory: conversationHistory || [],
-            familyProfileData: familyProfile
-          });
-          // CRITICAL FIX: Update local familyProfile with fresh data from onboardUser
-          familyProfile = onboardResult.data.familyProfile;
-          // Map aiMessage to message for frontend consistency
-          return Response.json({
-            message: onboardResult.data.aiMessage,
-            shouldShowSchools: onboardResult.data.shouldShowSchools,
-            schools: onboardResult.data.schools,
-            onboardingPhase: onboardResult.data.onboardingPhase,
-            familyProfile: onboardResult.data.familyProfile,
-            onboardingComplete: onboardResult.data.onboardingComplete
-          });
-        }
-        
-        // If onboarding is complete, enhance searchSchools with FamilyProfile defaults
-        // This will be used later in the intent-based search flow
-      } catch (error) {
-        console.error('Onboarding check error:', error);
-        // Continue with normal flow if error
-      }
+    // STEP 4: Handle state-specific response generation BEFORE school search
+    if (currentState === STATES.GREETING) {
+      return Response.json({
+        message: "Hi! I'm your NextSchool education consultant. I help families across Canada, the US, and Europe find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you in a school?",
+        state: STATES.GREETING,
+        conversationContext: context,
+        shouldShowSchools: false,
+        schools: []
+      });
+    }
+    
+    if (currentState === STATES.INTAKE) {
+      // INTAKE: Ask ONE question about missing field
+      const generateResult = await base44.functions.invoke('generateResponse', {
+        message,
+        intent: 'INTAKE_QUESTION',
+        state: STATES.INTAKE,
+        familyProfile: conversationFamilyProfile,
+        knownFields: conversationFamilyProfile ? {
+          childName: conversationFamilyProfile.childName,
+          childGrade: conversationFamilyProfile.childGrade,
+          locationArea: conversationFamilyProfile.locationArea,
+          maxTuition: conversationFamilyProfile.maxTuition,
+          interests: conversationFamilyProfile.interests,
+          priorities: conversationFamilyProfile.priorities,
+          dealbreakers: conversationFamilyProfile.dealbreakers
+        } : {},
+        conversationHistory: conversationHistory || [],
+        conversationContext: context,
+        consultantName: consultantName,
+        userNotes: userNotes || [],
+        shortlistedSchools: shortlistedSchools || []
+      });
+      
+      return Response.json({
+        message: generateResult.data.message,
+        state: STATES.INTAKE,
+        familyProfile: conversationFamilyProfile,
+        conversationContext: context,
+        shouldShowSchools: false,
+        schools: []
+      });
+    }
+    
+    if (currentState === STATES.BRIEF) {
+      // BRIEF: Generate The Brief from profile
+      const generateResult = await base44.functions.invoke('generateResponse', {
+        message: 'generate_brief',
+        intent: 'GENERATE_BRIEF',
+        state: STATES.BRIEF,
+        familyProfile: conversationFamilyProfile,
+        conversationHistory: conversationHistory || [],
+        conversationContext: context,
+        consultantName: consultantName
+      });
+      
+      return Response.json({
+        message: generateResult.data.message,
+        state: STATES.BRIEF,
+        familyProfile: conversationFamilyProfile,
+        conversationContext: context,
+        shouldShowSchools: false,
+        schools: []
+      });
+    }
+    
+    if (currentState === STATES.BRIEF_EDIT) {
+      // BRIEF_EDIT: Ask what to adjust
+      return Response.json({
+        message: 'No problem! What would you like to adjust or add?',
+        state: STATES.BRIEF_EDIT,
+        familyProfile: conversationFamilyProfile,
+        conversationContext: context,
+        shouldShowSchools: false,
+        schools: []
+      });
+    }
+    
+    if (currentState === STATES.SEARCHING) {
+      // SEARCHING → perform school search
+      // (falls through to school search logic below)
     }
 
     const isCompareIntent = intentResponse.intent === 'COMPARE_SCHOOLS';
