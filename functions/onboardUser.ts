@@ -184,7 +184,7 @@ Return arrays with EXACT parent words. Also capture what triggered the search an
 
   try {
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `${prompt}\n\nMessage: "${message}"\n\nCurrent profile data: ${JSON.stringify(profile)}`,
+      prompt: `${prompt}\n\nMessage: "${message}"`,
       response_json_schema: schema
     });
 
