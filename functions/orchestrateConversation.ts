@@ -392,6 +392,30 @@ Deno.serve(async (req) => {
       }
       
       matchingSchools = deduplicated.slice(0, 20); // Show up to 20 results
+
+      // STEP 2.5: Generate match explanations if FamilyProfile exists
+      if (familyProfile && familyProfile.onboardingComplete && matchingSchools.length > 0) {
+        try {
+          const explanationsResult = await base44.functions.invoke('generateMatchExplanations', {
+            familyProfile: familyProfile,
+            schools: matchingSchools
+          });
+          
+          if (explanationsResult.data?.explanations) {
+            // Augment schools with match explanations
+            matchingSchools = matchingSchools.map(school => {
+              const explanation = explanationsResult.data.explanations.find(e => e.schoolId === school.id);
+              return {
+                ...school,
+                matchExplanations: explanation?.matches || []
+              };
+            });
+          }
+        } catch (e) {
+          console.error('Failed to generate match explanations:', e);
+          // Continue without explanations
+        }
+      }
     }
 
     // STEP 3: Generate AI response (can timeout)
