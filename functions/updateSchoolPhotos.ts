@@ -26,6 +26,21 @@ async function tryFetchOgImage(url, timeout = 5000) {
   return null;
 }
 
+function generatePossibleDomains(name, slug) {
+  const domains = [];
+  const variants = [name.toLowerCase().replace(/\s+/g, '-'), slug];
+  const extensions = ['.ca', '.com', '.org', '.edu', '.co.uk'];
+  
+  for (const variant of variants) {
+    for (const ext of extensions) {
+      domains.push(`https://www.${variant}${ext}`);
+      domains.push(`https://${variant}${ext}`);
+    }
+  }
+  
+  return [...new Set(domains)]; // Remove duplicates
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
