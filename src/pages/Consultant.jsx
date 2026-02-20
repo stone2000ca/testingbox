@@ -595,7 +595,7 @@ Return empty array if user didn't provide any of these facts.`;
       {/* Header */}
       <Navbar variant="minimal" />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* LEFT SIDEBAR */}
         <aside className={`
           ${sidebarCollapsed ? 'w-0' : 'w-64'}
