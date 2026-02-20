@@ -526,7 +526,7 @@ Return empty array if user didn't provide any of these facts.`;
   };
 
   const handleViewSchoolDetail = (schoolId) => {
-    const school = schools.find(s => s.id === schoolId);
+    const school = schools.find(s => s.id === schoolId) || shortlistData.find(s => s.id === schoolId);
     if (school) {
       setSelectedSchool(school);
       setCurrentView('detail');
