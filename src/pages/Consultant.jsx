@@ -426,6 +426,9 @@ export default function Consultant() {
         ];
         
         setSchools(finalOrderedSchools);
+        // Reset sort to relevance when new schools arrive
+        setSortField('relevance');
+        setSortDirection('asc');
         // CRITICAL: Always switch to schools view when schools are returned
         setCurrentView('schools');
       } else {
