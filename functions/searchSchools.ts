@@ -190,6 +190,10 @@ async function performSearch(req) {
     if (curriculumType) {
       schools = schools.filter(s => s.curriculumType === curriculumType);
     }
+     if (schoolType) {
+       schools = schools.filter(s => s.schoolType === schoolType);
+     }
+
     if (specializations && specializations.length > 0) {
       schools = schools.filter(s => 
         s.specializations && specializations.some(spec => s.specializations.includes(spec))
