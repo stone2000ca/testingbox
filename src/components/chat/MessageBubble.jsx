@@ -85,13 +85,17 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile }) 
                 },
                 strong: ({ children }) => <strong className="font-semibold text-teal-700">{children}</strong>,
                 a: ({ href, children }) => {
-                  // FIX #2: Handle school:slug links consistently
+                  // Handle school:slug links - prevent navigation and open profile in-app
                   if (onViewSchoolProfile && href?.startsWith('school:')) {
                     const slug = href.replace('school:', '');
                     return (
                       <button
-                        onClick={() => onViewSchoolProfile(slug)}
-                        className="text-teal-600 hover:underline cursor-pointer font-semibold"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onViewSchoolProfile(slug);
+                        }}
+                        className="text-teal-600 hover:underline cursor-pointer font-semibold inline"
                       >
                         {children}
                       </button>
