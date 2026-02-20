@@ -458,9 +458,24 @@ Deno.serve(async (req) => {
       }
     }
 
+    // LATEST INFORMATION WINS: Update conversationContext with new filter criteria (overwrite old values)
+    if (intentResponse.filterCriteria) {
+      Object.assign(context, intentResponse.filterCriteria);
+    }
+    
+    // LATEST INFORMATION WINS: Update user location if provided
+    if (userLocation) {
+      context.location = userLocation;
+    }
+
     // Update user memory with insights from this message (non-blocking)
+    // Pass deduplicate:true to ensure new memories replace old conflicting ones
     try {
-      await base44.functions.invoke('updateUserMemory', { userId, userMessage: message });
+      await base44.functions.invoke('updateUserMemory', { 
+        userId, 
+        userMessage: message,
+        deduplicate: true
+      });
     } catch (e) {
       console.error('updateUserMemory failed:', e);
     }
