@@ -42,7 +42,7 @@ export default function Home() {
             Find the Private School Where Your Child Will Thrive
           </h1>
           <p className="text-xl sm:text-2xl text-slate-200 mb-10 max-w-3xl mx-auto font-light">
-            Our AI education consultant evaluates 283+ schools across Canada to find the ones that truly fit your family's needs.
+            Our AI education consultant evaluates schools across Canada, the US, and the UK to find the ones that truly fit your family's needs.
           </p>
           <Link to={createPageUrl('Consultant')}>
             <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-7 text-lg">
