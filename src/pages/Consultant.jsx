@@ -285,7 +285,7 @@ export default function Consultant() {
         userId: user?.id,
         title: 'New Conversation',
         messages: [],
-        conversationContext: {},
+        conversationContext: { consultant: selectedConsultant },
         isActive: true
       };
       
@@ -299,6 +299,20 @@ export default function Consultant() {
     } catch (error) {
       console.error('Failed to create conversation:', error);
     }
+  };
+
+  const handleSelectConsultant = (consultantName) => {
+    setSelectedConsultant(consultantName);
+    // Initialize first message with consultant's greeting
+    const greeting = {
+      role: 'assistant',
+      content: consultantName === 'Jackie'
+        ? "Hi, I'm Jackie! I help families find the right private school for their child. I'll ask a few questions about your family, and then I'll show you schools that actually fit — not just a generic list. What's bringing you here today?"
+        : "Hi, I'm Liam. I help families find the right private school by matching what matters most to you with real school data. I'll ask a few focused questions, then show you your strongest options. What's bringing you here today?",
+      timestamp: new Date().toISOString()
+    };
+    setMessages([greeting]);
+    setShowResponseChips(true);
   };
 
   const selectConversation = (convo) => {
