@@ -29,6 +29,8 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
                    const childText = typeof children === 'string' ? children : 
                      Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
                    
+                   console.log('🔗 MessageBubble link clicked:', { childText, href, schoolsAvailable: schools?.length });
+                   
                    // Check if href is a school link (format: school:slug)
                    const isSchoolLink = href && href.startsWith('school:');
                    const slugFromHref = isSchoolLink ? href.replace('school:', '') : null;
@@ -37,6 +39,8 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
                    const matchingSchool = schools?.find(s => 
                      s.name && childText && s.name.toLowerCase().trim() === childText.toLowerCase().trim()
                    );
+                   
+                   console.log('🎯 Link analysis:', { isSchoolLink, slugFromHref, matchingSchool: matchingSchool?.name || 'not found' });
                    
                    // BULLETPROOF: Always return a button, never a regular <a> tag
                    // Prevents default navigation in all cases
@@ -49,9 +53,11 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
                          // If it's a school link or matches a school name, call onViewSchoolProfile
                          if (isSchoolLink || matchingSchool) {
                            const slug = slugFromHref || matchingSchool?.slug;
+                           console.log('✅ Calling onViewSchoolProfile with slug:', slug);
                            onViewSchoolProfile && onViewSchoolProfile(slug);
                          } else if (href) {
                            // Otherwise, open the link in a new tab
+                           console.log('🌐 Opening external link:', href);
                            window.open(href, '_blank');
                          }
                        }}
