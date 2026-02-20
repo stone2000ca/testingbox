@@ -52,20 +52,39 @@ export function HeaderPhotoDisplay({ headerPhotoUrl, heroImage, schoolName, heig
   );
 }
 
-export function LogoDisplay({ logoUrl, schoolName, size = 'h-12 w-12' }) {
-  if (!logoUrl) {
+export function LogoDisplay({ logoUrl, schoolName, schoolWebsite, size = 'h-12 w-12' }) {
+  const [imageError, setImageError] = useState(false);
+  
+  // Try logoUrl first
+  if (logoUrl && !imageError) {
     return (
-      <div className={`${size} rounded-lg bg-teal-600 text-white font-bold flex items-center justify-center text-sm flex-shrink-0`}>
-        {schoolName.charAt(0).toUpperCase()}
-      </div>
+      <img 
+        src={logoUrl} 
+        alt={schoolName}
+        className={`${size} rounded-lg object-cover bg-white/10 flex-shrink-0`}
+        onError={() => setImageError(true)}
+      />
     );
   }
 
+  // Try Clearbit as fallback if we have a website
+  if (schoolWebsite && !imageError) {
+    const domain = schoolWebsite.replace(/^(https?:\/\/)/, '').split('/')[0];
+    const clearbitUrl = `https://logo.clearbit.com/${domain}`;
+    return (
+      <img 
+        src={clearbitUrl} 
+        alt={schoolName}
+        className={`${size} rounded-lg object-cover bg-white/10 flex-shrink-0`}
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
+  // Fallback to initial circle
   return (
-    <img 
-      src={logoUrl} 
-      alt={schoolName}
-      className={`${size} rounded-lg object-cover bg-white/10 flex-shrink-0`}
-    />
+    <div className={`${size} rounded-lg bg-teal-600 text-white font-bold flex items-center justify-center text-sm flex-shrink-0`}>
+      {schoolName.charAt(0).toUpperCase()}
+    </div>
   );
 }
