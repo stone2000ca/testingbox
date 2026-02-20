@@ -68,6 +68,31 @@ export default function ParentDashboard() {
     }
   };
 
+  const handleClearMemory = async () => {
+    setClearingMemory(true);
+    try {
+      // Delete UserMemory
+      const memories = await base44.entities.UserMemory.filter({ userId: user.id });
+      if (memories.length > 0) {
+        await base44.entities.UserMemory.delete(memories[0].id);
+      }
+
+      // Delete FamilyProfile
+      const profiles = await base44.entities.FamilyProfile.filter({ userId: user.id });
+      if (profiles.length > 0) {
+        await base44.entities.FamilyProfile.delete(profiles[0].id);
+      }
+
+      toast.success('AI Memory and Family Profile cleared. Fresh start ready!');
+      setClearMemoryDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to clear memory:', error);
+      toast.error('Failed to clear memory: ' + error.message);
+    } finally {
+      setClearingMemory(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
