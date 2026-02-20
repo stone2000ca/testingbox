@@ -147,10 +147,10 @@ async function performSearch(req) {
       });
     }
 
-    // Apply city filter (if no aliases matched) - exact city name match, no distance filter
+    // Apply city filter (if no aliases matched) - case-insensitive regex match
     if (city && aliasedCities.length === 0) {
-      const normalizedCity = toTitleCase(city.trim());
-      schools = schools.filter(s => s.city === normalizedCity);
+      const cityRegex = new RegExp(`^${city.trim()}$`, 'i');
+      schools = schools.filter(s => s.city && cityRegex.test(s.city));
     }
 
     if (provinceState && aliasedProvinces.length === 0) {
@@ -160,11 +160,11 @@ async function performSearch(req) {
       const fullProvinceName = provinceAbbreviations[psUpper] || stateAbbreviations[psUpper];
       const normalizedProvince = fullProvinceName || toTitleCase(provinceState.trim());
       
+      // BUG FIX #5: Use case-insensitive regex for province/state matching
+      const provinceRegex = new RegExp(`^${normalizedProvince}$`, 'i');
       schools = schools.filter(s => {
         if (!s.provinceState) return false;
-        
-        // Match exact Title Case or full name
-        return s.provinceState === normalizedProvince;
+        return provinceRegex.test(s.provinceState);
       });
     }
 
