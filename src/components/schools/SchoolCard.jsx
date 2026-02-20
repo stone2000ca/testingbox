@@ -80,16 +80,7 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
         {/* Content */}
         <div className="p-4 flex-1 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
-            {school.logoUrl ? (
-              <img 
-                src={school.logoUrl} 
-                alt={school.name}
-                className="h-5 w-5 rounded object-cover"
-              />
-            ) : (
-              <div className="h-5 w-5 rounded bg-teal-600 text-white text-xs font-bold flex items-center justify-center">
-                {school.name.charAt(0)}
-              </div>
+            <LogoDisplay logoUrl={school.logoUrl} schoolName={school.name} size="h-5 w-5" />
             )}
             <h3 className="font-bold text-lg line-clamp-1">{school.name}</h3>
           </div>
