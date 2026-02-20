@@ -17,7 +17,8 @@ Deno.serve(async (req) => {
         conversationHistory, 
         conversationContext,
         userNotes,
-        shortlistedSchools
+        shortlistedSchools,
+        familyProfileData
       } = await req.json();
 
       // HALLUCINATION FIX: If no schools, return "no matches" message immediately without AI call
