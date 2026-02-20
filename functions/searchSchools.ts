@@ -153,10 +153,13 @@ async function performSearch(req) {
       });
     }
 
-    // Apply city filter (if no aliases matched) - case-insensitive regex match
+    // Apply city filter (if no aliases matched) - case-insensitive partial match for flexibility
     if (city && aliasedCities.length === 0) {
-      const cityRegex = new RegExp(`^${city.trim()}$`, 'i');
-      locationFiltered = locationFiltered.filter(s => s.city && cityRegex.test(s.city));
+      const cityLower = city.trim().toLowerCase();
+      // Allow partial match to catch "Mississauga", "mississauga, ON", etc.
+      locationFiltered = locationFiltered.filter(s => 
+        s.city && s.city.toLowerCase().includes(cityLower)
+      );
     }
 
     if (provinceState && aliasedProvinces.length === 0) {
