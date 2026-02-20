@@ -46,7 +46,7 @@ export default function Home() {
           </p>
           <Link to={createPageUrl('Consultant')}>
             <Button size="lg" className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-7 text-lg">
-              Start Your Free Consultation
+              Meet Your Consultant
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
