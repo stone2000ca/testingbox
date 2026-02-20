@@ -365,29 +365,19 @@ export default function Consultant() {
         } : null
       });
 
-      // DEBUG: Log response to understand view switching issue
-      console.log('orchestrateConversation response:', {
-        shouldShowSchools: response.data.shouldShowSchools,
-        schoolsLength: response.data.schools?.length,
-        currentView: currentView
-      });
-
-      // FIX #4: Handle comparison intent properly
+      // BUG FIX #1 & #6: Improved view switching logic
+      // Handle comparison intent first
       if (response.data.intent === 'COMPARE_SCHOOLS' && response.data.schools?.length >= 2) {
-        console.log('Comparison intent detected - switching to comparison table');
         setPreviousSearchResults(schools);
         setComparisonData(response.data.schools);
         setCurrentView('comparison-table');
       }
-      // Regular school search results
+      // Handle school search results - SHOW SCHOOL CARDS if schools are returned
       else if (response.data.schools && response.data.schools.length > 0) {
-        console.log('Setting schools and changing view to schools/comparison');
-        
-        // FIX #4: Reorder schools to match the order mentioned in AI response
+        // Reorder schools to match the order mentioned in AI response
         const aiResponse = response.data.message;
         const orderedSchools = [...response.data.schools];
         
-        // Find schools mentioned in the AI response in order
         const mentionedSchools = [];
         const remainingSchools = [];
         
@@ -400,26 +390,21 @@ export default function Consultant() {
           }
         }
         
-        // Sort mentioned schools by order of appearance in AI message
         mentionedSchools.sort((a, b) => a.index - b.index);
         
-        // Combine: mentioned schools first (in order), then remaining
         const finalOrderedSchools = [
           ...mentionedSchools.map(ms => ms.school),
           ...remainingSchools
         ];
         
         setSchools(finalOrderedSchools);
-        console.log('Setting currentView to schools');
+        // CRITICAL: Always switch to schools view when schools are returned
         setCurrentView('schools');
-      } else if (response.data.shouldShowSchools === false && schools.length === 0) {
-        // Keep welcome view if no schools to show
-        console.log('Keeping welcome view (no schools to show)');
-        setCurrentView('welcome');
-      } else if (schools.length > 0) {
-        // Show existing schools if we have them
-        console.log('Showing existing schools');
-        setCurrentView('schools');
+      } else {
+        // No schools found - keep welcome or previous view
+        if (schools.length === 0) {
+          setCurrentView('welcome');
+        }
       }
 
       const aiMessage = {
@@ -430,13 +415,6 @@ export default function Consultant() {
 
       const finalMessages = [...updatedMessages, aiMessage];
       setMessages(finalMessages);
-      
-      // FALLBACK: If AI response contains numbered schools but schools array is empty, keep showing previous schools
-      const hasNumberedSchools = /\d+\.\s*[A-Z][a-zA-Z\s]+/g.test(response.data.message);
-      if (hasNumberedSchools && (!response.data.schools || response.data.schools.length === 0) && schools.length > 0) {
-        console.log('Fallback: AI response has numbered schools but no school array, keeping current view');
-        setCurrentView('schools');
-      }
       
       setIsTyping(false);
 
