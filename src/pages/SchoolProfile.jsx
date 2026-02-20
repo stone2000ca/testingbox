@@ -213,21 +213,29 @@ export default function SchoolProfile() {
                   </Card>
                 )}
 
-                <Card className="p-6">
-                  <h3 className="text-xl font-bold mb-3">Mission Statement</h3>
-                  <p className="text-slate-700 leading-relaxed">{school.missionStatement}</p>
-                </Card>
+                {school.missionStatement && (
+                  <Card className="p-6">
+                    <h3 className="text-xl font-bold mb-3">Mission Statement</h3>
+                    <p className="text-slate-700 leading-relaxed">{school.missionStatement}</p>
+                  </Card>
+                )}
 
-                <Card className="p-6">
-                  <h3 className="text-xl font-bold mb-3">Teaching Philosophy</h3>
-                  <p className="text-slate-700">{school.teachingPhilosophy}</p>
-                  <div className="mt-4">
-                    <span className="text-sm text-slate-600 font-medium">Curriculum Type:</span>
-                    <span className="ml-2 px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-medium">
-                      {school.curriculumType}
-                    </span>
-                  </div>
-                </Card>
+                {(school.teachingPhilosophy || school.curriculumType) && (
+                  <Card className="p-6">
+                    <h3 className="text-xl font-bold mb-3">Teaching Philosophy</h3>
+                    {school.teachingPhilosophy && (
+                      <p className="text-slate-700 mb-4">{school.teachingPhilosophy}</p>
+                    )}
+                    {school.curriculumType && (
+                      <div>
+                        <span className="text-sm text-slate-600 font-medium">Curriculum Type:</span>
+                        <span className="ml-2 px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-medium">
+                          {school.curriculumType}
+                        </span>
+                      </div>
+                    )}
+                  </Card>
+                )}
 
                 {school.values && school.values.length > 0 && (
                   <Card className="p-6">
