@@ -179,11 +179,8 @@ Deno.serve(async (req) => {
       // RULE: Exclude special needs schools unless explicitly mentioned
       if (!msgLower.includes('special needs') && !msgLower.includes('learning disabilities') && 
           !msgLower.includes('adhd') && !msgLower.includes('autism')) {
-        filtered = filtered.filter(s => s.schoolType !== 'Special Needs');
+        schools = schools.filter(s => s.schoolType !== 'Special Needs');
       }
-      
-      // BUG FIX #2: Exclude public schools - only private/independent schools
-      filtered = filtered.filter(s => s.schoolType !== 'Public');
       
       // BUG FIX #2: Exclude public schools - only private/independent schools
       schools = schools.filter(s => s.schoolType !== 'Public');
