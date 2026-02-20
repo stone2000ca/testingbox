@@ -1023,8 +1023,8 @@ Return empty array if user didn't provide any of these facts.`;
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Suggested Response Chips for BRIEF_DELIVERY */}
-          {onboardingPhase === 'BRIEF_DELIVERY' && (
+          {/* Suggested Response Chips for confirm_brief phase (The Brief) */}
+          {onboardingPhase === 'confirm_brief' && (
             <div className="p-4 border-t bg-slate-50 flex flex-wrap gap-2 justify-center">
               <Button 
                 variant="outline" 
