@@ -277,21 +277,24 @@ Deno.serve(async (req) => {
       console.log('FIX #5: NARROW_DOWN complete. Output count:', matchingSchools.length);
     } else if (intentResponse.shouldShowSchools) {
       // Call searchSchools function with extracted criteria
-      // First, get FamilyProfile for defaults if onboarding is complete
+      // CRITICAL: Fetch FamilyProfile FIRST to get hard filter constraints
       let familyProfileDefaults = {};
+      let fullFamilyProfile = null;
       if (userId) {
         try {
           const familyProfiles = await base44.entities.FamilyProfile.filter({ userId });
-          if (familyProfiles.length > 0 && familyProfiles[0].onboardingComplete) {
-            const fp = familyProfiles[0];
-            familyProfileDefaults = {
-              childGrade: fp.childGrade,
-              locationArea: fp.locationArea,
-              budgetRange: fp.budgetRange,
-              maxTuition: fp.maxTuition,
-              priorities: fp.priorities,
-              curriculumPreference: fp.curriculumPreference
-            };
+          if (familyProfiles.length > 0) {
+            fullFamilyProfile = familyProfiles[0];
+            if (fullFamilyProfile.onboardingComplete) {
+              familyProfileDefaults = {
+                childGrade: fullFamilyProfile.childGrade,
+                locationArea: fullFamilyProfile.locationArea,
+                budgetRange: fullFamilyProfile.budgetRange,
+                maxTuition: fullFamilyProfile.maxTuition,
+                priorities: fullFamilyProfile.priorities,
+                curriculumPreference: fullFamilyProfile.curriculumPreference
+              };
+            }
           }
         } catch (e) {
           console.error('Failed to fetch FamilyProfile for defaults:', e);
@@ -299,7 +302,8 @@ Deno.serve(async (req) => {
       }
 
       const searchParams = {
-        limit: 50
+        limit: 50,
+        familyProfile: fullFamilyProfile // PASS FULL PROFILE FOR HARD FILTERS
       };
       
       if (intentResponse.filterCriteria?.city) searchParams.city = intentResponse.filterCriteria.city;
