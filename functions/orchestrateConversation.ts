@@ -338,66 +338,48 @@ Deno.serve(async (req) => {
       
       matchingSchools = filtered;
       console.log('FIX #5: NARROW_DOWN complete. Output count:', matchingSchools.length);
-    } else if (intentResponse.shouldShowSchools || currentState === STATES.SEARCHING) {
-     // Call searchSchools function with extracted criteria
+    } else if (currentState === STATES.SEARCHING) {
+     // SEARCHING state: perform school search using conversation profile
      const searchParams = {
        limit: 50,
-       familyProfile: conversationFamilyProfile // ALWAYS use conversation profile
+       familyProfile: conversationFamilyProfile
      };
 
-     // PRIORITY: Use extracted data from conversation profile FIRST, then intent criteria
+     // Use extracted data from conversation profile
      if (conversationFamilyProfile?.locationArea) {
        searchParams.city = conversationFamilyProfile.locationArea;
-     } else if (intentResponse.filterCriteria?.city) {
-       searchParams.city = intentResponse.filterCriteria.city;
      }
 
      if (conversationFamilyProfile?.childGrade) {
        searchParams.minGrade = conversationFamilyProfile.childGrade;
        searchParams.maxGrade = conversationFamilyProfile.childGrade;
-     } else if (intentResponse.filterCriteria?.grade) {
-       searchParams.minGrade = intentResponse.filterCriteria.grade;
-       searchParams.maxGrade = intentResponse.filterCriteria.grade;
      }
 
-     if (intentResponse.filterCriteria?.provinceState) searchParams.provinceState = intentResponse.filterCriteria.provinceState;
-     if (intentResponse.filterCriteria?.region) searchParams.region = intentResponse.filterCriteria.region;
-      
-      if (intentResponse.filterCriteria?.minTuition) searchParams.minTuition = intentResponse.filterCriteria.minTuition;
-      if (intentResponse.filterCriteria?.maxTuition) searchParams.maxTuition = intentResponse.filterCriteria.maxTuition;
-      else if (familyProfileDefaults.maxTuition) searchParams.maxTuition = familyProfileDefaults.maxTuition;
-      
-      if (intentResponse.filterCriteria?.curriculumType) searchParams.curriculumType = intentResponse.filterCriteria.curriculumType;
-       if (intentResponse.filterCriteria?.schoolType) searchParams.schoolType = intentResponse.filterCriteria.schoolType;
+     if (conversationFamilyProfile?.maxTuition) {
+       searchParams.maxTuition = conversationFamilyProfile.maxTuition;
+     }
 
+     if (conversationFamilyProfile?.curriculumPreference?.length > 0) {
+       searchParams.curriculumType = conversationFamilyProfile.curriculumPreference[0];
+     }
 
-      // FIX #2: GENDER FILTERING - filter by schoolType
-      const genderPref = intentResponse.filterCriteria?.genderPreference;
-      if (genderPref === 'boy') {
-        searchParams.schoolType = 'All-Boys';
-      } else if (genderPref === 'girl') {
-        searchParams.schoolType = 'All-Girls';
-      }
-
-      if (intentResponse.filterCriteria?.specializations?.length > 0) {
-        searchParams.specializations = intentResponse.filterCriteria.specializations;
-      } else if (familyProfileDefaults.priorities?.length > 0) {
-        // Map family priorities to specializations
-        const priorityToSpec = {
-          'Arts': 'Arts',
-          'STEM': 'STEM',
-          'Sports': 'Sports',
-          'Languages': 'Languages',
-          'Leadership': 'Leadership',
-          'Environmental': 'Environmental'
-        };
-        const mappedSpecs = familyProfileDefaults.priorities
-          .map(p => priorityToSpec[p])
-          .filter(Boolean);
-        if (mappedSpecs.length > 0) {
-          searchParams.specializations = mappedSpecs;
-        }
-      }
+     if (conversationFamilyProfile?.priorities?.length > 0) {
+       // Map family priorities to specializations
+       const priorityToSpec = {
+         'Arts': 'Arts',
+         'STEM': 'STEM',
+         'Sports': 'Sports',
+         'Languages': 'Languages',
+         'Leadership': 'Leadership',
+         'Environmental': 'Environmental'
+       };
+       const mappedSpecs = conversationFamilyProfile.priorities
+         .map(p => priorityToSpec[p])
+         .filter(Boolean);
+       if (mappedSpecs.length > 0) {
+         searchParams.specializations = mappedSpecs;
+       }
+     }
       
       // FIX #3: DISTANCE CALCULATION - Use user's actual location
       // Check if user is asking for schools "near me" or similar
