@@ -63,6 +63,43 @@ Deno.serve(async (req) => {
         onboardingComplete = true;
         nextPhase = 'complete';
         aiMessage = `Perfect! Now that I understand ${profile.childName} and your family's needs, I have some great schools in mind. Let me show you what I'm thinking...`;
+        
+        // FIX #2: Trigger searchSchools immediately when onboarding is confirmed
+        try {
+          const searchResult = await base44.functions.invoke('searchSchools', {
+            region: profile.region || 'Canada',
+            city: profile.locationArea,
+            provinceState: profile.locationArea?.split(',')[1]?.trim(),
+            minGrade: profile.childGrade,
+            maxGrade: profile.childGrade,
+            minTuition: profile.budgetRange === 'under_20k' ? 0 : profile.budgetRange === '20k_35k' ? 20000 : 35000,
+            maxTuition: profile.maxTuition,
+            curriculumType: profile.curriculumPreference?.[0],
+            specializations: profile.interests,
+            userLat: profile.locationLat,
+            userLng: profile.locationLng,
+            limit: 20
+          });
+          
+          // Return schools from searchSchools along with completion status
+          const updatedProfile = await base44.entities.FamilyProfile.update(profile.id, {
+            ...profile,
+            onboardingPhase: nextPhase,
+            onboardingComplete: onboardingComplete
+          });
+          
+          return Response.json({
+            aiMessage,
+            shouldShowSchools: true,
+            schools: searchResult.data?.schools || [],
+            onboardingPhase: nextPhase,
+            familyProfile: updatedProfile,
+            onboardingComplete: true
+          });
+        } catch (searchError) {
+          console.error('Search schools error after onboarding:', searchError);
+          // Fall through to return empty schools if search fails
+        }
       } else if (isRejecting) {
         aiMessage = `No problem! What would you like me to adjust? Feel free to correct anything.`;
       } else {
