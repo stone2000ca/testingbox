@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import ContactSchoolModal from '@/components/schools/ContactSchoolModal';
 import Navbar from '@/components/navigation/Navbar';
+import { HeaderPhotoDisplay, LogoDisplay, isClearbitUrl } from '@/components/schools/HeaderPhotoHelper';
 
 export default function SchoolProfile() {
   const location = useLocation();
