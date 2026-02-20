@@ -222,8 +222,35 @@ Deno.serve(async (req) => {
       matchingSchools = schools.slice(0, 20); // Show up to 20 results
     }
 
-    // SIMPLIFIED PROMPT FOR TESTING
-    const responsePrompt = `You are a helpful school consultant. The user said: "${message}". Reply helpfully in 2-3 sentences.`;
+    // Build school context for AI - ULTRA CONDENSED
+    const schoolsToDescribe = isCompareIntent ? matchingSchools :
+                              (intentResponse.intent === 'NARROW_DOWN' && currentSchools?.length > 0) 
+                                ? currentSchools 
+                                : matchingSchools;
+    
+    const schoolContext = schoolsToDescribe.length > 0 
+      ? `\n\nSCHOOLS (${schoolsToDescribe.length}):\n` + 
+        schoolsToDescribe.map(s => 
+          `${s.name}|${s.city}|Gr${s.lowestGrade}-${s.highestGrade}|${s.curriculumType||'Trad'}|${s.tuition||'N/A'}`
+        ).join('\n')
+      : '\n\n[NONE]';
+
+    // Add user context - MINIMAL
+    let userContextText = '';
+    if (shortlistedSchools?.length > 0) {
+      userContextText += `\nShortlist: ${shortlistedSchools.join(', ')}`;
+    }
+
+    // Generate response - SHORTENED PROMPT
+    const responsePrompt = `Education consultant helping parents find private schools.
+
+Recent chat:
+${conversationSummary}
+${schoolContext}${userContextText}
+
+Parent: "${message}"
+
+Reply naturally (2-3 sentences if showing schools). Describe schools, answer questions, or suggest next steps.`;
     
     console.log('prompt length:', responsePrompt.length);
 
@@ -239,8 +266,12 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    // Update user memory with insights from this message
-    await base44.functions.invoke('updateUserMemory', { userId, userMessage: message });
+    // Update user memory with insights from this message (non-blocking)
+    try {
+      await base44.functions.invoke('updateUserMemory', { userId, userMessage: message });
+    } catch (e) {
+      console.error('updateUserMemory failed:', e);
+    }
 
     // Replace school names with markdown links (school:slug format)
     let messageWithLinks = aiResponse;
