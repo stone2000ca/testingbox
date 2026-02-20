@@ -469,25 +469,24 @@ export default function SchoolProfile() {
                 {isShortlisted ? 'Shortlisted' : 'Add to Shortlist'}
               </Button>
 
-               {/* Claim Button / Badge */}
-               {(!school.claimStatus || school.claimStatus === 'unclaimed') && (
-                 <Link to={`${createPageUrl('ClaimSchool')}?schoolId=${schoolId}`} className="block w-full">
-                   <Button className="w-full bg-blue-600 hover:bg-blue-700 mb-4">
-                     Claim This School
-                   </Button>
-                 </Link>
-               )}
-               {school.claimStatus === 'pending' && (
-                 <div className="w-full px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm text-center mb-4">
-                   Claim in Progress
-                 </div>
-               )}
-               {school.claimStatus === 'claimed' && (
-                 <div className="w-full px-3 py-2 rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-sm text-center mb-4">
-                   ✓ Managed by school
-                 </div>
-               )}
-
+              {/* Claim Button / Badge */}
+              {(!school.claimStatus || school.claimStatus === 'unclaimed') && (
+                <Link to={`${createPageUrl('ClaimSchool')}?schoolId=${schoolId}`} className="block w-full">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 mb-4">
+                    Claim This School
+                  </Button>
+                </Link>
+              )}
+              {school.claimStatus === 'pending' && (
+                <div className="w-full px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm text-center mb-4">
+                  Claim in Progress
+                </div>
+              )}
+              {school.claimStatus === 'claimed' && (
+                <div className="w-full px-3 py-2 rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-sm text-center mb-4">
+                  ✓ Managed by school
+                </div>
+              )}
 
               <div className="space-y-4">
                 <h3 className="font-bold">Contact Information</h3>
