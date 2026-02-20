@@ -29,16 +29,21 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
                    const childText = typeof children === 'string' ? children : 
                      Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
                    
+                   // Debug logging
+                   console.log('MessageBubble <a> handler:', { childText, href, schoolsCount: schools?.length });
+                   
                    // Check if href is a school link (format: school:slug)
                    const isSchoolLink = href && href.startsWith('school:');
                    const slugFromHref = isSchoolLink ? href.replace('school:', '') : null;
                    
-                   // Try to find matching school by name
+                   // Try to find matching school by name (case-insensitive exact match)
                    const matchingSchool = schools?.find(s => 
                      s.name && childText && s.name.toLowerCase().trim() === childText.toLowerCase().trim()
                    );
                    
-                   // Use school link if available, otherwise use matched school
+                   console.log('School match result:', { isSchoolLink, matchingSchool: matchingSchool?.name });
+                   
+                   // If it's a school link OR matches a school name, intercept it
                    if (isSchoolLink || matchingSchool) {
                      const slug = slugFromHref || matchingSchool?.slug;
                      return (
