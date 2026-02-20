@@ -74,11 +74,25 @@ export default function NotesPanel({ userId, onClose }) {
 
   const handleClearMemory = async () => {
     try {
+      // Delete all UserMemory records
       const userMemories = await base44.entities.UserMemory.filter({ userId });
       if (userMemories.length > 0) {
         await base44.entities.UserMemory.delete(userMemories[0].id);
-        setMemories([]);
       }
+
+      // Delete all FamilyProfile records
+      const familyProfiles = await base44.entities.FamilyProfile.filter({ userId });
+      for (const profile of familyProfiles) {
+        await base44.entities.FamilyProfile.delete(profile.id);
+      }
+
+      // Delete all ChatHistory records
+      const chatHistories = await base44.entities.ChatHistory.filter({ userId });
+      for (const chat of chatHistories) {
+        await base44.entities.ChatHistory.delete(chat.id);
+      }
+
+      setMemories([]);
       setClearMemoryDialogOpen(false);
     } catch (error) {
       console.error('Failed to clear memories:', error);
@@ -205,16 +219,16 @@ export default function NotesPanel({ userId, onClose }) {
            <AlertDialogHeader>
              <AlertDialogTitle className="flex items-center gap-2">
                <AlertCircle className="h-5 w-5 text-red-600" />
-               Clear AI Memory
+               Clear All Data
              </AlertDialogTitle>
              <AlertDialogDescription>
-               This will delete all stored memories that the AI has learned about you. This action cannot be undone. Are you sure?
+               This will delete all AI memories, family profile data, and conversation history. This action cannot be undone. Are you sure?
              </AlertDialogDescription>
            </AlertDialogHeader>
            <AlertDialogFooter>
              <AlertDialogCancel>Cancel</AlertDialogCancel>
              <AlertDialogAction onClick={handleClearMemory} className="bg-red-600 hover:bg-red-700">
-               Delete Memory
+               Delete All Data
              </AlertDialogAction>
            </AlertDialogFooter>
          </AlertDialogContent>
