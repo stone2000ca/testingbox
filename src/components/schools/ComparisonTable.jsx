@@ -59,9 +59,9 @@ export default function ComparisonTable({ schools, onBack }) {
         </Button>
       </div>
 
-      {/* Scrollable Comparison Table - FIX #3: Both columns visible with balanced widths */}
-      <div className="flex-1 overflow-auto p-4">
-        <table className="w-full border-collapse table-fixed">
+      {/* Comparison Table - FIX #3: All columns visible, no horizontal scroll */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+        <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '25%' }} />
             {schools.map((school) => (
@@ -71,15 +71,17 @@ export default function ComparisonTable({ schools, onBack }) {
           <tbody>
             {attributes.map((attr) => (
               <tr key={attr.key} className="border-b border-slate-200">
-                <td className="bg-slate-50 p-2 font-semibold text-slate-900 align-top text-sm">
+                <td className="bg-slate-50 p-2 font-semibold text-slate-900 align-top text-xs">
                   {attr.label}
                 </td>
                 {schools.map((school) => (
                   <td 
                     key={school.id} 
-                    className="p-2 text-sm text-slate-700 border-l border-slate-200 break-words align-top"
+                    className="p-2 text-xs text-slate-700 border-l border-slate-200 align-top overflow-hidden"
                   >
-                    {getValue(school, attr.key)}
+                    <div className="break-words">
+                      {getValue(school, attr.key)}
+                    </div>
                   </td>
                 ))}
               </tr>
