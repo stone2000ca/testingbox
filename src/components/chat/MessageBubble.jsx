@@ -1,6 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 
-export default function MessageBubble({ message, isUser, onViewSchoolProfile }) {
+export default function MessageBubble({ message, isUser, onViewSchoolProfile, schools }) {
   return (
     <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
@@ -26,8 +26,17 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile }) 
                 li: ({ children }) => <li className="my-0.5">{children}</li>,
                 strong: ({ children }) => <strong className="font-semibold text-teal-700">{children}</strong>,
                 a: ({ href, children }) => {
-                  if (href && href.startsWith('school:')) {
-                    const slug = href.replace('school:', '');
+                  // Extract text from children
+                  const childText = typeof children === 'string' ? children : 
+                    Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
+                  
+                  // Try to find matching school from the schools array
+                  const matchingSchool = schools?.find(s => 
+                    s.name && childText && s.name.toLowerCase().trim() === childText.toLowerCase().trim()
+                  );
+                  
+                  if (matchingSchool || (href && href.startsWith('school:'))) {
+                    const slug = matchingSchool?.slug || (href ? href.replace('school:', '') : '');
                     return (
                       <button
                         onClick={(e) => {
@@ -41,6 +50,7 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile }) 
                       </button>
                     );
                   }
+                  
                   return <a href={href} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">{children}</a>;
                 }
               }}
