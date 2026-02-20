@@ -202,6 +202,23 @@ export default function SchoolProfile() {
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
+                {school.highlights && school.highlights.length > 0 && (
+                  <Card className="p-6 bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-200">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Award className="h-5 w-5 text-teal-600" />
+                      What Makes This School Special
+                    </h3>
+                    <ul className="space-y-2">
+                      {school.highlights.slice(0, 3).map((highlight, idx) => (
+                        <li key={idx} className="flex gap-3">
+                          <span className="text-teal-600 font-bold">✦</span>
+                          <span className="text-teal-900">{highlight}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                )}
+
                 <Card className="p-6">
                   <h3 className="text-xl font-bold mb-3">Mission Statement</h3>
                   <p className="text-slate-700 leading-relaxed">{school.missionStatement}</p>
