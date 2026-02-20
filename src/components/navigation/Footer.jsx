@@ -18,6 +18,7 @@ export default function Footer() {
             <h3 className="text-white font-semibold text-sm mb-4">PRODUCT</h3>
             <Link to={createPageUrl('HowItWorks')} className="block text-sm hover:text-white transition-colors mb-3">How It Works</Link>
             <Link to={createPageUrl('SchoolDirectory')} className="block text-sm hover:text-white transition-colors mb-3">Schools</Link>
+            <Link to={createPageUrl('Blog')} className="block text-sm hover:text-white transition-colors mb-3">Guides</Link>
             <Link to={createPageUrl('Pricing')} className="block text-sm hover:text-white transition-colors">Pricing</Link>
           </div>
           
