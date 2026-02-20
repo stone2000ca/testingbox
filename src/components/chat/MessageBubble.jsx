@@ -26,33 +26,30 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
                 li: ({ children }) => <li className="my-0.5">{children}</li>,
                 strong: ({ children }) => <strong className="font-semibold text-teal-700">{children}</strong>,
                 a: ({ href, children }) => {
-                  // Extract text from children
-                  const childText = typeof children === 'string' ? children : 
-                    Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
-                  
-                  // Try to find matching school from the schools array
-                  const matchingSchool = schools?.find(s => 
-                    s.name && childText && s.name.toLowerCase().trim() === childText.toLowerCase().trim()
-                  );
-                  
-                  if (matchingSchool || (href && href.startsWith('school:'))) {
-                    const slug = matchingSchool?.slug || (href ? href.replace('school:', '') : '');
-                    return (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onViewSchoolProfile && onViewSchoolProfile(slug);
-                        }}
-                        className="text-teal-600 hover:underline cursor-pointer font-semibold inline"
-                      >
-                        {children}
-                      </button>
-                    );
-                  }
-                  
-                  return <a href={href} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">{children}</a>;
-                }
+                   const childText = typeof children === 'string' ? children : 
+                     Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
+                   
+                   const matchingSchool = schools?.find(s => 
+                     s.name && childText && s.name.toLowerCase().trim() === childText.toLowerCase().trim()
+                   );
+                   
+                   if (matchingSchool) {
+                     return (
+                       <button
+                         onClick={(e) => {
+                           e.preventDefault();
+                           e.stopPropagation();
+                           onViewSchoolProfile && onViewSchoolProfile(matchingSchool.slug);
+                         }}
+                         className="text-teal-600 hover:underline cursor-pointer font-semibold inline"
+                       >
+                         {children}
+                       </button>
+                     );
+                   }
+                   
+                   return <a href={href} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">{children}</a>;
+                 }
               }}
             >
               {message.content}
