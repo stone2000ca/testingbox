@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
       currentState = STATES.BRIEF;
     }
     
-    // BRIEF → SEARCHING transition (if parent confirms)
+    // BRIEF → SEARCHING/EDIT transition (parent MUST confirm or adjust - never skip Brief)
     if (currentState === STATES.BRIEF) {
       const msgLowerTrim = msgLower.trim();
       const isConfirming = /\b(exactly right|sounds good|yes|proceed|start search|that's right|thats right|correct|perfect|great|looks good|go ahead|let's go|let's search|sounds perfect)\b/i.test(msgLowerTrim);
@@ -103,6 +103,9 @@ Deno.serve(async (req) => {
         currentState = STATES.SEARCHING;
       } else if (isAdjusting) {
         currentState = STATES.BRIEF_EDIT;
+      } else {
+        // Parent hasn't confirmed or adjusted - stay in BRIEF and re-show it
+        currentState = STATES.BRIEF;
       }
     }
     
