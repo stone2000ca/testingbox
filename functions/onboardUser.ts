@@ -185,18 +185,9 @@ Return arrays with EXACT parent words. Also capture what triggered the search an
       response_json_schema: schema
     });
 
-    // Merge arrays with existing data, don't overwrite
-    const extracted = result;
-    const merged = { ...extracted };
-    
-    ['academicStrengths', 'academicStruggles', 'learningDifferences', 'interests', 'personalityTraits', 'priorities', 'dealbreakers', 'curriculumPreference'].forEach(arrayField => {
-      if (extracted[arrayField] && Array.isArray(extracted[arrayField])) {
-        const existing = profile[arrayField] || [];
-        merged[arrayField] = [...new Set([...existing, ...extracted[arrayField]])];
-      }
-    });
-
-    return merged;
+    // LATEST INFORMATION WINS: Overwrite all fields (including arrays) with extracted data
+    // Don't merge - new information replaces old information
+    return result;
   } catch (error) {
     console.error('Extract phase data error:', error);
     return {};
