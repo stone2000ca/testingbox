@@ -47,15 +47,15 @@ export default function ConsultantSelection({ onSelectConsultant }) {
               
               <div className="relative bg-slate-800 border border-slate-700 rounded-2xl p-8 hover:border-slate-500 transition-all h-full flex flex-col">
                 {/* Consultant Avatar & Name */}
-                <div className="mb-6">
-                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${consultant.color} flex items-center justify-center text-4xl mb-4 shadow-lg overflow-hidden`}>
+                <div className="mb-8">
+                  <div className={`w-40 h-40 rounded-2xl bg-gradient-to-br ${consultant.color} flex items-center justify-center text-4xl mb-6 shadow-2xl overflow-hidden mx-auto`}>
                     {consultant.isImage ? (
                       <img src={consultant.avatar} alt={consultant.name} className="w-full h-full object-cover" />
                     ) : (
                       consultant.avatar
                     )}
                   </div>
-                  <h2 className="text-3xl font-bold text-white mb-1">
+                  <h2 className="text-3xl font-bold text-white mb-1 text-center">
                     {consultant.name}
                   </h2>
                   <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-400">
