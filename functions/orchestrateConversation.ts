@@ -484,7 +484,9 @@ Deno.serve(async (req) => {
         const generateResult = await base44.functions.invoke('generateResponse', {
           message,
           intent: intentResponse.intent,
+          state: currentState,
           schools: matchingSchools,
+          familyProfile: conversationFamilyProfile,
           conversationHistory: conversationHistory || [],
           conversationContext: context,
           consultantName: consultantName,
@@ -494,7 +496,6 @@ Deno.serve(async (req) => {
         
         if (generateResult.data.timeout) {
           responseTimedOut = true;
-          // FIX #4: If schools exist, use the AI message even if timed out
           aiMessage = generateResult.data.message || 'Here are the schools I found:';
         } else {
           aiMessage = generateResult.data.message;
@@ -502,15 +503,17 @@ Deno.serve(async (req) => {
       } catch (error) {
         console.error('generateResponse error:', error);
         responseTimedOut = true;
-        // FIX #4: Don't contradict the display - if schools exist, acknowledge them
         aiMessage = matchingSchools.length > 0 ? 'Here are the schools I found:' : 'I don\'t have any schools matching that criteria.';
       }
 
-      // FIX #4: Ensure AI message matches the schools array
-      // If no schools found, AI should say so. If schools exist, AI should acknowledge them.
       if (matchingSchools.length === 0 && !aiMessage.includes('don\'t have') && !aiMessage.includes('no ')) {
         aiMessage = 'I don\'t have any schools matching that criteria yet. Our database is growing - try a nearby city or broader criteria.';
       }
+      
+      currentState = STATES.RESULTS;
+    } else {
+      // Fallback for unknown state
+      aiMessage = 'I encountered an unexpected state. Please try again.';
     }
 
     // LATEST INFORMATION WINS: Update conversationContext with new filter criteria (overwrite old values)
