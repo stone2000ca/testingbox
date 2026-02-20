@@ -142,6 +142,15 @@ export default function Consultant() {
     return limits[plan] || limits.free;
   };
 
+  const getConversationLimits = (plan) => {
+    const limits = {
+      free: 1,
+      pro: 10,
+      enterprise: 50
+    };
+    return limits[plan] || limits.free;
+  };
+
   const checkAuth = async () => {
     try {
       const authenticated = await base44.auth.isAuthenticated();
