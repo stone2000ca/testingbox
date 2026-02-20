@@ -65,17 +65,12 @@ export default function SchoolDetail({ school, onClose, onToggleShortlist, isSho
 
       {/* Hero Image */}
       <div className="relative h-48 bg-slate-200">
-        {school.heroImage ? (
-          <img 
-            src={school.heroImage} 
-            alt={school.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-teal-100 to-teal-200">
-            <Users className="h-16 w-16 text-teal-300" />
-          </div>
-        )}
+        <HeaderPhotoDisplay 
+          headerPhotoUrl={school.headerPhotoUrl}
+          heroImage={school.heroImage}
+          schoolName={school.name}
+          height="h-48"
+        />
       </div>
 
       {/* Quick Stats */}
