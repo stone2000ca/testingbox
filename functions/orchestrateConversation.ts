@@ -136,7 +136,6 @@ Deno.serve(async (req) => {
         message: "Hi! I'm your NextSchool education consultant. I help families across Canada, the US, and Europe find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you in a school?",
         state: STATES.GREETING,
         conversationContext: context,
-        shouldShowSchools: false,
         schools: []
       });
     }
