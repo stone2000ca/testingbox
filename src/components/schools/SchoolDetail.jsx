@@ -11,6 +11,24 @@ export default function SchoolDetail({ school, onClose, onToggleShortlist, isSho
   
   if (!school) return null;
 
+  function formatGrade(grade) {
+    if (grade === null || grade === undefined) return '';
+    const num = Number(grade);
+    if (num <= -2) return 'PK';
+    if (num === -1) return 'JK';
+    if (num === 0) return 'K';
+    return String(num);
+  }
+
+  function formatGradeRange(gradeFrom, gradeTo) {
+    const from = formatGrade(gradeFrom);
+    const to = formatGrade(gradeTo);
+    if (!from && !to) return '';
+    if (!from) return to;
+    if (!to) return from;
+    return `${from}-${to}`;
+  }
+
   const getCurrencySymbol = (currency) => {
     const symbols = { CAD: 'CA$', USD: '$', EUR: '€', GBP: '£' };
     return symbols[currency] || '$';
