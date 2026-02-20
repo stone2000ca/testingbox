@@ -331,16 +331,33 @@ export default function Consultant() {
         } : null
       });
 
-      // Handle view switching based on response
-      if (response.data.currentView === 'comparison' && response.data.schools?.length >= 2) {
+      // DEBUG: Log response to understand view switching issue
+      console.log('orchestrateConversation response:', {
+        shouldShowSchools: response.data.shouldShowSchools,
+        schoolsLength: response.data.schools?.length,
+        currentView: currentView
+      });
+
+      // FIX #4: Handle comparison intent properly
+      if (response.data.intent === 'COMPARE_SCHOOLS' && response.data.schools?.length >= 2) {
+        console.log('Comparison intent detected - switching to comparison table');
         setPreviousSearchResults(schools);
         setComparisonData(response.data.schools);
         setCurrentView('comparison-table');
-      } else if (response.data.schools && response.data.schools.length > 0) {
+      }
+      // Regular school search results
+      else if (response.data.schools && response.data.schools.length > 0) {
+        console.log('Setting schools and changing view to schools/comparison');
         setSchools(response.data.schools);
+        console.log('Setting currentView to schools');
         setCurrentView('schools');
+      } else if (response.data.shouldShowSchools === false && schools.length === 0) {
+        // Keep welcome view if no schools to show
+        console.log('Keeping welcome view (no schools to show)');
+        setCurrentView('welcome');
       } else if (schools.length > 0) {
-        // Keep showing existing schools
+        // Show existing schools if we have them
+        console.log('Showing existing schools');
         setCurrentView('schools');
       }
 

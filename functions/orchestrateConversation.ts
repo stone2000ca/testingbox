@@ -111,11 +111,26 @@ Deno.serve(async (req) => {
         }
       }
       
-      // SIMPLIFIED: Only search in currentSchools (avoid expensive DB query)
+      // Try fuzzy matching against currentSchools first with punctuation normalization
       if (currentSchools && currentSchools.length > 0 && extractedNames.length > 0) {
         for (const searchTerm of extractedNames) {
           const normalizedSearch = normalize(searchTerm);
           const found = currentSchools.find(s => {
+            const normalizedSchoolName = normalize(s.name);
+            return normalizedSchoolName.includes(normalizedSearch);
+          });
+          if (found && !matchingSchools.some(ms => ms.id === found.id)) {
+            matchingSchools.push(found);
+          }
+        }
+      }
+      
+      // Fallback: search all schools if not found in currentSchools
+      if (matchingSchools.length < 2 && extractedNames.length > 0) {
+        const allSchools = await base44.asServiceRole.entities.School.filter({});
+        for (const searchTerm of extractedNames) {
+          const normalizedSearch = normalize(searchTerm);
+          const found = allSchools.find(s => {
             const normalizedSchoolName = normalize(s.name);
             return normalizedSchoolName.includes(normalizedSearch);
           });
@@ -236,7 +251,7 @@ CRITICAL RULES:
 3. NEVER auto-shortlist schools. Only mention the shortlist if the parent explicitly asks about it or wants to save a school. DO NOT add schools to shortlist automatically.
 4. When parents express feeling overwhelmed, acknowledge their emotions and provide structured, step-by-step guidance (e.g., "Here are 3 steps to get started...")
 5. Keep responses warm, reassuring, and concise (2-3 sentences when showing schools)
-6. CRITICAL: When parent asks to COMPARE schools, DO NOT provide a text-based comparison with bullet points. Simply acknowledge their request briefly (e.g., "Sure, I've pulled up a side-by-side comparison table for you.") The system will automatically show them a comparison table.
+6. When parent asks to COMPARE schools, simply acknowledge their request briefly (e.g., "Sure, I've pulled up a comparison table for you.") The system will automatically show them a comparison table.
 
 Recent chat:
 ${conversationSummary}
@@ -277,21 +292,12 @@ Reply naturally and empathetically. Describe schools, answer questions, or sugge
       });
     }
 
-    // FIX: Return proper currentView signal
-    let currentViewSignal = 'welcome';
-    if (isCompareIntent && matchingSchools.length >= 2) {
-      currentViewSignal = 'comparison';
-    } else if (matchingSchools.length > 0) {
-      currentViewSignal = 'schools';
-    }
-    
     return Response.json({
       message: messageWithLinks,
       intent: intentResponse.intent,
       shouldShowSchools: matchingSchools.length > 0,
       schools: matchingSchools,
-      filterCriteria: intentResponse.filterCriteria || {},
-      currentView: currentViewSignal
+      filterCriteria: intentResponse.filterCriteria || {}
     });
   };
 
