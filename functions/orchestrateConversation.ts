@@ -497,7 +497,8 @@ Deno.serve(async (req) => {
       intent: intentResponse.intent,
       shouldShowSchools: finalShouldShowSchools,
       schools: matchingSchools,
-      filterCriteria: intentResponse.filterCriteria || {}
+      filterCriteria: intentResponse.filterCriteria || {},
+      conversationContext: context  // Return updated context with latest information
     });
   };
 
