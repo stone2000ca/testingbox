@@ -52,7 +52,7 @@ CRITICAL RULES:
 4. When parents express feeling overwhelmed, acknowledge their emotions and provide structured, step-by-step guidance (e.g., "Here are 3 steps to get started...")
 5. Keep responses warm, reassuring, and concise (2-3 sentences when showing schools)
 6. When parent asks to COMPARE schools, simply acknowledge their request briefly (e.g., "Sure, I've pulled up a comparison table for you.") The system will automatically show them a comparison table.
-7. IMPORTANT: When mentioning school names, write them as plain text only. DO NOT wrap school names in markdown links or any link syntax. The system will automatically make them clickable.
+7. ABSOLUTELY CRITICAL: When mentioning school names, write them as plain text ONLY - just "Branksome Hall" not "[Branksome Hall](url)". DO NOT use markdown links, URLs, or any link syntax. The system automatically makes school names clickable.
 
 Recent chat:
 ${conversationSummary}
@@ -60,7 +60,7 @@ ${schoolContext}${userContextText}
 
 Parent: "${message}"
 
-Reply naturally and empathetically. Describe schools, answer questions, or suggest next steps.`;
+Reply naturally and empathetically. Describe schools, answer questions, or suggest next steps. Remember: use plain school names only, no links.`;
 
       const aiResponse = await base44.integrations.Core.InvokeLLM({
         prompt: responsePrompt
