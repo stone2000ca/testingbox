@@ -4,13 +4,17 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, CheckCircle2, XCircle, Edit, Archive } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, Edit, Archive, Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AdminSchools() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRegion, setFilterRegion] = useState('all');
+  const [enrichingSchoolId, setEnrichingSchoolId] = useState(null);
+  const [enrichingAll, setEnrichingAll] = useState(false);
+  const [enrichmentProgress, setEnrichmentProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     loadSchools();
@@ -45,6 +49,54 @@ export default function AdminSchools() {
     }
   };
 
+  const handleEnrichSchool = async (schoolId) => {
+    if (!schools.find(s => s.id === schoolId)?.website) {
+      toast.error('School has no website URL for enrichment');
+      return;
+    }
+    setEnrichingSchoolId(schoolId);
+    try {
+      const response = await base44.functions.invoke('enrichSchoolData', { schoolId });
+      if (response.data.status === 'success') {
+        toast.success(`School enriched (${response.data.count || 0} fields updated)`);
+        loadSchools();
+      }
+    } catch (error) {
+      console.error('Enrichment failed:', error);
+      toast.error(`Enrichment failed: ${error.message}`);
+    } finally {
+      setEnrichingSchoolId(null);
+    }
+  };
+
+  const handleEnrichAllSchools = async () => {
+    const confirmEnrich = confirm('Enrich all schools? This may take several minutes and will process each school sequentially.');
+    if (!confirmEnrich) return;
+
+    setEnrichingAll(true);
+    setEnrichmentProgress({ current: 0, total: schools.length });
+
+    for (let i = 0; i < schools.length; i++) {
+      const school = schools[i];
+      setEnrichmentProgress({ current: i + 1, total: schools.length });
+      
+      if (!school.website) {
+        console.warn(`Skipping ${school.name} - no website`);
+        continue;
+      }
+
+      try {
+        await base44.functions.invoke('enrichSchoolData', { schoolId: school.id });
+      } catch (error) {
+        console.error(`Failed to enrich ${school.name}:`, error);
+      }
+    }
+
+    toast.success('All schools enrichment complete');
+    setEnrichingAll(false);
+    loadSchools();
+  };
+
   const filteredSchools = schools.filter(school => {
     const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          school.city.toLowerCase().includes(searchTerm.toLowerCase());
@@ -69,7 +121,26 @@ export default function AdminSchools() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-900 mb-4">Schools Management</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-slate-900">Schools Management</h2>
+          <Button 
+            onClick={handleEnrichAllSchools} 
+            disabled={enrichingAll || loading}
+            className="gap-2 bg-teal-600 hover:bg-teal-700"
+          >
+            {enrichingAll ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Enriching {enrichmentProgress.current}/{enrichmentProgress.total}
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Enrich All Schools
+              </>
+            )}
+          </Button>
+        </div>
         
         <div className="flex gap-4 mb-4">
           <div className="flex-1 relative">
@@ -109,6 +180,7 @@ export default function AdminSchools() {
                 <th className="text-left p-4 font-semibold text-sm">Tier</th>
                 <th className="text-left p-4 font-semibold text-sm">Verified</th>
                 <th className="text-left p-4 font-semibold text-sm">Last Updated</th>
+                <th className="text-left p-4 font-semibold text-sm">Website</th>
                 <th className="text-left p-4 font-semibold text-sm">Actions</th>
               </tr>
             </thead>
@@ -135,8 +207,30 @@ export default function AdminSchools() {
                   <td className="p-4 text-sm text-slate-600">
                     {new Date(school.updated_date).toLocaleDateString()}
                   </td>
+                  <td className="p-4 text-sm">
+                    {school.website ? (
+                      <a href={school.website} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline truncate max-w-[200px] block">
+                        {new URL(school.website).hostname}
+                      </a>
+                    ) : (
+                      <span className="text-slate-400">No website</span>
+                    )}
+                  </td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEnrichSchool(school.id)}
+                        disabled={enrichingSchoolId === school.id || enrichingAll}
+                        title={school.website ? 'Enrich from website' : 'No website URL'}
+                      >
+                        {enrichingSchoolId === school.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3 w-3" />
+                        )}
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
