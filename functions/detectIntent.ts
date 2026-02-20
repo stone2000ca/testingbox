@@ -75,6 +75,17 @@ Deno.serve(async (req) => {
     else if (msgLower.includes('arts')) filterCriteria.specializations = ['Arts'];
     else if (msgLower.includes('sports')) filterCriteria.specializations = ['Sports'];
     
+    // FIX #2: GENDER FILTERING
+    let genderPreference = null;
+    if (msgLower.includes(' son') || msgLower.includes('boy') || msgLower.includes('boys')) {
+      genderPreference = 'boy';
+    } else if (msgLower.includes(' daughter') || msgLower.includes('girl') || msgLower.includes('girls')) {
+      genderPreference = 'girl';
+    }
+    if (genderPreference) {
+      filterCriteria.genderPreference = genderPreference;
+    }
+    
     return Response.json({
       intent,
       shouldShowSchools,
