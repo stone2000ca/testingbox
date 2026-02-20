@@ -331,8 +331,8 @@ export default function Consultant() {
         } : null
       });
 
-      // Show schools immediately if available (before AI response)
-      if (response.data.shouldShowSchools && response.data.schools?.length > 0) {
+      // CRITICAL FIX #1: Always update schools when search returns results
+      if (response.data.schools && response.data.schools.length > 0) {
         setSchools(response.data.schools);
         const msgLower = messageText.toLowerCase();
         const isCompareIntent = msgLower.includes('compare') || msgLower.includes(' vs ') || msgLower.includes('versus');
@@ -343,6 +343,12 @@ export default function Consultant() {
         } else {
           setCurrentView('schools');
         }
+      } else if (response.data.shouldShowSchools === false && schools.length === 0) {
+        // Keep welcome view if no schools to show
+        setCurrentView('welcome');
+      } else if (schools.length > 0) {
+        // Show existing schools if we have them
+        setCurrentView('schools');
       }
 
       const aiMessage = {

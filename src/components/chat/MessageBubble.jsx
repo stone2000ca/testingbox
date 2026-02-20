@@ -26,6 +26,7 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile }) 
                 li: ({ children }) => <li className="my-0.5">{children}</li>,
                 strong: ({ children }) => <strong className="font-semibold text-teal-700">{children}</strong>,
                 a: ({ href, children }) => {
+                  // FIX #2: Handle school:slug links consistently
                   if (onViewSchoolProfile && href?.startsWith('school:')) {
                     const slug = href.replace('school:', '');
                     return (
@@ -38,6 +39,27 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile }) 
                     );
                   }
                   return <a href={href} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">{children}</a>;
+                },
+                // Catch raw markdown links that weren't processed
+                text: ({ children }) => {
+                  const text = String(children);
+                  const linkMatch = text.match(/\[([^\]]+)\]\(school:([^)]+)\)/);
+                  if (linkMatch && onViewSchoolProfile) {
+                    const [fullMatch, schoolName, slug] = linkMatch;
+                    return (
+                      <>
+                        {text.substring(0, text.indexOf(fullMatch))}
+                        <button
+                          onClick={() => onViewSchoolProfile(slug)}
+                          className="text-teal-600 hover:underline cursor-pointer font-semibold"
+                        >
+                          {schoolName}
+                        </button>
+                        {text.substring(text.indexOf(fullMatch) + fullMatch.length)}
+                      </>
+                    );
+                  }
+                  return <>{text}</>;
                 }
               }}
             >

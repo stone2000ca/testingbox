@@ -59,29 +59,33 @@ export default function ComparisonTable({ schools, onBack }) {
         </Button>
       </div>
 
-      {/* Scrollable Comparison Table */}
+      {/* Scrollable Comparison Table - FIX #3: Show both columns without horizontal scroll */}
       <div className="flex-1 overflow-auto p-4">
-        <div className="min-w-max">
-          <table className="w-full border-collapse">
-            <tbody>
-              {attributes.map((attr) => (
-                <tr key={attr.key} className="border-b border-slate-200">
-                  <td className="bg-slate-50 p-3 font-semibold text-slate-900 w-40 align-top sticky left-0 z-10">
-                    {attr.label}
+        <table className="w-full border-collapse table-fixed">
+          <colgroup>
+            <col style={{ width: '180px' }} />
+            {schools.map((school) => (
+              <col key={school.id} style={{ width: `${Math.floor((100 - 18) / schools.length)}%` }} />
+            ))}
+          </colgroup>
+          <tbody>
+            {attributes.map((attr) => (
+              <tr key={attr.key} className="border-b border-slate-200">
+                <td className="bg-slate-50 p-3 font-semibold text-slate-900 align-top">
+                  {attr.label}
+                </td>
+                {schools.map((school) => (
+                  <td 
+                    key={school.id} 
+                    className="p-3 text-sm text-slate-700 border-l border-slate-200 break-words"
+                  >
+                    {getValue(school, attr.key)}
                   </td>
-                  {schools.map((school) => (
-                    <td 
-                      key={school.id} 
-                      className="p-3 text-sm text-slate-700 border-l border-slate-200 min-w-56"
-                    >
-                      {getValue(school, attr.key)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
