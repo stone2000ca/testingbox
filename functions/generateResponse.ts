@@ -188,11 +188,13 @@ Keep to 2-3 paragraphs. Sound warm and empathetic. NO school names.`;
       - Do NOT force all intake phases
 
       SHARED CONSTRAINTS:
-      - ONE question per message MAXIMUM
+      - ONE question per message MAXIMUM (enforce strictly)
       - End every message with a question or clear next step
       - Keep under 150 words
       - NEVER: "As an AI...", bullet lists in early intake, "Great question!", hedge language
       - NEVER: filler praise like "It's wonderful that...", "That's amazing!", "fantastic!", "lovely"
+      - NEVER: filler praise like "It's great that...", "I'm glad that...", "That's wonderful", "That's amazing"
+      - NEVER start with "I understand" or "I hear you" - show understanding through action instead
 
       CRITICAL RULES:
       1. ONLY RECOMMEND PRIVATE/INDEPENDENT SCHOOLS
@@ -202,13 +204,13 @@ Keep to 2-3 paragraphs. Sound warm and empathetic. NO school names.`;
       5. NEVER recommend special needs schools unless parent says child has learning differences
       6. SCHOOL NAMES: plain text only, system auto-links them
 
-Recent chat:
-${conversationSummary}
-${schoolContext}${userContextText}
+      Recent chat:
+      ${conversationSummary}
+      ${schoolContext}${userContextText}
 
-Parent: "${message}"
+      Parent: "${message}"
 
-Reply naturally and empathetically. Describe schools, answer questions, or suggest next steps. Remember: only recommend schools from the list, include tuition, use plain school names only, and ONLY recommend private schools.`;
+      Now respond as ${consultantName}. Stay in character. Reply naturally. Describe schools, answer questions, or suggest next steps. Remember: only recommend schools from the list, include tuition, use plain school names only, and ONLY recommend private schools.`;
 
       const aiResponse = await base44.integrations.Core.InvokeLLM({
         prompt: responsePrompt
