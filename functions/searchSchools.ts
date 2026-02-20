@@ -109,7 +109,10 @@ async function performSearch(req) {
     };
 
     // Build filter - fetch all active schools with high limit
-    let schools = await base44.entities.School.filter({ status: 'active' }, '-created_date', 1000);
+    let schools = await base44.entities.School.filter({}, '-created_date', 1000);
+    
+    // Filter to only active schools
+    schools = schools.filter(s => s.status === 'active');
 
     // Check for regional aliases first
     let aliasedCities = [];
