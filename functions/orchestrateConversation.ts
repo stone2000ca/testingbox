@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
 
   const processRequest = async () => {
     const base44 = createClientFromRequest(req);
-    const { message, conversationHistory, conversationContext, region, userId, currentSchools, userNotes, shortlistedSchools, userLocation } = await req.json();
+    const { message, conversationHistory, conversationContext, region, userId, consultantName, currentSchools, userNotes, shortlistedSchools, userLocation } = await req.json();
 
     const context = conversationContext || {};
     const msgLower = message.toLowerCase();
