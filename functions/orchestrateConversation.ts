@@ -338,49 +338,30 @@ Deno.serve(async (req) => {
       
       matchingSchools = filtered;
       console.log('FIX #5: NARROW_DOWN complete. Output count:', matchingSchools.length);
-    } else if (intentResponse.shouldShowSchools) {
-      // Call searchSchools function with extracted criteria
-      // CRITICAL: Fetch FamilyProfile FIRST to get hard filter constraints
-      let familyProfileDefaults = {};
-      let fullFamilyProfile = null;
-      if (userId) {
-        try {
-          const familyProfiles = await base44.entities.FamilyProfile.filter({ userId });
-          if (familyProfiles.length > 0) {
-            fullFamilyProfile = familyProfiles[0];
-            if (fullFamilyProfile.onboardingComplete) {
-              familyProfileDefaults = {
-                childGrade: fullFamilyProfile.childGrade,
-                locationArea: fullFamilyProfile.locationArea,
-                budgetRange: fullFamilyProfile.budgetRange,
-                maxTuition: fullFamilyProfile.maxTuition,
-                priorities: fullFamilyProfile.priorities,
-                curriculumPreference: fullFamilyProfile.curriculumPreference
-              };
-            }
-          }
-        } catch (e) {
-          console.error('Failed to fetch FamilyProfile for defaults:', e);
-        }
-      }
+    } else if (intentResponse.shouldShowSchools || currentState === STATES.SEARCHING) {
+     // Call searchSchools function with extracted criteria
+     const searchParams = {
+       limit: 50,
+       familyProfile: conversationFamilyProfile // ALWAYS use conversation profile
+     };
 
-      const searchParams = {
-        limit: 50,
-        familyProfile: conversationFamilyProfile || fullFamilyProfile // PASS FULL PROFILE FOR HARD FILTERS
-      };
-      
-      if (intentResponse.filterCriteria?.city) searchParams.city = intentResponse.filterCriteria.city;
-      else if (familyProfileDefaults.locationArea) searchParams.city = familyProfileDefaults.locationArea;
-      
-      if (intentResponse.filterCriteria?.provinceState) searchParams.provinceState = intentResponse.filterCriteria.provinceState;
-      if (intentResponse.filterCriteria?.region) searchParams.region = intentResponse.filterCriteria.region;
-      if (intentResponse.filterCriteria?.grade) {
-        searchParams.minGrade = intentResponse.filterCriteria.grade;
-        searchParams.maxGrade = intentResponse.filterCriteria.grade;
-      } else if (familyProfileDefaults.childGrade) {
-        searchParams.minGrade = familyProfileDefaults.childGrade;
-        searchParams.maxGrade = familyProfileDefaults.childGrade;
-      }
+     // PRIORITY: Use extracted data from conversation profile FIRST, then intent criteria
+     if (conversationFamilyProfile?.locationArea) {
+       searchParams.city = conversationFamilyProfile.locationArea;
+     } else if (intentResponse.filterCriteria?.city) {
+       searchParams.city = intentResponse.filterCriteria.city;
+     }
+
+     if (conversationFamilyProfile?.childGrade) {
+       searchParams.minGrade = conversationFamilyProfile.childGrade;
+       searchParams.maxGrade = conversationFamilyProfile.childGrade;
+     } else if (intentResponse.filterCriteria?.grade) {
+       searchParams.minGrade = intentResponse.filterCriteria.grade;
+       searchParams.maxGrade = intentResponse.filterCriteria.grade;
+     }
+
+     if (intentResponse.filterCriteria?.provinceState) searchParams.provinceState = intentResponse.filterCriteria.provinceState;
+     if (intentResponse.filterCriteria?.region) searchParams.region = intentResponse.filterCriteria.region;
       
       if (intentResponse.filterCriteria?.minTuition) searchParams.minTuition = intentResponse.filterCriteria.minTuition;
       if (intentResponse.filterCriteria?.maxTuition) searchParams.maxTuition = intentResponse.filterCriteria.maxTuition;
