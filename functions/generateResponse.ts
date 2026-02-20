@@ -18,7 +18,8 @@ Deno.serve(async (req) => {
         conversationContext,
         userNotes,
         shortlistedSchools,
-        familyProfileData
+        familyProfileData,
+        consultantName
       } = await req.json();
 
       // Handle GENERATE_BRIEF intent
