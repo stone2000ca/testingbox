@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
       extractedData = extractionResult.data?.extracted || {};
     } catch (e) {
       console.error('[ERROR] extractEntityData failed:', e.message, 'Status:', e.response?.status);
+      console.error('ACTUAL ERROR:', e.message, e.response?.data, e.stack);
       // Continue without extraction - don't crash
     }
     
@@ -178,6 +179,7 @@ Deno.serve(async (req) => {
       intentResponse = intentResult.data;
     } catch (e) {
       console.error('[ERROR] detectIntent failed:', e.message, 'Status:', e.response?.status);
+      console.error('ACTUAL ERROR:', e.message, e.response?.data, e.stack);
       intentResponse = { intent: 'INTAKE_QUESTION', shouldShowSchools: false };
     }
     
@@ -226,6 +228,7 @@ Deno.serve(async (req) => {
         intakeMessage = generateResult.data.message;
       } catch (e) {
         console.error('[ERROR] generateResponse-INTAKE failed:', e.message, 'Status:', e.response?.status);
+        console.error('ACTUAL ERROR:', e.message, e.response?.data, e.stack);
         intakeMessage = 'Tell me about your child - what grade are they in and what matters most to you in a school?';
       }
       
@@ -262,6 +265,7 @@ Deno.serve(async (req) => {
         briefMessage = generateResult.data.message;
       } catch (e) {
         console.error('[ERROR] generateResponse-BRIEF failed:', e.message, 'Status:', e.response?.status);
+        console.error('ACTUAL ERROR:', e.message, e.response?.data, e.stack);
         briefMessage = 'Let me summarize what you\'ve shared so far. Does that sound right?';
       }
       
@@ -494,6 +498,7 @@ Deno.serve(async (req) => {
         schools = searchResult.data.schools || [];
       } catch (e) {
         console.error('[ERROR] searchSchools failed:', e.message, 'Status:', e.response?.status);
+        console.error('ACTUAL ERROR:', e.message, e.response?.data, e.stack);
         // Continue with empty schools array
       }
       
@@ -578,6 +583,7 @@ Deno.serve(async (req) => {
         }
       } catch (error) {
         console.error('[ERROR] generateResponse-SEARCHING/RESULTS failed:', error.message, 'Status:', error.response?.status);
+        console.error('ACTUAL ERROR:', error.message, error.response?.data, error.stack);
         responseTimedOut = true;
         aiMessage = matchingSchools.length > 0 ? 'Here are the schools I found:' : 'I don\'t have any schools matching that criteria.';
       }
