@@ -228,7 +228,8 @@ Deno.serve(async (req) => {
         updated,
         skipped,
         total: schools.length,
-        errors
+        errors,
+        dedupLog
       }
     });
   } catch (error) {
