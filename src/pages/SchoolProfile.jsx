@@ -19,11 +19,19 @@ export default function SchoolProfile() {
   const [user, setUser] = useState(null);
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [sessionId] = useState(Math.random().toString(36).substring(2, 11));
 
   useEffect(() => {
+    // Track page view
+    base44.functions.invoke('trackSessionEvent', {
+      eventType: 'page_view',
+      sessionId,
+      metadata: { page: 'SchoolProfile', schoolId }
+    }).catch(err => console.error('Failed to track:', err));
+
     loadSchool();
     checkAuth();
-  }, [schoolId]);
+  }, [schoolId, sessionId]);
 
   useEffect(() => {
     if (!school) return;

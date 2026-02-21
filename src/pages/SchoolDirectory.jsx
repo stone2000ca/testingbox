@@ -17,12 +17,40 @@ export default function SchoolDirectory() {
   const [filterRegion, setFilterRegion] = useState('all');
   const [displayedCount, setDisplayedCount] = useState(20);
   const [user, setUser] = useState(null);
+  const [sessionId] = useState(Math.random().toString(36).substring(2, 11));
   const SCHOOLS_PER_PAGE = 20;
 
   useEffect(() => {
+    // Track page view
+    base44.functions.invoke('trackSessionEvent', {
+      eventType: 'page_view',
+      sessionId,
+      metadata: { page: 'SchoolDirectory' }
+    }).catch(err => console.error('Failed to track:', err));
+
+    // Set meta tags for SEO
+    document.title = 'Private School Directory - Browse Schools | NextSchool';
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.name = 'description';
+      document.head.appendChild(metaDesc);
+    }
+
     loadSchools();
     checkAuth();
   }, []);
+
+  // Update meta description when schools are loaded
+  useEffect(() => {
+    if (allSchools.length > 0) {
+      document.title = `Private School Directory - Browse ${allSchools.length} Schools | NextSchool`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.content = `Browse ${allSchools.length} private schools across Canada. Filter by location, grade, tuition, and more.`;
+      }
+    }
+  }, [allSchools]);
 
   const checkAuth = async () => {
     try {
@@ -184,7 +212,7 @@ export default function SchoolDirectory() {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-sm sm:text-base text-slate-900 line-clamp-2">{school.name}</h3>
+                            <h2 className="font-semibold text-sm sm:text-base text-slate-900 line-clamp-2">{school.name}</h2>
                           </div>
                         </div>
 

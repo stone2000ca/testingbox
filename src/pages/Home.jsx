@@ -10,8 +10,16 @@ import { base44 } from '@/api/base44Client';
 export default function Home() {
   const [schools, setSchools] = useState([]);
   const [loadingSchools, setLoadingSchools] = useState(true);
+  const [sessionId] = useState(Math.random().toString(36).substring(2, 11));
 
   useEffect(() => {
+    // Track page view
+    base44.functions.invoke('trackSessionEvent', {
+      eventType: 'page_view',
+      sessionId,
+      metadata: { page: 'Home' }
+    }).catch(err => console.error('Failed to track:', err));
+
     // Set meta tags for SEO
     document.title = 'NextSchool - Find the Perfect Private School for Your Child';
     let metaDesc = document.querySelector('meta[name="description"]');
@@ -226,9 +234,15 @@ export default function Home() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {schools.map((school) => (
-                <Link key={school.id} to={`${createPageUrl('SchoolProfile')}?schoolId=${school.id}`}>
+                <Link 
+                  key={school.id} 
+                  to={`${createPageUrl('SchoolProfile')}?schoolId=${school.id}`}
+                  className="focus:ring-2 focus:ring-teal-400 focus:outline-none rounded-xl"
+                >
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:shadow-md hover:border-teal-200 transition-all h-full">
-                    <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2">{school.name}</h3>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2">
+                      {school.name}
+                    </h3>
                     <p className="text-sm text-slate-600 mb-4">{school.city}, {school.provinceState}</p>
                     
                     <div className="space-y-3">
