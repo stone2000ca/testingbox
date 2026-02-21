@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { AlertCircle, CheckCircle2, AlertTriangle, Upload, Loader2, Search } from 'lucide-react';
+import { AlertCircle, CheckCircle2, AlertTriangle, Upload, Loader2, Search, HelpCircle } from 'lucide-react';
 import Navbar from '@/components/navigation/Navbar';
 import Footer from '@/components/navigation/Footer';
 import { Link } from 'react-router-dom';
@@ -385,7 +385,7 @@ export default function ClaimSchool() {
                 <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
               </div>
             ) : searchResults.length > 0 ? (
-              <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                 {searchResults.map((result) => (
                   <Button
                     key={result.id}
@@ -401,16 +401,25 @@ export default function ClaimSchool() {
                 ))}
               </div>
             ) : searchTerm.length >= 2 && !searchingSchools ? (
-              <div className="text-center py-8 text-slate-500">No schools found for "{searchTerm}".</div>
+              <div className="text-center py-8">
+                <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                <p className="text-slate-600">No schools found for "{searchTerm}"</p>
+              </div>
             ) : (
               <div className="text-center py-8 text-slate-500">Start typing to search for your school.</div>
             )}
 
-            {searchTerm.length < 2 && searchResults.length === 0 && (
-              <div className="mt-8 text-center text-sm text-slate-500">
-                Can't find your school? <Link to={createPageUrl('Contact')} className="text-teal-600 hover:underline">Contact us</Link>.
+            <div className="mt-8 pt-6 border-t">
+              <div className="flex items-start gap-3 text-sm text-slate-600">
+                <HelpCircle className="h-4 w-4 flex-shrink-0 mt-0.5 text-slate-400" />
+                <div>
+                  <p className="font-medium text-slate-700 mb-1">Don't see your school?</p>
+                  <p>
+                    <Link to={createPageUrl('Contact')} className="text-teal-600 hover:underline">Contact us</Link> to have your school added to our database.
+                  </p>
+                </div>
               </div>
-            )}
+            </div>
           </Card>
         </div>
         <Footer />
