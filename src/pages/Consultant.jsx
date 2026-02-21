@@ -1555,7 +1555,6 @@ Return empty array if user didn't provide any of these facts.`;
           />
         </>
       )}
-      )}
     </div>
   );
 }
