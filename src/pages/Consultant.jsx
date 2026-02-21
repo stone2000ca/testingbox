@@ -1662,19 +1662,7 @@ Return empty array if user didn't provide any of these facts.`;
                   </Button>
                 </>
               )}
-              {(() => {
-                const lastAIMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
-                const isBriefMessage = lastAIMessage?.content && (
-                  lastAIMessage.content.includes("Does that capture") ||
-                  lastAIMessage.content.includes("Anything I'm missing") ||
-                  lastAIMessage.content.includes("Here's what I'm taking away") ||
-                  lastAIMessage.content.includes("needs adjustment")
-                );
-                
-                return onboardingPhase === 'confirm_brief' || 
-                       currentConversation?.conversationContext?.state === 'BRIEF' ||
-                       isBriefMessage;
-              })() && (
+              {currentState === STATES.BRIEF && [BRIEF_STATUS.PENDING_REVIEW, BRIEF_STATUS.EDITING].includes(briefStatus) && (
                 <>
                   <Button 
                     variant="outline" 
