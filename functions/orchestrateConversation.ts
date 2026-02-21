@@ -121,8 +121,8 @@ Deno.serve(async (req) => {
     // STEP 2: DETERMINE CURRENT STATE
     let currentState = context.state || STATES.GREETING;
     
-    // First message after greeting → move to INTAKE
-    if (currentState === STATES.GREETING && conversationHistory && conversationHistory.length > 0) {
+    // First user message → move to INTAKE (conversationHistory can be empty on first message)
+    if (currentState === STATES.GREETING && message) {
       currentState = STATES.INTAKE;
     }
     
