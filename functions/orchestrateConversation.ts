@@ -829,9 +829,16 @@ Use bullet points. Be concise and direct. Maximum 150 words.`;
       console.log('[DIAGNOSTIC] [searchSchools] Params:', JSON.stringify(searchParams));
       
       let schools = [];
+      let edgeCaseMessage = null;
       try {
-        const searchResult = await base44.asServiceRole.functions.invoke('searchSchools', searchParams);
+        const searchResult = await base44.asServiceRole.functions.invoke('searchSchools', {
+          ...searchParams,
+          conversationId: conversationId,
+          userId: userId,
+          searchQuery: message
+        });
         schools = searchResult.data.schools || [];
+        edgeCaseMessage = searchResult.data.edgeCaseMessage;
       } catch (e) {
         console.error('[ERROR] searchSchools failed:', e.message, 'Status:', e.response?.status);
         console.error('ACTUAL ERROR:', e.message, e.response?.data, e.stack);
@@ -988,6 +995,11 @@ Respond as ${consultantName}. ONE question max. No filler.`;
           });
           
           let messageWithLinks = aiResponse;
+          
+          // Prepend edge case message if present
+          if (edgeCaseMessage) {
+            messageWithLinks = edgeCaseMessage + '\n\n' + messageWithLinks;
+          }
           
           // Replace school names with school:slug links
           matchingSchools.forEach(school => {
