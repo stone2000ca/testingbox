@@ -9,12 +9,31 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Fetch all schools
-    const schools = await base44.asServiceRole.entities.School.filter({});
+    // Fetch all schools in batches
+    let allSchools = [];
+    let batchSize = 1000;
+    let skip = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const batch = await base44.asServiceRole.entities.School.filter({}, null, batchSize, skip);
+      
+      if (!batch || batch.length === 0) {
+        hasMore = false;
+      } else {
+        allSchools = allSchools.concat(batch);
+        skip += batchSize;
+        if (batch.length < batchSize) {
+          hasMore = false;
+        }
+      }
+    }
     
-    if (!schools || schools.length === 0) {
+    if (!allSchools || allSchools.length === 0) {
       return Response.json({ error: 'No schools found' }, { status: 400 });
     }
+
+    const schools = allSchools;
 
     // Group by slug
     const slugMap = {};
