@@ -85,11 +85,16 @@ Deno.serve(async (req) => {
       console.warn('Entity extraction failed, continuing:', e);
     }
     
-    // Merge extracted data into conversation-scoped profile (without overwriting existing non-null values)
+    // Merge extracted data into conversation-scoped profile (overwrite empty arrays and null/undefined values)
     if (conversationFamilyProfile && Object.keys(extractedData).length > 0) {
       for (const [key, value] of Object.entries(extractedData)) {
-        if (value !== null && value !== undefined && !conversationFamilyProfile[key]) {
-          conversationFamilyProfile[key] = value;
+        if (value !== null && value !== undefined) {
+          const existing = conversationFamilyProfile[key];
+          if (existing === null || existing === undefined || 
+              (Array.isArray(existing) && existing.length === 0) ||
+              (Array.isArray(value) && value.length > 0)) {
+            conversationFamilyProfile[key] = value;
+          }
         }
       }
       // Update profile in DB (only if it has an ID, i.e., authenticated user)
