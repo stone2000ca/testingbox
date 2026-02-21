@@ -628,22 +628,24 @@ Respond as ${consultantName}. ONE question max.`;
       }
       
       return Response.json({
-        message: aiMessage,
-        state: currentState,
-        schools: currentSchools || [],
-        familyProfile: conversationFamilyProfile,
-        conversationContext: context
-      });
-    }
+         message: aiMessage,
+         state: currentState,
+         briefStatus: briefStatus,
+         schools: currentSchools || [],
+         familyProfile: conversationFamilyProfile,
+         conversationContext: context
+       });
+      }
 
-    // Fallback
-    return Response.json({
-      message: 'I encountered an unexpected state. Please try again.',
-      state: currentState,
-      schools: [],
-      familyProfile: conversationFamilyProfile,
-      conversationContext: context
-    });
+      // Fallback
+      return Response.json({
+       message: 'I encountered an unexpected state. Please try again.',
+       state: currentState,
+       briefStatus: briefStatus,
+       schools: [],
+       familyProfile: conversationFamilyProfile,
+       conversationContext: context
+      });
 
     } catch (error) {
       console.error('orchestrateConversation FATAL:', error);
