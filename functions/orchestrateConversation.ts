@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     const context = conversationContext || {};
     const msgLower = message.toLowerCase();
     
-    // STATE MACHINE STATES (7 states, strictly ordered)
+    // STATE MACHINE: 7 states (strictly deterministic)
     const STATES = {
       GREETING: 'GREETING',
       INTAKE: 'INTAKE',
@@ -36,36 +36,32 @@ Deno.serve(async (req) => {
       DEEP_DIVE: 'DEEP_DIVE'
     };
     
-    // Track edit cycles to prevent infinite loops
     let briefEditCount = context.briefEditCount || 0;
     const MAX_BRIEF_EDITS = 3;
     
-    // STEP 0: Initialize/retrieve conversation-scoped FamilyProfile
+    // STEP 0: Initialize/retrieve FamilyProfile
     let conversationFamilyProfile = null;
     const conversationId = context.conversationId;
     
     if (userId && conversationId) {
       try {
-        // Try to get conversation-scoped FamilyProfile
         const profiles = await base44.entities.FamilyProfile.filter({
           userId,
           conversationId: conversationId
         });
         conversationFamilyProfile = profiles.length > 0 ? profiles[0] : null;
         
-        // If no profile exists, CREATE ONE (first message in conversation)
         if (!conversationFamilyProfile) {
           conversationFamilyProfile = await base44.entities.FamilyProfile.create({
             userId,
             conversationId: conversationId
           });
-          console.log('Created new conversation-scoped FamilyProfile:', conversationFamilyProfile.id);
+          console.log('Created new FamilyProfile:', conversationFamilyProfile.id);
         }
       } catch (e) {
-        console.error('Failed to fetch/create conversation-scoped FamilyProfile:', e);
+        console.error('FamilyProfile error:', e);
       }
     } else {
-      // For unauthenticated users, create a local empty object
       conversationFamilyProfile = {
         childName: null,
         childGrade: null,
@@ -78,12 +74,11 @@ Deno.serve(async (req) => {
       };
     }
     
-    // STEP 1: ENTITY EXTRACTION - Run BEFORE state machine (INLINED)
+    // STEP 1: ENTITY EXTRACTION (runs on EVERY message)
     let extractedData = {};
     try {
       const t1 = Date.now();
       
-      // Build context for extraction
       const knownData = conversationFamilyProfile ? {
         childName: conversationFamilyProfile.childName,
         childGrade: conversationFamilyProfile.childGrade,
@@ -101,7 +96,6 @@ Deno.serve(async (req) => {
         .map(m => `${m.role === 'user' ? 'Parent' : 'AI'}: ${m.content}`)
         .join('\n') || '';
 
-      // First pass: Extract grade using regex (for speed & reliability)
       const gradeMatch = message.match(/\b(?:grade|gr\.?)\s*([0-9]+|\b(?:pk|jk|k|junior|senior)\b)/i);
       let extractedGrade = null;
       if (gradeMatch) {
@@ -110,44 +104,29 @@ Deno.serve(async (req) => {
         extractedGrade = gradeMap[gradeStr] !== undefined ? gradeMap[gradeStr] : parseInt(gradeStr);
       }
 
-      const extractionPrompt = `Extract ONLY factual data that the parent explicitly stated. Do NOT infer.
-Return a JSON object with NULL for anything not mentioned.
+      const extractionPrompt = `Extract ONLY factual data explicitly stated. Return JSON with NULL for anything not mentioned.
 
 CURRENT KNOWN DATA:
 ${JSON.stringify(knownData, null, 2)}
 
-CONVERSATION CONTEXT:
-${conversationSummary}
-
 PARENT'S MESSAGE:
 "${message}"
 
-Extract and return ONLY these fields (null if not mentioned):
-- childName: string (parent used child's name)
-- childGrade: number (grade level, e.g., 3 for Grade 3. If you see "grade 1" or "Grade 3" or similar, extract the number. CRITICAL: Return as a number, not a string.)
-- locationArea: string (city or area name)
-- maxTuition: CRITICAL BUDGET RULES:
-  * If "money isn't an issue" / "budget is not a concern" / "cost doesn't matter" / "price isn't a factor" / "money is no object" → "unlimited"
-  * If dollar amount mentioned (e.g. "$35K", "40000") → extract as number
-  * If not mentioned → null
-- interests: array of strings (child's interests: sports, arts, STEM, etc.)
-- priorities: array of strings (what matters most, what they want, what's important - e.g. "academics and arts are most important" -> ["academics", "arts"])
-- concerns: array of strings (any mention of problems, worries, fears)
-- dealbreakers: array of strings (any "no", "not", "don't want" statements)
-- learning_needs: array of strings (any diagnoses, challenges, special needs mentioned)
-- curriculumPreference: array of strings (curriculum types mentioned: IB, Montessori, etc.)
-- religiousPreference: string (secular, or specific religion if mentioned)
-- boardingPreference: string (day only, open to boarding, boarding preferred)
-- genderPreference: CRITICAL GENDER RULES:
-  * 'all-boys' / 'boys school' / 'boys only' / 'boy' → "All Boys"
-  * 'all-girls' / 'girls school' / 'girls only' / 'girl' → "All Girls"
-  * 'co-ed' / 'coeducational' / 'mixed' → "Co-Ed"
-  * Not mentioned → null
-- requestedSchools: array of strings (CRITICAL: School names or abbreviations mentioned):
-  * Full names: "Upper Canada College", "Crescent School", "St. Andrew's College"
-  * Abbreviations: "UCC" → "Upper Canada College", "SAC" → "St. Andrew's College"
-  * Partial: "Crescent" → "Crescent School"
-  * If none mentioned → null
+Extract ONLY:
+- childName: string or null
+- childGrade: number or null (e.g., 3 for Grade 3)
+- locationArea: string (city name)
+- maxTuition: "unlimited" OR number OR null
+- interests: array of strings or null
+- priorities: array of strings or null
+- concerns: array or null
+- dealbreakers: array or null
+- learning_needs: array or null
+- curriculumPreference: array or null
+- religiousPreference: string or null
+- boardingPreference: string or null
+- genderPreference: "All Boys" OR "All Girls" OR "Co-Ed" OR null
+- requestedSchools: array of school names or null
 
 Return ONLY valid JSON. Do NOT explain.`;
 
@@ -174,13 +153,11 @@ Return ONLY valid JSON. Do NOT explain.`;
         }
       });
 
-      // Regex extraction overrides LLM result if grade was found
       let finalResult = result;
       if (extractedGrade !== null && !result.childGrade) {
        finalResult = { ...result, childGrade: extractedGrade };
       }
 
-      // Clean up nulls and empty arrays
       const cleaned = {};
       for (const [key, value] of Object.entries(finalResult)) {
        if (value !== null && value !== undefined && !(Array.isArray(value) && value.length === 0)) {
@@ -189,13 +166,12 @@ Return ONLY valid JSON. Do NOT explain.`;
       }
       
       extractedData = cleaned;
-      console.log('[DIAGNOSTIC] [extractEntityData-INLINED] took', Date.now() - t1, 'ms');
+      console.log('[EXTRACT] took', Date.now() - t1, 'ms');
     } catch (e) {
-      console.error('[ERROR] extractEntityData-INLINED failed:', e.message);
-      // Continue without extraction - don't crash
+      console.error('[ERROR] Extraction failed:', e.message);
     }
     
-    // Merge extracted data into conversation-scoped profile (overwrite empty arrays and null/undefined values)
+    // Persist extracted data to FamilyProfile immediately
     if (conversationFamilyProfile && Object.keys(extractedData).length > 0) {
       for (const [key, value] of Object.entries(extractedData)) {
         if (value !== null && value !== undefined) {
@@ -207,25 +183,24 @@ Return ONLY valid JSON. Do NOT explain.`;
           }
         }
       }
-      // Update profile in DB (only if it has an ID, i.e., authenticated user)
       if (conversationFamilyProfile?.id) {
         try {
           conversationFamilyProfile = await base44.entities.FamilyProfile.update(conversationFamilyProfile.id, extractedData);
         } catch (e) {
-          console.error('Failed to update FamilyProfile with extracted data:', e);
+          console.error('FamilyProfile update failed:', e);
         }
       }
     }
     
-    // STEP 2: DETERMINISTIC STATE MACHINE (Backend decides transitions)
+    // STEP 2: DETERMINISTIC STATE TRANSITIONS (Backend only)
     let currentState = context.state || STATES.GREETING;
     
-    // Rule 1: GREETING → INTAKE (on first user message)
+    // Rule 1: GREETING → INTAKE on first message
     if (currentState === STATES.GREETING && message) {
       currentState = STATES.INTAKE;
     }
     
-    // Rule 2: INTAKE → BRIEF (check minimum data: grade + location + at least one of budget/priorities/interests)
+    // Rule 2: INTAKE → BRIEF when minimum data present
     if (currentState === STATES.INTAKE) {
       const hasMinimumData = conversationFamilyProfile && 
         conversationFamilyProfile?.childGrade !== null &&
@@ -239,62 +214,53 @@ Return ONLY valid JSON. Do NOT explain.`;
       
       if (hasMinimumData || forcedBriefAfterMessages) {
         currentState = STATES.BRIEF;
-        briefEditCount = 0; // Reset edit count when entering BRIEF
+        briefEditCount = 0;
       }
     }
     
-    // Rule 3: BRIEF → SEARCHING or BRIEF_EDIT (deterministic based on keywords)
+    // Rule 3: BRIEF → SEARCHING or BRIEF_EDIT
     if (currentState === STATES.BRIEF) {
       const msgLowerTrim = msgLower.trim();
-      const isConfirming = /\b(yes|yeah|yep|confirmed?|correct|perfect|great|sounds good|looks good|go ahead|that's right|that's perfect|proceed|search|search away|let's search|let's go)\b/i.test(msgLowerTrim);
-      const isAdjusting = /\b(change|adjust|edit|actually|wait|hold on|no|not right|different|no wait|hmm|let me|redo)\b/i.test(msgLowerTrim);
+      const isConfirming = /\b(yes|yeah|yep|confirmed?|correct|perfect|great|sounds good|looks good|go ahead|that's right|that's perfect|proceed|search)\b/i.test(msgLowerTrim);
+      const isAdjusting = /\b(change|adjust|edit|actually|wait|hold on|no|not right|different|let me|redo)\b/i.test(msgLowerTrim);
       
       if (isConfirming) {
         currentState = STATES.SEARCHING;
       } else if (isAdjusting) {
         briefEditCount++;
         if (briefEditCount >= MAX_BRIEF_EDITS) {
-          // After 3 edits, force search anyway
           currentState = STATES.SEARCHING;
-          console.log('[STATE MACHINE] Max brief edits reached, forcing SEARCHING');
+          console.log('[STATE] Max brief edits reached, forcing search');
         } else {
           currentState = STATES.BRIEF_EDIT;
         }
       } else {
-        // Ambiguous input - stay in BRIEF and re-display it
         currentState = STATES.BRIEF;
       }
     }
     
-    // Rule 4: BRIEF_EDIT → BRIEF (AI regenerates after edit)
+    // Rule 4: BRIEF_EDIT → BRIEF
     if (currentState === STATES.BRIEF_EDIT) {
-      // Brief edit is temporary - next AI response regenerates BRIEF
-      // Will transition back to BRIEF in the response generation
       currentState = STATES.BRIEF;
     }
     
-    // Rule 5: SEARCHING → RESULTS (automatic after search completes)
-    // This transition happens in the school search section below
-    
-    // Rule 6: RESULTS → DEEP_DIVE or BRIEF_EDIT (based on user intent)
+    // Rule 6: RESULTS → DEEP_DIVE or BRIEF_EDIT
     if (currentState === STATES.RESULTS) {
-      const isAskingAboutSchool = intentResponse.intent === 'DEEP_DIVE' || 
-                                   intentResponse.intent === 'COMPARE_SCHOOLS';
-      const isEditingBrief = /\b(change|adjust|different|again|new search|try again)\b/i.test(msgLower);
+      const isAskingAboutSchool = /\b(tell me|about|compare|vs|versus|difference|which|why)\b/i.test(msgLower);
+      const isEditingBrief = /\b(change|adjust|different|new search|try again)\b/i.test(msgLower);
       
       if (isAskingAboutSchool) {
         currentState = STATES.DEEP_DIVE;
       } else if (isEditingBrief) {
         currentState = STATES.BRIEF_EDIT;
       } else {
-        // Answering questions about current results, stay in RESULTS
         currentState = STATES.RESULTS;
       }
     }
     
-    // Rule 7: DEEP_DIVE → RESULTS or BRIEF_EDIT (user can go back)
+    // Rule 7: DEEP_DIVE → RESULTS or BRIEF_EDIT
     if (currentState === STATES.DEEP_DIVE) {
-      const isBackToResults = /\b(back|show me|see more|other schools|compare|list)\b/i.test(msgLower);
+      const isBackToResults = /\b(back|show me|see more|other schools|list|all)\b/i.test(msgLower);
       const isEditingBrief = /\b(change|adjust|different|new search)\b/i.test(msgLower);
       
       if (isBackToResults) {
@@ -302,129 +268,18 @@ Return ONLY valid JSON. Do NOT explain.`;
       } else if (isEditingBrief) {
         currentState = STATES.BRIEF_EDIT;
       } else {
-        // Asking more questions about schools, stay in DEEP_DIVE
         currentState = STATES.DEEP_DIVE;
       }
     }
     
-    // Update context with new state and edit count
     context.state = currentState;
     context.briefEditCount = briefEditCount;
-    
-    console.log(`[orchestrateConversation] STATE MACHINE: ${context.state || 'INIT'} → ${currentState}, extracted: ${Object.keys(extractedData).join(',')}`);
+    console.log(`[STATE] ${context.state} (edits: ${briefEditCount})`);
 
-    // STEP 3: Detect intent (INLINED)
-    let intentResponse;
-    try {
-      const t2 = Date.now();
-      
-      // Extract intent via keyword matching
-      let intent = 'SHOW_SCHOOLS'; // default
-      let shouldShowSchools = true;
-      let filterCriteria = {};
-      let comparisonSchoolNames = [];
-      
-      // Compare intent
-      if (msgLower.includes('compare') || msgLower.includes(' vs ') || msgLower.includes('versus') || 
-          msgLower.includes('side by side') || msgLower.includes('side-by-side')) {
-        intent = 'COMPARE_SCHOOLS';
-        shouldShowSchools = false;
-        
-        // Extract school names for comparison
-        let cleanedMessage = message
-          .replace(/^compare\s+/i, '')
-          .replace(/\s+(with|and|vs|versus|to|side\s*by\s*side)\s+/gi, '|')
-          .trim();
-        comparisonSchoolNames = cleanedMessage.split('|').map(n => n.trim()).filter(n => n.length > 3);
-      }
-      // Narrow down intent
-      else if (msgLower.includes('narrow') || msgLower.includes('filter') || msgLower.includes('only show')) {
-        intent = 'NARROW_DOWN';
-        shouldShowSchools = false;
-      }
-      // Pure greetings
-      else if (/^(hi|hello|hey|greetings|good morning|good afternoon|howdy|welcome)[\s!.]*$/i.test(msgLower.trim())) {
-        intent = 'GREETING';
-        shouldShowSchools = false;
-      }
-      // SEARCH_SCHOOLS intent - when user is actively looking for schools
-      else if (msgLower.includes('show') || msgLower.includes('find') || msgLower.includes('search') ||
-               msgLower.includes('schools in') || msgLower.includes('schools near') ||
-               msgLower.includes('private school') || msgLower.includes('looking for')) {
-        intent = 'SEARCH_SCHOOLS';
-        shouldShowSchools = true;
-      }
-      
-      // Extract filter criteria using regex/string matching
-      // City extraction
-      const cityMatch = message.match(/\b(?:in|near|at|around)\s+([A-Z][a-zA-Z\s]+?)(?:\s*,|\s+(?:ontario|bc|quebec|california|new york)|$)/i) ||
-                       message.match(/\b(Toronto|Vancouver|Montreal|Calgary|Edmonton|Ottawa|Victoria|Winnipeg|Hamilton|Quebec City|London|Kitchener|Halifax|Oakville|Burlington|Richmond Hill|Markham|Mississauga)\b/i);
-      if (cityMatch) filterCriteria.city = cityMatch[1].trim();
-      
-      // Province/State extraction
-      const provinceMatch = message.match(/\b(Ontario|British Columbia|BC|Quebec|Alberta|Manitoba|Saskatchewan|Nova Scotia|New Brunswick|Newfoundland|PEI|California|New York|Texas|Florida)\b/i);
-      if (provinceMatch) filterCriteria.provinceState = provinceMatch[1];
-      
-      // Region extraction
-      const regionMatch = message.match(/\b(Canada|US|USA|United States|Europe|GTA|Greater Toronto|Lower Mainland|Greater Vancouver)\b/i);
-      if (regionMatch) filterCriteria.region = regionMatch[1];
-      
-      // Curriculum extraction
-      const curriculumMatch = message.match(/\b(Montessori|IB|International Baccalaureate|Waldorf|AP|Advanced Placement|Traditional)\b/i);
-      if (curriculumMatch) {
-        let curr = curriculumMatch[1];
-        if (curr.toLowerCase().includes('international')) curr = 'IB';
-        if (curr.toLowerCase().includes('advanced')) curr = 'AP';
-        filterCriteria.curriculumType = curr;
-      }
-      
-      // Grade extraction
-      const gradeMatch = message.match(/\bgrade\s*(\d+)\b/i) || message.match(/\b(\d+)(?:th|st|nd|rd)\s*grade\b/i);
-      if (gradeMatch) filterCriteria.grade = parseInt(gradeMatch[1]);
-      
-      // Specializations
-      if (msgLower.includes('stem')) filterCriteria.specializations = ['STEM'];
-      else if (msgLower.includes('arts')) filterCriteria.specializations = ['Arts'];
-      else if (msgLower.includes('sports')) filterCriteria.specializations = ['Sports'];
-      
-      // ESL/Language support filter
-      if (msgLower.includes('esl') || msgLower.includes('english as a second language') || msgLower.includes('language support')) {
-        filterCriteria.specializations = filterCriteria.specializations || [];
-        if (!filterCriteria.specializations.includes('Languages')) {
-          filterCriteria.specializations.push('Languages');
-        }
-        intent = 'NARROW_DOWN';
-        shouldShowSchools = false;
-      }
-      
-      // Gender filtering
-      let genderPreference = null;
-      if (msgLower.includes(' son') || msgLower.includes('boy') || msgLower.includes('boys')) {
-        genderPreference = 'boy';
-      } else if (msgLower.includes(' daughter') || msgLower.includes('girl') || msgLower.includes('girls')) {
-        genderPreference = 'girl';
-      }
-      if (genderPreference) {
-        filterCriteria.genderPreference = genderPreference;
-      }
-      
-      intentResponse = {
-        intent,
-        shouldShowSchools,
-        filterCriteria,
-        comparisonSchoolNames
-      };
-      
-      console.log('[DIAGNOSTIC] [detectIntent-INLINED] took', Date.now() - t2, 'ms');
-    } catch (e) {
-      console.error('[ERROR] detectIntent-INLINED failed:', e.message);
-      intentResponse = { intent: 'INTAKE_QUESTION', shouldShowSchools: false };
-    }
-    
-    // STEP 4: Handle state-specific response generation BEFORE school search
+    // STEP 3: STATE-SPECIFIC RESPONSE GENERATION
     if (currentState === STATES.GREETING) {
       return Response.json({
-        message: "I'm your NextSchool education consultant. I help families across Canada, the US, and Europe find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you in a school?",
+        message: "I'm your NextSchool education consultant. I help families find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you?",
         state: STATES.GREETING,
         conversationContext: context,
         schools: []
@@ -432,136 +287,58 @@ Return ONLY valid JSON. Do NOT explain.`;
     }
     
     if (currentState === STATES.INTAKE) {
-      // INTAKE: Generate response (INLINED)
-      console.log(`[orchestrateConversation] INTAKE state: Generating response inline`);
       let intakeMessage;
       try {
-        const t3 = Date.now();
-        
-        // Build conversation context
         const history = conversationHistory || [];
         const recentMessages = history.slice(-10);
         const conversationSummary = recentMessages
           .map(msg => `${msg.role === 'user' ? 'Parent' : 'Consultant'}: ${msg.content}`)
           .join('\n');
         
-        // Entity extraction from conversation
         const allText = history.map(m => m.content).join(' ') + ' ' + message;
-        let hasLocation = false;
-        let hasBudget = false;
-        let hasChildGrade = false;
-
+        let hasLocation = false, hasBudget = false, hasChildGrade = false;
         try {
           hasLocation = /mississauga|toronto|vancouver|calgary|ottawa|montreal|brampton|oakville|markham|vaughan|richmond hill|burnaby|surrey|london|hamilton|winnipeg|quebec|edmonton/i.test(allText);
-          hasBudget = /(\$|budget|tuition|cost)\s*\d+/.test(allText) || /\d{2,3}\s*[k](?:\s*per|\/)?(?:\s*year|annually)?/i.test(allText);
-          hasChildGrade = /grade|kindergarten|preschool|elementary|middle|high school|grade \d/i.test(allText);
-        } catch (regexError) {
-          console.warn('Regex extraction error:', regexError);
-        }
-
-        const extractedInfo = { hasLocation, hasBudget, hasChildGrade };
-
-        // Build persona-specific instructions
+          hasBudget = /(\$|budget|tuition|cost)\s*\d+/.test(allText) || /\d{2,3}\s*k\b/i.test(allText);
+          hasChildGrade = /grade|kindergarten|preschool|elementary|middle|high school/i.test(allText);
+        } catch (e) {}
+        
         const personaInstructions = consultantName === 'Jackie'
-         ? `HARD RULE: Every response must be under 150 words. No exceptions. If you need more space, ask a follow-up question to continue in the next message. Count your words before responding.
-
-YOU ARE JACKIE - The Warm & Supportive Consultant:
-
-===== RESPONSE FORMAT RULES (APPLY TO EVERY MESSAGE) =====
-Maximum 150 words per response. No exceptions. Maximum 3 paragraphs. One question maximum per response. Use contractions. Write like you're talking, not writing.
-
-===== ABSOLUTE RULES (NON-NEGOTIABLE) =====
-🚫 IF PARENT SAID LOCATION (e.g., "Mississauga", "Toronto") → NEVER ask "where are you located?"
-🚫 IF PARENT SAID BUDGET (e.g., "$15-20K", "around 20") → NEVER ask "what's your budget?"
-🚫 IF PARENT SAID GRADE (e.g., "Grade 3", "high school") → NEVER ask "what grade?"
-🚫 ONE QUESTION ONLY per message. Not two. Not multiple. Count: 1.
-🚫 NO filler: "It's great that", "It's wonderful that", "That's amazing", "I'm glad", "I understand"—AVOID.
-
-===== DIRECT RECOMMENDATIONS =====
-When a parent asks "which would you recommend?" or any variation, you MUST give a direct answer. State your top pick first, then explain why. Say "I'd go with X" or "My top pick is X." Never hedge with "it depends" without then giving your actual recommendation. It's acceptable to say "I'd lean toward X, but Y is a close second because..."
-
-Your core identity: empathetic, emotionally attuned, validating. You make families feel heard.
-
-===== PERSONALITY EXAMPLES =====
-Example 1 - INTAKE:
-Parent: "My daughter is struggling at her current school."
-Jackie: "I can hear how much you care about finding the right fit for her. Tell me more about what's been difficult - is it the academics, the social environment, or something else entirely?"
-
-Example 2 - BRIEF DELIVERY:
-"From everything you've shared, Maya sounds like a creative, sensitive child who thrives when she feels seen by her teachers. She needs smaller classes, a strong arts program, and a community that celebrates individuality. Here's what I have so far..."
-
-Example 3 - SEARCH RESULTS:
-"I've found three schools that I think could be really special for Maya. Let me walk you through each one and why I picked them."
-
-Example 4 - TRADEOFF:
-"Havergal checks almost every box, but I want to be honest - the commute from Mississauga is real. About 40 minutes in morning traffic. Some families make it work, others find it exhausting by November. How does your family handle long drives?"
-
-Example 5 - PUSHBACK:
-"I understand the tuition feels steep. Here's what I'd say - Branksome's financial aid covers up to 40% for qualifying families, and their application is separate from admissions. It's worth exploring before ruling them out."`
-         : `HARD RULE: Every response must be under 150 words. No exceptions. If you need more space, ask a follow-up question to continue in the next message. Count your words before responding.
-
-YOU ARE LIAM - The Direct & Strategic Consultant:
-
-===== RESPONSE FORMAT RULES (APPLY TO EVERY MESSAGE) =====
-Maximum 150 words per response. No exceptions. Maximum 3 paragraphs. One question maximum per response. Use contractions. Write like you're talking, not writing.
-
-===== ABSOLUTE RULES (NON-NEGOTIABLE) =====
-🚫 IF PARENT SAID LOCATION (e.g., "Mississauga", "Toronto") → NEVER ask "where are you located?"
-🚫 IF PARENT SAID BUDGET (e.g., "$15-20K", "around 20") → NEVER ask "what's your budget?"
-🚫 IF PARENT SAID GRADE (e.g., "Grade 3", "high school") → NEVER ask "what grade?"
-🚫 ONE QUESTION ONLY per message. Not two. Not multiple. Count: 1.
-🚫 NO filler: "It's great that", "It's wonderful that", "That's amazing", "I'm glad"—AVOID.
-
-===== DIRECT RECOMMENDATIONS =====
-When a parent asks "which would you recommend?" or any variation, you MUST give a direct answer. State your top pick first, then explain why. Say "I'd go with X" or "My top pick is X." Never hedge with "it depends" without then giving your actual recommendation. It's acceptable to say "I'd lean toward X, but Y is a close second because..."
-
-Your core identity: data-driven, efficient, action-focused. Cut through complexity fast.
-
-===== PERSONALITY EXAMPLES =====
-Example 1 - INTAKE:
-Parent: "My daughter is struggling at her current school."
-Liam: "Got it. What's the main issue - academics, social, or something specific like class size or teaching approach?"
-
-Example 2 - BRIEF DELIVERY:
-"Here's what I'm working with: Grade 4, North York, budget under $25K, top priorities are academics and small class size. No dealbreakers flagged. Sound right?"
-
-Example 3 - SEARCH RESULTS:
-"Three strong matches. I've ranked them by overall fit. Here's the breakdown."
-
-Example 4 - TRADEOFF:
-"UCC is the strongest academic match but it's $38K - $13K over your stated budget. Two options: apply for financial aid, or look at Greenwood College which hits the same academic marks at $24K. Your call."
-
-Example 5 - PUSHBACK:
-"Financial aid at Branksome covers up to 40%. Separate application from admissions. Worth 20 minutes to apply before crossing it off."`;
-
-        // Generate response
+          ? `[STATE: INTAKE] You are gathering family info. Ask ONE focused question at a time. Always answer their question first, then ask yours. Do NOT recommend schools or mention school names. Max 150 words.
+YOU ARE JACKIE - Warm, empathetic, validating.
+🚫 IF THEY SAID LOCATION → NEVER ask where they live
+🚫 IF THEY SAID BUDGET → NEVER ask budget
+🚫 IF THEY SAID GRADE → NEVER ask grade
+🚫 ONE QUESTION ONLY. NO filler.`
+          : `[STATE: INTAKE] You are gathering family info. Ask ONE focused question at a time. Always answer their question first, then ask yours. Do NOT recommend schools or mention school names. Max 150 words.
+YOU ARE LIAM - Direct, strategic, efficient.
+🚫 IF THEY SAID LOCATION → NEVER ask where they live
+🚫 IF THEY SAID BUDGET → NEVER ask budget
+🚫 IF THEY SAID GRADE → NEVER ask grade
+🚫 ONE QUESTION ONLY. NO filler.`;
+        
         const responsePrompt = `${personaInstructions}
 
-===== ENTITY EXTRACTION (DO THIS FIRST) =====
-From the parent's message AND conversation history, extract:
-- LOCATION ALREADY MENTIONED: ${extractedInfo.hasLocation ? 'YES - do NOT ask where they live' : 'NO - ask if needed'}
-- BUDGET ALREADY MENTIONED: ${extractedInfo.hasBudget ? 'YES - do NOT ask budget' : 'NO - ask if needed'}
-- GRADE ALREADY MENTIONED: ${extractedInfo.hasChildGrade ? 'YES - do NOT ask grade' : 'NO - ask if needed'}
-
-===== ONE QUESTION ONLY RULE =====
-Count your questions before sending. If you have more than one "?", DELETE extra questions.
+ENTITY EXTRACTION:
+- LOCATION: ${hasLocation ? 'YES' : 'NO'}
+- BUDGET: ${hasBudget ? 'YES' : 'NO'}
+- GRADE: ${hasChildGrade ? 'YES' : 'NO'}
 
 Recent chat:
 ${conversationSummary}
 
 Parent: "${message}"
 
-Respond as ${consultantName}. ONE question max. No filler. Never re-ask extracted info.`;
-
+Respond as ${consultantName}. ONE question max. No filler.`;
+        
         const aiResponse = await base44.integrations.Core.InvokeLLM({
           prompt: responsePrompt
         });
         
         intakeMessage = aiResponse;
-        console.log('[DIAGNOSTIC] [generateResponse-INTAKE-INLINED] took', Date.now() - t3, 'ms');
       } catch (e) {
-        console.error('[ERROR] generateResponse-INTAKE-INLINED failed:', e.message);
-        intakeMessage = 'Tell me about your child - what grade are they in and what matters most to you in a school?';
+        console.error('[ERROR] INTAKE response failed:', e.message);
+        intakeMessage = 'Tell me about your child — what grade are they in and what matters most to you?';
       }
       
       return Response.json({
@@ -573,92 +350,57 @@ Respond as ${consultantName}. ONE question max. No filler. Never re-ask extracte
       });
     }
     
-    if (currentState === STATES.BRIEF) {
-      // BRIEF: Generate The Brief from profile (INLINED)
+    if (currentState === STATES.BRIEF || currentState === STATES.BRIEF_EDIT) {
       let briefMessage;
       try {
-        const t4 = Date.now();
         const { childName, childGrade, locationArea, budgetRange, maxTuition, interests, priorities, dealbreakers, currentSituation, academicStrengths } = conversationFamilyProfile;
-        
-        // Format arrays for the prompt
         const interestsStr = interests?.length > 0 ? interests.join(', ') : '';
         const prioritiesStr = priorities?.length > 0 ? priorities.join(', ') : '';
         const strengthsStr = academicStrengths?.length > 0 ? academicStrengths.join(', ') : '';
         const dealbreakersStr = dealbreakers?.length > 0 ? dealbreakers.join(', ') : '';
         
-        // FIX 2: Format budget display for unlimited
         let budgetDisplay = budgetRange || '(not specified)';
         if (maxTuition === 'unlimited') {
-          budgetDisplay = 'Budget is flexible / Cost is not a constraint';
+          budgetDisplay = 'Budget is flexible';
         } else if (maxTuition) {
           budgetDisplay = `$${maxTuition}/year`;
         }
         
-        const briefPrompt = consultantName === 'Jackie' 
-          ? `HARD RULE: Every response must be under 150 words. No exceptions. If you need more space, ask a follow-up question to continue in the next message. Count your words before responding.
+        const briefPrompt = consultantName === 'Jackie'
+          ? `[STATE: BRIEF] Generate a warm, narrative brief. Include child name, grade, location, interests, priorities, budget. Use these values EXACTLY. No school names. End: "Does that capture it? Anything to adjust?"
+Max 150 words.
 
-You are Jackie, a warm, empathetic education consultant. Generate "The Brief" using a NARRATIVE style - describe the child as a person first.
+FAMILY DATA:
+- CHILD: ${childName || '(not shared)'}
+- GRADE: ${childGrade ? \`Grade \${childGrade}\` : '(not specified)'}
+- LOCATION: ${locationArea || '(not specified)'}
+- INTERESTS: ${interestsStr || '(not specified)'}
+- PRIORITIES: ${prioritiesStr || '(not specified)'}
+- BUDGET: ${budgetDisplay}
 
-====== CRITICAL BRIEF GENERATION RULE ======
-Never say "you haven't specified" or "you didn't mention" about any field that appears in the extracted profile below. If a field is present in the extracted data, reflect it back. Only note gaps for fields that are genuinely empty.
+YOU ARE JACKIE - Warm, narrative style.`
+          : `[STATE: BRIEF] Generate a direct, executive-style brief with bullets. Include child name, grade, location, interests, priorities, budget. Use these values EXACTLY. No school names. End: "Sound right?"
+Max 150 words.
 
-====== FAMILY DATA (USE THESE VALUES EXACTLY AS PROVIDED) ======
-CHILD'S NAME: ${childName || '(not shared)'}
-GRADE: ${childGrade ? `Grade ${childGrade}` : '(not specified)'}
-LOCATION: ${locationArea || '(not specified)'}
-CURRENT SITUATION: ${currentSituation || '(not shared)'}
-ACADEMIC STRENGTHS: ${strengthsStr || '(not specified)'}
-INTERESTS: ${interestsStr || '(not specified)'}
-FAMILY PRIORITIES: ${prioritiesStr || '(not specified)'}
-BUDGET: ${budgetDisplay}
-DEALBREAKERS: ${dealbreakersStr || '(none mentioned)'}
+FAMILY DATA:
+- CHILD: ${childName || '(not shared)'}
+- GRADE: ${childGrade ? \`Grade \${childGrade}\` : '(not specified)'}
+- LOCATION: ${locationArea || '(not specified)'}
+- INTERESTS: ${interestsStr || '(not specified)'}
+- PRIORITIES: ${prioritiesStr || '(not specified)'}
+- BUDGET: ${budgetDisplay}
 
-====== GENERATE THE BRIEF - JACKIE'S NARRATIVE STYLE ======
-Format: "[Child] sounds like a [description] who [interests/personality]. Your family is looking for [key needs]. Based in [location], with a budget of [range], the priorities that matter most are [priorities]."
-
-Start with the child's name and personality. Use warm, flowing language. Keep to 2-3 paragraphs maximum (under 150 words). Close: "Does that capture what you're looking for? Anything I'm missing or needs adjustment?"`
-          : `HARD RULE: Every response must be under 150 words. No exceptions. If you need more space, ask a follow-up question to continue in the next message. Count your words before responding.
-
-You are Liam, a direct, strategic education consultant. Generate "The Brief" using an EXECUTIVE SUMMARY style with prioritized bullets.
-
-====== CRITICAL BRIEF GENERATION RULE ======
-Never say "you haven't specified" or "you didn't mention" about any field that appears in the extracted profile below. If a field is present in the extracted data, reflect it back. Only note gaps for fields that are genuinely empty.
-
-====== FAMILY DATA (USE THESE VALUES EXACTLY AS PROVIDED) ======
-CHILD'S NAME: ${childName || '(not shared)'}
-GRADE: ${childGrade ? `Grade ${childGrade}` : '(not specified)'}
-LOCATION: ${locationArea || '(not specified)'}
-CURRENT SITUATION: ${currentSituation || '(not shared)'}
-ACADEMIC STRENGTHS: ${strengthsStr || '(not specified)'}
-INTERESTS: ${interestsStr || '(not specified)'}
-FAMILY PRIORITIES: ${prioritiesStr || '(not specified)'}
-BUDGET: ${budgetDisplay}
-DEALBREAKERS: ${dealbreakersStr || '(none mentioned)'}
-
-====== GENERATE THE BRIEF - LIAM'S EXECUTIVE SUMMARY STYLE ======
-Format:
-"Here's what I'm working with:
-- Student: [Child], Grade [X]
-- Location: [area]
-- Budget: [range]
-- Top priorities: [ranked]
-- Dealbreakers: [list or none]
-- Key context: [1 sentence]
-
-Sound right?"
-
-Use bullet points. Be concise and direct. Maximum 150 words.`;
-
+YOU ARE LIAM - Direct, strategic style.`;
+        
         const briefResult = await base44.integrations.Core.InvokeLLM({
           prompt: briefPrompt,
           add_context_from_internet: false
         });
         
         briefMessage = briefResult;
-        console.log('[DIAGNOSTIC] [generateResponse-BRIEF-INLINED] took', Date.now() - t4, 'ms');
       } catch (e) {
-        console.error('[ERROR] generateResponse-BRIEF-INLINED failed:', e.message);
-        briefMessage = 'Let me summarize what you\'ve shared so far. Does that sound right?';
+        console.error('[ERROR] BRIEF response failed:', e.message);
+        briefMessage = 'Let me summarize what you\'ve shared. Does that sound right?';
       }
       
       return Response.json({
@@ -670,222 +412,40 @@ Use bullet points. Be concise and direct. Maximum 150 words.`;
       });
     }
     
-    if (currentState === STATES.BRIEF_EDIT) {
-      // BRIEF_EDIT: Ask what to adjust
-      return Response.json({
-        message: 'No problem! What would you like to adjust or add?',
-        state: STATES.BRIEF_EDIT,
-        familyProfile: conversationFamilyProfile,
-        conversationContext: context,
-        schools: []
-      });
-    }
-    
-    // STEP 4B: School search ONLY in SEARCHING state
-    // Do NOT fall through for other states
-    if (currentState !== STATES.SEARCHING) {
-      // State machine is the sole gate—if we're not in SEARCHING, return error fallback
-      console.log(`STATE MACHINE BLOCK: currentState=${currentState}, no search performed`);
-      return Response.json({
-        message: 'I encountered an unexpected state. Please try again.',
-        state: currentState,
-        intent: intentResponse.intent,
-        schools: [],
-        familyProfile: conversationFamilyProfile,
-        filterCriteria: intentResponse.filterCriteria || {},
-        conversationContext: context
-      });
-    }
+    // STEP 4: School search only in SEARCHING/RESULTS/DEEP_DIVE states
+    if (currentState === STATES.SEARCHING) {
+      const searchParams = {
+        limit: 50,
+        familyProfile: conversationFamilyProfile
+      };
 
-    const isCompareIntent = intentResponse.intent === 'COMPARE_SCHOOLS';
-
-    // STEP 2: Fetch matching schools based on intent
-    let matchingSchools = [];
-    
-    // COMPARE SCHOOLS - Word-based scoring system
-    if (isCompareIntent) {
-      // Remove comparison keywords and extract words
-      let cleanedMessage = message.toLowerCase()
-        .replace(/^compare\s+/i, '')
-        .replace(/\s+(with|and|vs|versus|to|side\s*by\s*side)\s+/gi, ' ')
-        .trim();
-      
-      const messageWords = cleanedMessage.split(/\s+/).filter(w => w.length > 2);
-      
-      // Score each school in currentSchools
-      if (currentSchools && currentSchools.length > 0) {
-        const scored = currentSchools.map(school => {
-          const schoolWords = school.name.toLowerCase().split(/\s+/);
-          let matchCount = 0;
-          
-          for (const msgWord of messageWords) {
-            for (const schoolWord of schoolWords) {
-              if (schoolWord.includes(msgWord) || msgWord.includes(schoolWord)) {
-                matchCount++;
-                break;
-              }
-            }
-          }
-          
-          const score = matchCount / schoolWords.length;
-          return { school, score };
-        });
-        
-        // Take top 2 with score > 0.5
-        const topMatches = scored
-          .filter(s => s.score > 0.5)
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 2);
-        
-        matchingSchools = topMatches.map(m => m.school);
+      if (conversationFamilyProfile?.locationArea) {
+        searchParams.city = conversationFamilyProfile.locationArea;
       }
-      
-      // Fallback: targeted DB search if < 2 found
-      if (matchingSchools.length < 2) {
-        // Split message into potential school name fragments
-        const fragments = cleanedMessage.split(/\s+and\s+|\s+vs\s+|\s+versus\s+/);
-        
-        for (const fragment of fragments) {
-          if (fragment.trim().length > 3 && matchingSchools.length < 2) {
-            try {
-              const results = await base44.asServiceRole.entities.School.filter({
-                name: { $regex: fragment.trim(), $options: 'i' }
-              });
-              
-              // Add first match that's not already in matchingSchools
-              for (const school of results.slice(0, 3)) {
-                if (!matchingSchools.some(ms => ms.id === school.id)) {
-                  matchingSchools.push(school);
-                  if (matchingSchools.length >= 2) break;
-                }
-              }
-            } catch (e) {
-              console.error('DB search fragment error:', e);
-            }
-          }
-        }
+      if (conversationFamilyProfile?.childGrade) {
+        searchParams.minGrade = conversationFamilyProfile.childGrade;
+        searchParams.maxGrade = conversationFamilyProfile.childGrade;
       }
-    }
-    // If narrowing from current schools, filter those instead of searching database
-    else if (intentResponse.intent === 'NARROW_DOWN' && currentSchools && currentSchools.length > 0) {
-      console.log('FIX #5: NARROW_DOWN intent - filtering existing schools. Input count:', currentSchools.length);
-      // Filter from currently displayed schools
-      let filtered = currentSchools;
-      
-      // RULE: Exclude special needs schools unless explicitly mentioned
-      if (!msgLower.includes('special needs') && !msgLower.includes('learning disabilities') && 
-          !msgLower.includes('adhd') && !msgLower.includes('autism')) {
-        filtered = filtered.filter(s => s.schoolType !== 'Special Needs');
+      if (conversationFamilyProfile?.maxTuition) {
+        searchParams.maxTuition = conversationFamilyProfile.maxTuition;
       }
-      
-      // FIX #5: ESL/Language support filter - now using filterCriteria from detectIntent
-      if (intentResponse.filterCriteria?.specializations?.includes('Languages')) {
-        console.log('FIX #5: Applying Languages specialization filter for ESL/language support');
-        filtered = filtered.filter(s => 
-          s.languages?.length > 0 || s.specializations?.includes('Languages')
-        );
-        console.log('FIX #5: Schools after Languages filter:', filtered.length);
+      if (conversationFamilyProfile?.curriculumPreference?.length > 0) {
+        searchParams.curriculumType = conversationFamilyProfile.curriculumPreference[0];
       }
-      
-      // Apply other specialization filters from detectIntent
-      if (intentResponse.filterCriteria?.specializations?.length > 0) {
-        const nonLanguageSpecs = intentResponse.filterCriteria.specializations.filter(s => s !== 'Languages');
-        if (nonLanguageSpecs.length > 0) {
-          filtered = filtered.filter(s =>
-            s.specializations && 
-            nonLanguageSpecs.some(spec => s.specializations.includes(spec))
-          );
+      if (conversationFamilyProfile?.priorities?.length > 0) {
+        const priorityToSpec = { 'Arts': 'Arts', 'STEM': 'STEM', 'Sports': 'Sports', 'Languages': 'Languages', 'Leadership': 'Leadership', 'Environmental': 'Environmental' };
+        const mappedSpecs = conversationFamilyProfile.priorities.map(p => priorityToSpec[p]).filter(Boolean);
+        if (mappedSpecs.length > 0) {
+          searchParams.specializations = mappedSpecs;
         }
       }
       
-      // Check curriculum type (IB, Montessori, etc.)
-      const criteriaText = message.toLowerCase();
-      if (criteriaText.includes('ib')) {
-        filtered = filtered.filter(s => s.curriculumType === 'IB' || s.specializations?.includes('IB'));
-      }
-      if (criteriaText.includes('montessori')) {
-        filtered = filtered.filter(s => s.curriculumType === 'Montessori');
-      }
-      if (criteriaText.includes('waldorf')) {
-        filtered = filtered.filter(s => s.curriculumType === 'Waldorf');
-      }
-      
-      // Apply tuition filter if mentioned
-      if (intentResponse.filterCriteria?.minTuition || intentResponse.filterCriteria?.maxTuition) {
-        filtered = filtered.filter(s => {
-          if (!s.tuition) return false;
-          if (intentResponse.filterCriteria.minTuition && s.tuition < intentResponse.filterCriteria.minTuition) return false;
-          if (intentResponse.filterCriteria.maxTuition && s.tuition > intentResponse.filterCriteria.maxTuition) return false;
-          return true;
-        });
-      }
-      
-      matchingSchools = filtered;
-      console.log('FIX #5: NARROW_DOWN complete. Output count:', matchingSchools.length);
-    } else if (currentState === STATES.SEARCHING) {
-     // SEARCHING state: perform school search using conversation profile
-     const searchParams = {
-       limit: 50,
-       familyProfile: conversationFamilyProfile
-     };
-
-     // Use extracted data from conversation profile
-     if (conversationFamilyProfile?.locationArea) {
-       searchParams.city = conversationFamilyProfile.locationArea;
-     }
-
-     if (conversationFamilyProfile?.childGrade) {
-       searchParams.minGrade = conversationFamilyProfile.childGrade;
-       searchParams.maxGrade = conversationFamilyProfile.childGrade;
-     }
-
-     if (conversationFamilyProfile?.maxTuition) {
-       searchParams.maxTuition = conversationFamilyProfile.maxTuition;
-     }
-
-     if (conversationFamilyProfile?.curriculumPreference?.length > 0) {
-       searchParams.curriculumType = conversationFamilyProfile.curriculumPreference[0];
-     }
-
-     if (conversationFamilyProfile?.priorities?.length > 0) {
-       // Map family priorities to specializations
-       const priorityToSpec = {
-         'Arts': 'Arts',
-         'STEM': 'STEM',
-         'Sports': 'Sports',
-         'Languages': 'Languages',
-         'Leadership': 'Leadership',
-         'Environmental': 'Environmental'
-       };
-       const mappedSpecs = conversationFamilyProfile.priorities
-         .map(p => priorityToSpec[p])
-         .filter(Boolean);
-       if (mappedSpecs.length > 0) {
-         searchParams.specializations = mappedSpecs;
-       }
-     }
-      
-      // FIX #3: DISTANCE CALCULATION - Use user's actual location
-      // Check if user is asking for schools "near me" or similar
-      const isNearMe = message.toLowerCase().includes('near me') || 
-                       message.toLowerCase().includes('near my location') ||
-                       message.toLowerCase().includes('closest') ||
-                       message.toLowerCase().includes('find schools near me');
-      
-      // Always pass user's location for proper distance calculation
       if (userLocation?.lat && userLocation?.lng) {
         searchParams.userLat = userLocation.lat;
         searchParams.userLng = userLocation.lng;
-        if (isNearMe) {
-          searchParams.maxDistanceKm = 100; // Default 100km radius for "near me"
-        }
       }
 
-      console.log('[DIAGNOSTIC] [searchSchools] Time:', new Date().toISOString());
-      console.log('[DIAGNOSTIC] [searchSchools] Params:', JSON.stringify(searchParams));
-      
       let schools = [];
-      let edgeCaseMessage = null;
       try {
         const searchResult = await base44.asServiceRole.functions.invoke('searchSchools', {
           ...searchParams,
@@ -894,25 +454,14 @@ Use bullet points. Be concise and direct. Maximum 150 words.`;
           searchQuery: message
         });
         schools = searchResult.data.schools || [];
-        edgeCaseMessage = searchResult.data.edgeCaseMessage;
       } catch (e) {
-        console.error('[ERROR] searchSchools failed:', e.message, 'Status:', e.response?.status);
-        console.error('ACTUAL ERROR:', e.message, e.response?.data, e.stack);
-        // Continue with empty schools array
+        console.error('[ERROR] searchSchools failed:', e.message);
       }
       
-      // RULE: Exclude special needs schools unless explicitly mentioned
-      if (!msgLower.includes('special needs') && !msgLower.includes('learning disabilities') && 
-          !msgLower.includes('adhd') && !msgLower.includes('autism')) {
-        schools = schools.filter(s => s.schoolType !== 'Special Needs');
-      }
+      // Filter out special needs/public schools
+      schools = schools.filter(s => s.schoolType !== 'Special Needs' && s.schoolType !== 'Public');
       
-      // BUG FIX #2: Exclude public schools - only private/independent schools
-      schools = schools.filter(s => s.schoolType !== 'Public');
-      
-      console.log('schools found:', schools.length);
-      
-      // Deduplicate by school name (keep first occurrence)
+      // Deduplicate
       const seen = new Set();
       const deduplicated = [];
       for (const school of schools) {
@@ -922,133 +471,33 @@ Use bullet points. Be concise and direct. Maximum 150 words.`;
         }
       }
       
-      matchingSchools = deduplicated.slice(0, 20); // Show up to 20 results
-
-      // Auto-transition SEARCHING → RESULTS
-      if (currentState === STATES.SEARCHING) {
-        currentState = STATES.RESULTS;
-        context.state = currentState;
-      }
-
-      // STEP 2.5: Generate match explanations if FamilyProfile exists
-      if (conversationFamilyProfile && conversationFamilyProfile.onboardingComplete && matchingSchools.length > 0) {
-        try {
-          const explanationsResult = await base44.asServiceRole.functions.invoke('generateMatchExplanations', {
-            familyProfile: conversationFamilyProfile,
-            schools: matchingSchools
-          });
-          
-          if (explanationsResult.data?.explanations) {
-            // Augment schools with match explanations
-            matchingSchools = matchingSchools.map(school => {
-              const explanation = explanationsResult.data.explanations.find(e => e.schoolId === school.id);
-              return {
-                ...school,
-                matchExplanations: explanation?.matches || []
-              };
-            });
-          }
-        } catch (e) {
-          console.error('[ERROR] generateMatchExplanations failed:', e.message);
-          // Continue without explanations
-        }
-      }
-    }
-
-    // STEP 5: For SEARCHING/RESULTS states, generate school response (INLINED)
-    let aiMessage = '';
-    let responseTimedOut = false;
-    
-    // Auto-transition SEARCHING → RESULTS after search completes
-    if (currentState === STATES.SEARCHING && matchingSchools.length > 0) {
+      const matchingSchools = deduplicated.slice(0, 20);
+      
+      // Auto-transition to RESULTS
       currentState = STATES.RESULTS;
       context.state = currentState;
-    }
-    
-    if (currentState === STATES.SEARCHING || currentState === STATES.RESULTS || currentState === STATES.DEEP_DIVE) {
+      
+      // Generate response for RESULTS
+      let aiMessage = '';
       try {
-        const t5 = Date.now();
-        
-        // Check if no schools - return early
         if (!matchingSchools || matchingSchools.length === 0) {
-          aiMessage = "I don't have any schools in our database that match your criteria yet. Our database is growing - please try a nearby city or broader search criteria.";
+          aiMessage = "I don't have any schools matching your criteria yet. Try a nearby city or broader criteria.";
         } else {
-          // Build conversation context
           const history = conversationHistory || [];
           const recentMessages = history.slice(-10);
           const conversationSummary = recentMessages
             .map(msg => `${msg.role === 'user' ? 'Parent' : 'Consultant'}: ${msg.content}`)
             .join('\n');
           
-          // Format grade helper
-          function formatGrade(grade) {
-            if (grade === null || grade === undefined) return '';
-            const num = Number(grade);
-            if (num <= -2) return 'PK';
-            if (num === -1) return 'JK';
-            if (num === 0) return 'K';
-            return String(num);
-          }
-
-          function formatGradeRange(gradeFrom, gradeTo) {
-            const from = formatGrade(gradeFrom);
-            const to = formatGrade(gradeTo);
-            if (!from && !to) return '';
-            if (!from) return to;
-            if (!to) return from;
-            return `${from}-${to}`;
-          }
-          
-          // Build school context
           const schoolContext = `\n\nSCHOOLS (${matchingSchools.length}):\n` + 
             matchingSchools.map(s => {
-              const tuitionStr = s.tuition ? `$${s.tuition} ${s.currency || 'CAD'}` : 'N/A';
-              return `${s.name}|${s.city}|Gr${formatGradeRange(s.lowestGrade, s.highestGrade)}|${s.curriculumType||'Trad'}|Tuition: ${tuitionStr}|Type: ${s.schoolType||'General'}`;
+              const tuitionStr = s.tuition ? `$${s.tuition}` : 'N/A';
+              return `${s.name} | ${s.city} | Grade ${s.lowestGrade}-${s.highestGrade} | ${s.curriculumType||'Trad'} | Tuition: ${tuitionStr}`;
             }).join('\n');
           
-          // Entity extraction from conversation
-          const allText = history.map(m => m.content).join(' ') + ' ' + message;
-          let hasLocation = false;
-          let hasBudget = false;
-          let hasChildGrade = false;
+          const responsePrompt = `[STATE: RESULTS] Explain these school matches. Focus on fit. Do NOT ask intake questions. Max 150 words.
 
-          try {
-            hasLocation = /mississauga|toronto|vancouver|calgary|ottawa|montreal|brampton|oakville|markham|vaughan|richmond hill|burnaby|surrey|london|hamilton|winnipeg|quebec|edmonton/i.test(allText);
-            hasBudget = /(\$|budget|tuition|cost)\s*\d+/.test(allText) || /\d{2,3}\s*[k](?:\s*per|\/)?(?:\s*year|annually)?/i.test(allText);
-            hasChildGrade = /grade|kindergarten|preschool|elementary|middle|high school|grade \d/i.test(allText);
-          } catch (regexError) {
-            console.warn('Regex extraction error:', regexError);
-          }
-
-          const extractedInfo = { hasLocation, hasBudget, hasChildGrade };
-
-          // Build persona-specific instructions
-          const personaInstructions = consultantName === 'Jackie'
-           ? `HARD RULE: Every response must be under 150 words. No exceptions. If you need more space, ask a follow-up question to continue in the next message. Count your words before responding.
-
-YOU ARE JACKIE - The Warm & Supportive Consultant:
-
-===== RESPONSE FORMAT RULES =====
-Maximum 150 words per response. No exceptions. Maximum 3 paragraphs. One question maximum per response.
-
-===== DIRECT RECOMMENDATIONS =====
-When a parent asks "which would you recommend?" or any variation, you MUST give a direct answer. State your top pick first, then explain why. Say "I'd go with X" or "My top pick is X." Never hedge with "it depends" without then giving your actual recommendation. It's acceptable to say "I'd lean toward X, but Y is a close second because..."
-
-Your core identity: empathetic, emotionally attuned, validating.`
-           : `HARD RULE: Every response must be under 150 words. No exceptions. If you need more space, ask a follow-up question to continue in the next message. Count your words before responding.
-
-YOU ARE LIAM - The Direct & Strategic Consultant:
-
-===== RESPONSE FORMAT RULES =====
-Maximum 150 words per response. No exceptions. Maximum 3 paragraphs. One question maximum per response.
-
-===== DIRECT RECOMMENDATIONS =====
-When a parent asks "which would you recommend?" or any variation, you MUST give a direct answer. State your top pick first, then explain why. Say "I'd go with X" or "My top pick is X." Never hedge with "it depends" without then giving your actual recommendation. It's acceptable to say "I'd lean toward X, but Y is a close second because..."
-
-Your core identity: data-driven, efficient, action-focused.`;
-
-          // Generate response
-          const responsePrompt = `${personaInstructions}
+${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic.' : 'YOU ARE LIAM - Direct, strategic.'}
 
 Recent chat:
 ${conversationSummary}
@@ -1056,28 +505,17 @@ ${schoolContext}
 
 Parent: "${message}"
 
-Respond as ${consultantName}. ONE question max. No filler.`;
-
+Respond as ${consultantName}. ONE question max.`;
+          
           const aiResponse = await base44.integrations.Core.InvokeLLM({
             prompt: responsePrompt
           });
           
           let messageWithLinks = aiResponse;
           
-          // Prepend edge case message if present
-          if (edgeCaseMessage) {
-            messageWithLinks = edgeCaseMessage + '\n\n' + messageWithLinks;
-          }
-          
-          // Replace school names with school:slug links
+          // Replace school names with links
           matchingSchools.forEach(school => {
             const escapedName = school.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const markdownLinkRegex = new RegExp(`\\[${escapedName}\\]\\([^)]+\\)`, 'gi');
-            messageWithLinks = messageWithLinks.replace(
-              markdownLinkRegex,
-              `[${school.name}](school:${school.slug})`
-            );
-            
             const schoolNameRegex = new RegExp(`(?<!\\[)\\b${escapedName}\\b(?!\\]\\()`, 'gi');
             messageWithLinks = messageWithLinks.replace(
               schoolNameRegex,
@@ -1087,55 +525,93 @@ Respond as ${consultantName}. ONE question max. No filler.`;
           
           aiMessage = messageWithLinks;
         }
-        
-        console.log('[DIAGNOSTIC] [generateResponse-SEARCHING/RESULTS-INLINED] took', Date.now() - t5, 'ms');
-      } catch (error) {
-        console.error('[ERROR] generateResponse-SEARCHING/RESULTS-INLINED failed:', error.message);
-        responseTimedOut = true;
-        aiMessage = matchingSchools.length > 0 ? 'Here are the schools I found:' : 'I don\'t have any schools matching that criteria.';
-      }
-
-      if (matchingSchools.length === 0 && !aiMessage.includes('don\'t have') && !aiMessage.includes('no ')) {
-        aiMessage = 'I don\'t have any schools matching that criteria yet. Our database is growing - try a nearby city or broader criteria.';
+      } catch (e) {
+        console.error('[ERROR] RESULTS response failed:', e.message);
+        aiMessage = matchingSchools.length > 0 ? 'Here are the schools I found:' : "I don't have matching schools.";
       }
       
-      currentState = STATES.RESULTS;
-    }
-
-    // LATEST INFORMATION WINS: Update conversationContext with new filter criteria (overwrite old values)
-    if (intentResponse.filterCriteria) {
-      Object.assign(context, intentResponse.filterCriteria);
-    }
-    
-    // LATEST INFORMATION WINS: Update user location if provided
-    if (userLocation) {
-      context.location = userLocation;
-    }
-
-    // Update user memory with insights from this message (non-blocking)
-    // Pass deduplicate:true to ensure new memories replace old conflicting ones
-    try {
-      await base44.asServiceRole.functions.invoke('updateUserMemory', { 
-        userId, 
-        userMessage: message,
-        deduplicate: true
+      return Response.json({
+        message: aiMessage,
+        state: currentState,
+        schools: matchingSchools,
+        familyProfile: conversationFamilyProfile,
+        conversationContext: context
       });
-    } catch (e) {
-      console.error('[ERROR] updateUserMemory failed:', e.message);
     }
 
+    if (currentState === STATES.RESULTS || currentState === STATES.DEEP_DIVE) {
+      let aiMessage = '';
+      try {
+        const history = conversationHistory || [];
+        const recentMessages = history.slice(-10);
+        const conversationSummary = recentMessages
+          .map(msg => `${msg.role === 'user' ? 'Parent' : 'Consultant'}: ${msg.content}`)
+          .join('\n');
+        
+        const schoolContext = currentSchools && currentSchools.length > 0
+          ? `\n\nSCHOOLS:\n` + currentSchools.map(s => {
+              const tuitionStr = s.tuition ? `$${s.tuition}` : 'N/A';
+              return `${s.name} | ${s.city} | Grade ${s.lowestGrade}-${s.highestGrade} | Tuition: ${tuitionStr}`;
+            }).join('\n')
+          : '';
+        
+        const stateLabel = currentState === STATES.RESULTS ? '[STATE: RESULTS]' : '[STATE: DEEP_DIVE]';
+        const responsePrompt = `${stateLabel} Discuss schools. Do NOT ask intake questions. Max 150 words.
+
+${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic.' : 'YOU ARE LIAM - Direct, strategic.'}
+
+Recent chat:
+${conversationSummary}
+${schoolContext}
+
+Parent: "${message}"
+
+Respond as ${consultantName}. ONE question max.`;
+        
+        const aiResponse = await base44.integrations.Core.InvokeLLM({
+          prompt: responsePrompt
+        });
+        
+        let messageWithLinks = aiResponse;
+        
+        if (currentSchools && currentSchools.length > 0) {
+          currentSchools.forEach(school => {
+            const escapedName = school.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const schoolNameRegex = new RegExp(`(?<!\\[)\\b${escapedName}\\b(?!\\]\\()`, 'gi');
+            messageWithLinks = messageWithLinks.replace(
+              schoolNameRegex,
+              `[${school.name}](school:${school.slug})`
+            );
+          });
+        }
+        
+        aiMessage = messageWithLinks;
+      } catch (e) {
+        console.error('[ERROR] RESULTS/DEEP_DIVE response failed:', e.message);
+        aiMessage = 'Tell me more about what you\'re looking for.';
+      }
+      
+      return Response.json({
+        message: aiMessage,
+        state: currentState,
+        schools: currentSchools || [],
+        familyProfile: conversationFamilyProfile,
+        conversationContext: context
+      });
+    }
+
+    // Fallback
     return Response.json({
-      message: aiMessage,
+      message: 'I encountered an unexpected state. Please try again.',
       state: currentState,
-      intent: intentResponse.intent,
-      schools: matchingSchools,
+      schools: [],
       familyProfile: conversationFamilyProfile,
-      filterCriteria: intentResponse.filterCriteria || {},
       conversationContext: context
     });
+
     } catch (error) {
       console.error('orchestrateConversation FATAL:', error);
-      return Response.json({ error: error.message || String(error), stack: error.stack }, { status: 500 });
+      return Response.json({ error: error.message || String(error) }, { status: 500 });
     }
   };
 
@@ -1144,12 +620,12 @@ Respond as ${consultantName}. ONE question max. No filler.`;
   } catch (error) {
     if (error.message === 'TIMEOUT') {
       return Response.json({ 
-        error: 'Request took too long. Try being more specific or search fewer schools.',
+        error: 'Request timeout',
         status: 408 
       }, { status: 408 });
     }
     return Response.json({ 
-      error: 'Sorry, something went wrong. Please try again.',
+      error: 'Something went wrong. Please try again.',
       status: 500 
     }, { status: 500 });
   }
