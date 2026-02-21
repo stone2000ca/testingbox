@@ -91,8 +91,8 @@ Deno.serve(async (req) => {
       
       extractedData = extractionResult.data?.extracted || {};
     } catch (e) {
-      console.error('[DIAGNOSTIC] extractEntityData failed:', e.message, 'response:', e.response?.data, 'config:', JSON.stringify(e.config?.data)?.substring(0, 500));
-      console.warn('Entity extraction failed, continuing:', e);
+      console.error('[ERROR] extractEntityData failed:', e.message, 'Status:', e.response?.status);
+      // Continue without extraction - don't crash
     }
     
     // Merge extracted data into conversation-scoped profile (overwrite empty arrays and null/undefined values)
@@ -523,7 +523,7 @@ Deno.serve(async (req) => {
       // STEP 2.5: Generate match explanations if FamilyProfile exists
       if (familyProfile && familyProfile.onboardingComplete && matchingSchools.length > 0) {
         try {
-          const explanationsResult = await base44.functions.invoke('generateMatchExplanations', {
+          const explanationsResult = await base44.asServiceRole.functions.invoke('generateMatchExplanations', {
             familyProfile: familyProfile,
             schools: matchingSchools
           });
@@ -539,7 +539,7 @@ Deno.serve(async (req) => {
             });
           }
         } catch (e) {
-          console.error('Failed to generate match explanations:', e);
+          console.error('[ERROR] generateMatchExplanations failed:', e.message);
           // Continue without explanations
         }
       }
