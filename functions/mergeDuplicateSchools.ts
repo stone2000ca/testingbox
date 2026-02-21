@@ -94,20 +94,7 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Fetched ${schools.length} schools`);
-
-    // Debug: check slugs
-    const allSlugs = schools.map(s => s?.data?.slug).filter(Boolean);
-    const uniqueSlugs = new Set(allSlugs);
-    console.log(`All slugs: ${allSlugs.length}, unique: ${uniqueSlugs.size}`);
-    
-    const slugCounts = {};
-    for (const slug of allSlugs) {
-      slugCounts[slug] = (slugCounts[slug] || 0) + 1;
-    }
-    const duplicateCount = Object.values(slugCounts).filter(c => c > 1).length;
-    console.log(`Duplicate slug groups: ${duplicateCount}`);
-    const dups = Object.entries(slugCounts).filter(([_, c]) => c > 1).slice(0, 5);
-    console.log('Sample duplicate slugs:', JSON.stringify(dups));
+    console.log(`Sample school structure:`, JSON.stringify(schools[0], null, 2).slice(0, 500));
 
     const report = {
       pass1: {
