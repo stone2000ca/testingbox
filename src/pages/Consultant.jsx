@@ -1434,7 +1434,6 @@ Return empty array if user didn't provide any of these facts.`;
           )}
 
           {currentState === STATES.RESULTS && schools.length > 0 && (
-          {currentState === STATES.RESULTS && schools.length > 0 && (
             <div className="h-full flex flex-col animate-fadeIn">
               <div className="p-3 sm:p-4 border-b flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <h2 className="text-base sm:text-lg font-semibold text-slate-900">
