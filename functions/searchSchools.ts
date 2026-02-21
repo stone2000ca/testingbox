@@ -45,8 +45,78 @@ async function performSearch(req) {
       maxDistanceKm,
       commuteToleranceMinutes,
       limit = 20,
-      familyProfile = null
+      familyProfile = null,
+      conversationId = null,
+      userId = null,
+      searchQuery = ''
     } = await req.json();
+
+    // TASK C: FUZZY SCHOOL NAME MATCHING - School name lookup map
+    const schoolNameLookup = {
+      // Abbreviations
+      'ucc': 'Upper Canada College',
+      'bss': 'Bishop Strachan School',
+      'tcs': 'Trinity College School',
+      'sac': "St. Andrew's College",
+      'tfs': 'Toronto French School',
+      'rsgc': "Royal St. George's College",
+      'hsc': 'Hillfield Strathallan College',
+      
+      // Partial names
+      'branksome': 'Branksome Hall',
+      'havergal': 'Havergal College',
+      'appleby': 'Appleby College',
+      'ridley': 'Ridley College',
+      'crescent': 'Crescent School',
+      'lakefield': 'Lakefield College School',
+      'pickering': 'Pickering College',
+      'trinity': 'Trinity College School',
+      'greenwood': 'Greenwood College School',
+      'crestwood': 'Crestwood Preparatory College',
+      
+      // Common misspellings
+      'st andrews': "St. Andrew's College",
+      'saint andrews': "St. Andrew's College",
+      'bishop strachen': 'Bishop Strachan School',
+      'bishop strachan': 'Bishop Strachan School',
+      'hillfield strathallen': 'Hillfield Strathallan College',
+      'hillfield strathallan': 'Hillfield Strathallan College',
+      
+      // "The" variations
+      'york school': 'The York School',
+      'country day school': 'The Country Day School'
+    };
+
+    // TASK D: LOCATION-AWARE SEARCH - Toronto neighbourhood coordinates
+    const neighbourhoodMap = {
+      'midtown': { lat: 43.7, lng: -79.39 },
+      'yorkville': { lat: 43.67, lng: -79.39 },
+      'leaside': { lat: 43.71, lng: -79.36 },
+      'forest hill': { lat: 43.69, lng: -79.41 },
+      'rosedale': { lat: 43.68, lng: -79.38 },
+      'the annex': { lat: 43.67, lng: -79.41 },
+      'annex': { lat: 43.67, lng: -79.41 },
+      'lawrence park': { lat: 43.73, lng: -79.40 },
+      'north york': { lat: 43.77, lng: -79.41 },
+      'scarborough': { lat: 43.77, lng: -79.26 },
+      'etobicoke': { lat: 43.65, lng: -79.51 },
+      'mississauga': { lat: 43.59, lng: -79.64 },
+      'oakville': { lat: 43.45, lng: -79.68 },
+      'richmond hill': { lat: 43.87, lng: -79.44 },
+      'markham': { lat: 43.86, lng: -79.34 }
+    };
+
+    // Resolve neighbourhood to coordinates if mentioned
+    let resolvedLat = userLat;
+    let resolvedLng = userLng;
+    if (city && !userLat && !userLng) {
+      const neighbourhood = neighbourhoodMap[city.toLowerCase().trim()];
+      if (neighbourhood) {
+        resolvedLat = neighbourhood.lat;
+        resolvedLng = neighbourhood.lng;
+        console.log(`Resolved neighbourhood "${city}" to coordinates:`, neighbourhood);
+      }
+    }
 
     // Province/State abbreviation mappings
     const provinceAbbreviations = {
@@ -116,12 +186,19 @@ async function performSearch(req) {
       }
     };
 
-    // FIX 5: If requestedSchools is provided, fetch them first
+    // FIX 5 + TASK C: If requestedSchools is provided, fetch them first (with fuzzy matching)
     let requestedSchoolsList = [];
     if (familyProfile?.requestedSchools && familyProfile.requestedSchools.length > 0) {
       console.log('[FIX 5] Fetching requested schools:', familyProfile.requestedSchools);
+      
+      // Apply fuzzy matching to requested schools
+      const expandedNames = familyProfile.requestedSchools.map(name => {
+        const normalized = name.toLowerCase().trim();
+        return schoolNameLookup[normalized] || name;
+      });
+      
       requestedSchoolsList = await base44.entities.School.filter({
-        name: { $in: familyProfile.requestedSchools }
+        name: { $in: expandedNames }
       });
       console.log('[FIX 5] Found requested schools:', requestedSchoolsList.map(s => s.name));
     }
@@ -305,11 +382,11 @@ async function performSearch(req) {
     // Step 3: Sort by score (descending) - keeps location-matched schools
     schools = scored.sort((a, b) => b.score - a.score).map(s => s.school);
 
-    // Calculate distances if user location provided
-    if (userLat && userLng) {
+    // Calculate distances if user location provided (use resolved neighbourhood coordinates)
+    if (resolvedLat && resolvedLng) {
       schools = schools.map(school => {
         if (school.lat && school.lng) {
-          const distance = calculateDistance(userLat, userLng, school.lat, school.lng);
+          const distance = calculateDistance(resolvedLat, resolvedLng, school.lat, school.lng);
           return { ...school, distanceKm: distance };
         }
         return school;
@@ -351,7 +428,55 @@ async function performSearch(req) {
     // FIX 5: Always include requested schools at the top, even if they fail filters
     const requestedSchoolIds = new Set(requestedSchoolsList.map(s => s.id));
     const otherSchools = schools.filter(s => !requestedSchoolIds.has(s.id));
-    const finalSchools = [...requestedSchoolsList, ...otherSchools];
+    let finalSchools = [...requestedSchoolsList, ...otherSchools];
+    
+    // TASK E: FILTER EDGE CASE HANDLING
+    const originalFilteredCount = finalSchools.length;
+    let edgeCaseMessage = null;
+    let relaxedFilters = false;
+    
+    // Edge case 1: ALL schools filtered out - relax budget by 20%
+    if (finalSchools.length === 0 && maxTuition && maxTuition !== 'unlimited') {
+      edgeCaseMessage = "I couldn't find any schools matching all your criteria. Let me relax some filters and try again.";
+      const relaxedBudget = maxTuition * 1.2;
+      
+      // Retry with relaxed budget
+      finalSchools = hardFiltered.filter(school => {
+        if (school.tuition && school.tuition <= relaxedBudget) {
+          return true;
+        }
+        return !school.tuition; // Include schools without tuition data
+      });
+      
+      relaxedFilters = true;
+      
+      // If still none, relax location radius by 50%
+      if (finalSchools.length === 0 && maxDistanceKm) {
+        const relaxedDistance = maxDistanceKm * 1.5;
+        finalSchools = locationFiltered.filter(s => 
+          !s.distanceKm || s.distanceKm <= relaxedDistance
+        );
+      }
+    }
+    // Edge case 2: Fewer than 3 schools - relax budget by 20%
+    else if (finalSchools.length < 3 && finalSchools.length > 0 && maxTuition && maxTuition !== 'unlimited') {
+      edgeCaseMessage = "I've expanded the budget range slightly to show you more options.";
+      const relaxedBudget = maxTuition * 1.2;
+      
+      const additionalSchools = hardFiltered.filter(school => {
+        if (!requestedSchoolIds.has(school.id) && school.tuition) {
+          return school.tuition > maxTuition && school.tuition <= relaxedBudget;
+        }
+        return false;
+      });
+      
+      finalSchools = [...finalSchools, ...additionalSchools];
+      relaxedFilters = true;
+    }
+    // Edge case 3: Too many schools (>15) - prompt user to narrow down
+    else if (finalSchools.length > 15) {
+      edgeCaseMessage = "I found quite a few options! Would you like to narrow it down by adding more preferences (budget, curriculum, specializations)?";
+    }
     
     // Limit to max 20 results and return minimal fields
     const maxResults = Math.min(finalSchools.length, 20);
@@ -369,13 +494,53 @@ async function performSearch(req) {
       curriculumType: s.curriculumType,
       region: s.region,
       specializations: s.specializations,
-      distanceKm: s.distanceKm
+      distanceKm: s.distanceKm,
+      schoolType: s.schoolType
     }));
+
+    // TASK B: SEARCH LOGGING - Create SearchLog record
+    try {
+      const topResultsForLog = condensedSchools.slice(0, 10).map((s, idx) => ({
+        schoolName: s.name,
+        score: scored.find(sc => sc.school.id === s.id)?.score || 0,
+        reasons: [
+          s.distanceKm ? `${s.distanceKm.toFixed(1)}km away` : null,
+          s.tuition && maxTuition && s.tuition <= maxTuition ? 'Within budget' : null,
+          s.curriculumType === curriculumType ? `${curriculumType} curriculum` : null,
+          s.specializations?.some(spec => specializations?.includes(spec)) ? 'Matches specializations' : null
+        ].filter(Boolean)
+      }));
+
+      await base44.asServiceRole.entities.SearchLog.create({
+        query: searchQuery || `Search for grade ${minGrade} in ${city || region || 'unspecified'}`,
+        inputFilters: {
+          city,
+          provinceState,
+          region,
+          minGrade,
+          maxGrade,
+          maxTuition,
+          curriculumType,
+          specializations,
+          schoolType,
+          maxDistanceKm
+        },
+        totalSchoolsPassingFilters: originalFilteredCount,
+        topResults: topResultsForLog,
+        conversationId,
+        userId
+      });
+    } catch (logError) {
+      console.error('Failed to create SearchLog:', logError);
+      // Don't fail the search if logging fails
+    }
 
     return Response.json({ 
       schools: condensedSchools, 
       total: finalSchools.length,
-      returned: condensedSchools.length
+      returned: condensedSchools.length,
+      edgeCaseMessage,
+      relaxedFilters
     });
 }
 
