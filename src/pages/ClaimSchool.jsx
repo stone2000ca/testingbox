@@ -1,21 +1,26 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { AlertCircle, CheckCircle2, AlertTriangle, Upload, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, AlertTriangle, Upload, Loader2, Search } from 'lucide-react';
 import Navbar from '@/components/navigation/Navbar';
 import Footer from '@/components/navigation/Footer';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { debounce } from 'lodash';
 
 export default function ClaimSchool() {
   const location = useLocation();
-  const schoolId = new URLSearchParams(location.search).get('schoolId');
+  const navigate = useNavigate();
+  const [schoolId, setSchoolId] = useState(new URLSearchParams(location.search).get('schoolId'));
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [school, setSchool] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchingSchools, setSearchingSchools] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     role: '',
@@ -31,12 +36,46 @@ export default function ClaimSchool() {
   const [emailError, setEmailError] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
 
+  const handleSchoolSelect = (selectedSchoolId) => {
+    setSchoolId(selectedSchoolId);
+    setLoading(true);
+    setStep(1);
+    navigate(`${createPageUrl('ClaimSchool')}?schoolId=${selectedSchoolId}`);
+  };
+
+  const searchSchoolsDebounced = useCallback(
+    debounce(async (term) => {
+      if (term.length < 2) {
+        setSearchResults([]);
+        setSearchingSchools(false);
+        return;
+      }
+      setSearchingSchools(true);
+      try {
+        const schools = await base44.entities.School.filter({
+          name: { "$ilike": `%${term}%` }
+        }, null, 50);
+        setSearchResults(schools);
+      } catch (error) {
+        console.error('Failed to search schools:', error);
+        setSearchResults([]);
+      } finally {
+        setSearchingSchools(false);
+      }
+    }, 300),
+    []
+  );
+
   useEffect(() => {
-    if (!schoolId) {
+    searchSchoolsDebounced(searchTerm);
+  }, [searchTerm, searchSchoolsDebounced]);
+
+  useEffect(() => {
+    if (schoolId) {
+      loadSchool();
+    } else {
       setLoading(false);
-      return;
     }
-    loadSchool();
   }, [schoolId]);
 
   const loadSchool = async () => {
@@ -318,20 +357,60 @@ export default function ClaimSchool() {
     );
   }
 
-  if (!schoolId) {
+  if (!schoolId || !school) {
     return (
       <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="max-w-2xl mx-auto px-4 py-12">
-          <Card className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold mb-2 text-slate-900">No School Selected</h1>
-            <p className="text-slate-600 mb-8">Please select a school from the directory to claim.</p>
-            <Link to={createPageUrl('SchoolDirectory')}>
-              <Button className="bg-teal-600 hover:bg-teal-700">
-                Go to School Directory
-              </Button>
-            </Link>
+          <Card className="p-8">
+            <h1 className="text-3xl font-bold text-slate-900 mb-4 text-center">Claim Your School Profile</h1>
+            <p className="text-slate-600 mb-8 text-center">
+              Search for your school to begin the verification process.
+            </p>
+            
+            <div className="relative mb-6">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Search for your school by name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border rounded-lg w-full text-lg"
+                autoFocus
+              />
+            </div>
+
+            {searchingSchools ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+              </div>
+            ) : searchResults.length > 0 ? (
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+                {searchResults.map((result) => (
+                  <Button
+                    key={result.id}
+                    variant="ghost"
+                    className="w-full justify-start text-left h-auto p-3 hover:bg-slate-100"
+                    onClick={() => handleSchoolSelect(result.id)}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium text-slate-800">{result.name}</span>
+                      <span className="text-sm text-slate-500">{result.city}, {result.provinceState}</span>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            ) : searchTerm.length >= 2 && !searchingSchools ? (
+              <div className="text-center py-8 text-slate-500">No schools found for "{searchTerm}".</div>
+            ) : (
+              <div className="text-center py-8 text-slate-500">Start typing to search for your school.</div>
+            )}
+
+            {searchTerm.length < 2 && searchResults.length === 0 && (
+              <div className="mt-8 text-center text-sm text-slate-500">
+                Can't find your school? <Link to={createPageUrl('Contact')} className="text-teal-600 hover:underline">Contact us</Link>.
+              </div>
+            )}
           </Card>
         </div>
         <Footer />

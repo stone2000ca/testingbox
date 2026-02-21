@@ -4,8 +4,8 @@ import { ArrowRight, MessageSquare, Zap, BarChart3, CheckCircle2 } from "lucide-
 import { createPageUrl } from "../utils";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/navigation/Navbar";
-import Footer from "@/components/navigation/Footer";
 import { base44 } from '@/api/base44Client';
+import SchoolCardUnified from '@/components/schools/SchoolCardUnified';
 
 export default function Home() {
   const [schools, setSchools] = useState([]);
@@ -81,8 +81,11 @@ export default function Home() {
 
   const loadFeaturedSchools = async () => {
     try {
-      const data = await base44.entities.School.list('-updated_date', 6);
-      setSchools(data);
+      const featuredNames = ["Havergal College", "Upper Canada College", "Branksome Hall", "Crescent School"];
+      const data = await base44.entities.School.filter({
+        name: { "$in": featuredNames }
+      });
+      setSchools(data.slice(0, 4));
     } catch (error) {
       console.error('Failed to load featured schools:', error);
     } finally {
@@ -219,8 +222,8 @@ export default function Home() {
           </div>
 
           {loadingSchools ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[...Array(6)].map((_, i) => (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-white rounded-xl p-6 h-64 animate-pulse">
                   <div className="h-4 bg-slate-200 rounded w-3/4 mb-4" />
                   <div className="h-4 bg-slate-200 rounded w-1/2 mb-6" />
@@ -232,41 +235,9 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {schools.map((school) => (
-                <Link 
-                  key={school.id} 
-                  to={`${createPageUrl('SchoolProfile')}?schoolId=${school.id}`}
-                  className="focus:ring-2 focus:ring-teal-400 focus:outline-none rounded-xl"
-                >
-                  <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:shadow-md hover:border-teal-200 transition-all h-full">
-                    <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2">
-                      {school.name}
-                    </h3>
-                    <p className="text-sm text-slate-600 mb-4">{school.city}, {school.provinceState}</p>
-                    
-                    <div className="space-y-3">
-                      {school.gradesServed && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">Grades:</span>
-                          <span className="font-semibold text-slate-900">{school.gradesServed}</span>
-                        </div>
-                      )}
-                      {school.tuition && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">Tuition:</span>
-                          <span className="font-semibold text-slate-900">${school.tuition?.toLocaleString()}</span>
-                        </div>
-                      )}
-                      {school.curriculumType && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">Curriculum:</span>
-                          <span className="font-semibold text-slate-900">{school.curriculumType}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                <SchoolCardUnified key={school.id} school={school} />
               ))}
             </div>
           )}
@@ -290,8 +261,6 @@ export default function Home() {
           </Link>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

@@ -17,7 +17,6 @@ import SortControl from '@/components/schools/SortControl';
 import LoginGateModal from '@/components/dialogs/LoginGateModal';
 import FamilyBriefPanel from '@/components/chat/FamilyBriefPanel';
 import ProgressBar from '@/components/ui/progress-bar';
-import BetaWelcomeOverlay from '@/components/onboarding/BetaWelcomeOverlay';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
@@ -985,7 +984,6 @@ Return empty array if user didn't provide any of these facts.`;
   if (!selectedConsultant) {
     return (
       <div className="h-screen flex flex-col bg-slate-50">
-        <BetaWelcomeOverlay />
         <a 
           href="#consultant-selection" 
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-teal-600 focus:text-white focus:rounded-lg"
