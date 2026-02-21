@@ -924,6 +924,12 @@ Use bullet points. Be concise and direct. Maximum 150 words.`;
       
       matchingSchools = deduplicated.slice(0, 20); // Show up to 20 results
 
+      // Auto-transition SEARCHING → RESULTS
+      if (currentState === STATES.SEARCHING) {
+        currentState = STATES.RESULTS;
+        context.state = currentState;
+      }
+
       // STEP 2.5: Generate match explanations if FamilyProfile exists
       if (conversationFamilyProfile && conversationFamilyProfile.onboardingComplete && matchingSchools.length > 0) {
         try {
