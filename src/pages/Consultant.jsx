@@ -1626,20 +1626,8 @@ Return empty array if user didn't provide any of these facts.`;
 
           {/* Suggested Response Chips - After greeting, for confirm_brief, BRIEF state, or Brief message detected */}
           {(() => {
-            // Check if last AI message is a Brief (contains confirmation phrases)
-            const lastAIMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
-            const isBriefMessage = lastAIMessage?.content && (
-              lastAIMessage.content.includes("Does that capture") ||
-              lastAIMessage.content.includes("Anything I'm missing") ||
-              lastAIMessage.content.includes("Here's what I'm taking away") ||
-              lastAIMessage.content.includes("needs adjustment")
-            );
-            
             const shouldShowChips = showResponseChips || 
-                                    onboardingPhase === 'confirm_brief' || 
-                                    currentConversation?.conversationContext?.state === 'BRIEF' ||
-                                    isBriefMessage;
-            
+                                    (currentState === STATES.BRIEF && [BRIEF_STATUS.PENDING_REVIEW, BRIEF_STATUS.EDITING].includes(briefStatus));
             return shouldShowChips;
           })() && (
             <div className="p-3 sm:p-4 border-t border-white/10 bg-[#2A2A3D] flex flex-col sm:flex-row flex-wrap gap-2 justify-center">
