@@ -15,7 +15,7 @@ function normalizeName(name) {
 // Count non-null fields
 function countCompleteFields(school) {
   let count = 0;
-  const data = school.data || school;
+  const data = school;
   const fields = [
     'name', 'address', 'city', 'provinceState', 'phone', 'email',
     'website', 'dayTuition', 'boardingTuition', 'currency', 'founded',
@@ -34,32 +34,26 @@ function countCompleteFields(school) {
 
 // Determine primary school (best candidate to keep)
 function selectPrimary(schools) {
-  // Normalize: ensure all schools have .data property
-  const normalized = schools.map(s => ({
-    id: s.id,
-    data: s.data || s
-  }));
-
   // Priority 1: claimed status
-  const claimed = normalized.find(s => s.data.claimStatus === 'claimed');
+  const claimed = schools.find(s => s.claimStatus === 'claimed');
   if (claimed) return claimed;
 
   // Priority 2: manual source (user-created)
-  const manual = normalized.find(s => s.data.dataSource === 'manual' || !s.data.importBatchId);
+  const manual = schools.find(s => s.dataSource === 'manual' || !s.importBatchId);
   if (manual) return manual;
 
   // Priority 3: most complete record
-  return normalized.reduce((best, current) => 
+  return schools.reduce((best, current) => 
     countCompleteFields(current) > countCompleteFields(best) ? current : best
   );
 }
 
 // Merge duplicate records
 function mergeRecords(primary, duplicate) {
-  const merged = { ...primary.data };
+  const merged = { ...primary };
   
-  for (const [key, value] of Object.entries(duplicate.data)) {
-    if (value && !merged[key] && key !== 'id' && key !== 'created_date' && key !== 'created_by') {
+  for (const [key, value] of Object.entries(duplicate)) {
+    if (value && !merged[key] && key !== 'id' && key !== 'created_date' && key !== 'created_by' && key !== 'updated_date') {
       merged[key] = value;
     } else if (Array.isArray(value) && Array.isArray(merged[key])) {
       // Merge arrays, avoiding duplicates
@@ -79,29 +73,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Fetch all schools - use list with sort descending to get all
+    // Fetch all schools
     const schools = await base44.asServiceRole.entities.School.filter({});
     
-    if (schools.length === 0) {
+    if (!schools || schools.length === 0) {
       return Response.json({ error: 'No schools found' }, { status: 400 });
     }
-
-    console.log(`Fetched ${schools.length} schools`);
-    
-    // Verify data structure
-    if (!Array.isArray(schools) || schools.length === 0) {
-      console.log('Schools is not an array or empty');
-      return Response.json({ error: 'Invalid school data' }, { status: 400 });
-    }
-
-    const firstSchool = schools[0];
-    const schoolKeys = Object.keys(firstSchool || {});
-    console.log(`First school keys:`, schoolKeys);
-    
-    // Check if schools have .data property or are flat
-    const isFlatStructure = 'slug' in firstSchool;
-    const hasDataProperty = 'data' in firstSchool;
-    console.log(`isFlatStructure: ${isFlatStructure}, hasDataProperty: ${hasDataProperty}`);
 
     const report = {
       pass1: {
@@ -124,21 +101,14 @@ Deno.serve(async (req) => {
     // PASS 1: Find and merge duplicate slugs
     const slugMap = {};
     for (const school of schools) {
-      const slug = school.slug || school.data?.slug;
-      if (slug) {
-        if (!slugMap[slug]) slugMap[slug] = [];
-        slugMap[slug].push(school);
+      if (school.slug) {
+        if (!slugMap[school.slug]) slugMap[school.slug] = [];
+        slugMap[school.slug].push(school);
       }
     }
 
-    console.log(`Total unique slugs: ${Object.keys(slugMap).length}, schools: ${schools.length}`);
-    const duplicateSlugs = Object.entries(slugMap).filter(([_, list]) => list.length > 1);
-    console.log(`Duplicate slug groups: ${duplicateSlugs.length}`);
-    if (duplicateSlugs.length > 0) {
-      console.log('Sample duplicates:', duplicateSlugs.slice(0, 3).map(([slug, list]) => ({ slug, count: list.length })));
-    }
-
     const deletedIds = new Set();
+    const updateQueue = []; // Queue updates to avoid rate limit
 
     for (const [slug, schoolList] of Object.entries(slugMap)) {
       if (schoolList.length > 1) {
@@ -149,30 +119,35 @@ Deno.serve(async (req) => {
         const duplicates = schoolList.filter(s => s.id !== primary.id);
 
         // Merge fields from duplicates into primary
-        const primaryData = primary.data || primary;
-        let mergedData = { ...primaryData };
+        let mergedData = { ...primary };
         let fieldsCopied = 0;
 
         for (const duplicate of duplicates) {
-          const dupData = duplicate.data || duplicate;
           const before = JSON.stringify(mergedData);
-          mergedData = mergeRecords({ data: mergedData }, { data: dupData });
+          mergedData = mergeRecords(mergedData, duplicate);
           const after = JSON.stringify(mergedData);
           
           if (before !== after) {
-            const newFields = Object.keys(dupData).filter(
-              k => dupData[k] && !primaryData[k]
+            const newFields = Object.keys(duplicate).filter(
+              k => duplicate[k] && !primary[k]
             ).length;
             fieldsCopied += newFields;
           }
         }
 
-        // Update primary with merged data
-        await base44.asServiceRole.entities.School.update(primary.id, mergedData);
+        // Queue update
+        updateQueue.push({
+          type: 'update',
+          id: primary.id,
+          data: mergedData
+        });
 
-        // Delete duplicates
+        // Queue deletes
         for (const duplicate of duplicates) {
-          await base44.asServiceRole.entities.School.delete(duplicate.id);
+          updateQueue.push({
+            type: 'delete',
+            id: duplicate.id
+          });
           deletedIds.add(duplicate.id);
           report.pass1.recordsDeleted++;
         }
@@ -181,11 +156,11 @@ Deno.serve(async (req) => {
         report.pass1.merges.push({
           slug: slug,
           primaryId: primary.id,
-          primaryName: primaryData.name,
-          primarySource: primaryData.dataSource,
+          primaryName: primary.name,
+          primarySource: primary.dataSource,
           primaryCompleteFields: countCompleteFields(primary),
           duplicatesDeleted: duplicates.length,
-          duplicateNames: duplicates.map(d => (d.data || d).name),
+          duplicateNames: duplicates.map(d => d.name),
           fieldsCopied: fieldsCopied
         });
       }
@@ -193,65 +168,80 @@ Deno.serve(async (req) => {
       report.pass1.totalProcessed++;
     }
 
-    report.pass1.fieldsCopied = report.pass1.merges.reduce((sum, m) => sum + (m.fieldsCopied || 0), 0);
+    // Execute update queue
+    for (const op of updateQueue) {
+      if (op.type === 'update') {
+        await base44.asServiceRole.entities.School.update(op.id, op.data);
+      } else if (op.type === 'delete') {
+        await base44.asServiceRole.entities.School.delete(op.id);
+      }
+      // Small delay to avoid rate limits
+      await new Promise(r => setTimeout(r, 10));
+    }
 
     // PASS 2: Find schools with same normalized name + city but different slugs
     const remaining = schools.filter(s => !deletedIds.has(s.id));
     const nameMap = {};
 
     for (const school of remaining) {
-      const data = school.data || school;
-      if (data?.name && data?.city) {
-        const key = `${normalizeName(data.name)}|${data.city}`;
+      if (school.name && school.city) {
+        const key = `${normalizeName(school.name)}|${school.city}`;
         if (!nameMap[key]) nameMap[key] = [];
         nameMap[key].push(school);
       }
     }
 
+    const updateQueue2 = [];
+
     for (const [key, schoolList] of Object.entries(nameMap)) {
       if (schoolList.length > 1) {
         // Check if they have different slugs
-        const slugs = new Set(schoolList.map(s => (s.data || s).slug));
+        const slugs = new Set(schoolList.map(s => s.slug));
         if (slugs.size > 1) {
           report.pass2.duplicatesFound++;
 
           const primary = selectPrimary(schoolList);
           const duplicates = schoolList.filter(s => s.id !== primary.id);
 
-          const primaryData = primary.data || primary;
-          let mergedData = { ...primaryData };
+          let mergedData = { ...primary };
           let fieldsCopied = 0;
 
           for (const duplicate of duplicates) {
-            const dupData = duplicate.data || duplicate;
             const before = JSON.stringify(mergedData);
-            mergedData = mergeRecords({ data: mergedData }, { data: dupData });
+            mergedData = mergeRecords(mergedData, duplicate);
             const after = JSON.stringify(mergedData);
             
             if (before !== after) {
-              const newFields = Object.keys(dupData).filter(
-                k => dupData[k] && !primaryData[k]
+              const newFields = Object.keys(duplicate).filter(
+                k => duplicate[k] && !primary[k]
               ).length;
               fieldsCopied += newFields;
             }
           }
 
-          // Update primary
-          await base44.asServiceRole.entities.School.update(primary.id, mergedData);
+          // Queue update
+          updateQueue2.push({
+            type: 'update',
+            id: primary.id,
+            data: mergedData
+          });
 
-          // Delete duplicates
+          // Queue deletes
           for (const duplicate of duplicates) {
-            await base44.asServiceRole.entities.School.delete(duplicate.id);
+            updateQueue2.push({
+              type: 'delete',
+              id: duplicate.id
+            });
             deletedIds.add(duplicate.id);
             report.pass2.recordsDeleted++;
           }
 
           report.pass2.merges.push({
-            schoolNames: schoolList.map(s => (s.data || s).name),
-            city: (schoolList[0].data || schoolList[0]).city,
+            schoolNames: schoolList.map(s => s.name),
+            city: schoolList[0].city,
             slugsConsolidated: Array.from(slugs),
             primaryId: primary.id,
-            primarySlug: primaryData.slug,
+            primarySlug: primary.slug,
             duplicatesDeleted: duplicates.length,
             fieldsCopied: fieldsCopied
           });
@@ -259,8 +249,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Execute second update queue
+    for (const op of updateQueue2) {
+      if (op.type === 'update') {
+        await base44.asServiceRole.entities.School.update(op.id, op.data);
+      } else if (op.type === 'delete') {
+        await base44.asServiceRole.entities.School.delete(op.id);
+      }
+      // Small delay to avoid rate limits
+      await new Promise(r => setTimeout(r, 10));
+    }
+
     // Final count
-    const finalSchools = await base44.asServiceRole.entities.School.list(null, 1000);
+    const finalSchools = await base44.asServiceRole.entities.School.filter({});
     report.totalSchoolsAfter = finalSchools.length;
 
     return Response.json({
