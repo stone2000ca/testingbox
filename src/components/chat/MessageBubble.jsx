@@ -17,15 +17,15 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
             : 'bg-[#334155] text-white'
         }`}>
           {isUser ? (
-            <p className="text-sm leading-relaxed">{message.content}</p>
+           <p className="text-sm leading-relaxed">{message.content}</p>
           ) : (
-            <ReactMarkdown 
-              className="text-sm prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-              components={{
-                p: ({ children }) => <p className="my-1 leading-relaxed text-[#E8E8ED]">{children}</p>,
-                ul: ({ children }) => <ul className="my-1 ml-4 list-disc text-[#E8E8ED]">{children}</ul>,
-                ol: ({ children }) => <ol className="my-1 ml-4 list-decimal text-[#E8E8ED]">{children}</ol>,
-                li: ({ children }) => <li className="my-0.5 text-[#E8E8ED]">{children}</li>,
+           <ReactMarkdown 
+             className="text-sm prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+             components={{
+               p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
+               ul: ({ children }) => <ul className="my-1 ml-4 list-disc">{children}</ul>,
+               ol: ({ children }) => <ol className="my-1 ml-4 list-decimal">{children}</ol>,
+               li: ({ children }) => <li className="my-0.5">{children}</li>,
                 strong: ({ children }) => <strong className="font-semibold" style={{ color: accentColor }}>{children}</strong>,
                 a: ({ href, children }) => {
                    const childText = typeof children === 'string' ? children : 
