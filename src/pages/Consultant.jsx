@@ -1478,13 +1478,6 @@ Return empty array if user didn't provide any of these facts.`;
             />
           )}
 
-           {currentState === STATES.RESULTS && comparisonData && (
-             <ComparisonView 
-               schools={comparisonData} 
-               onBack={handleComparisonBack}
-             />
-           )}
-
           
 
         </main>
