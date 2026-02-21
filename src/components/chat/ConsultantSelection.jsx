@@ -69,7 +69,7 @@ export default function ConsultantSelection({ onSelectConsultant }) {
 
                 {/* Tagline */}
                 <div className="mb-4">
-                  <p className="text-slate-400 italic text-sm">
+                  <p className="text-slate-300 italic text-sm">
                     "{consultant.tagline}"
                   </p>
                 </div>
