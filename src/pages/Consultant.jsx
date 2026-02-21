@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { STATES, BRIEF_STATUS } from './stateMachineConfig';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus, Heart, FileText, Sparkles, LogIn, Menu, ArrowLeft, Badge, Trash2, MapPin, Star } from "lucide-react";
 import MessageBubble from '@/components/chat/MessageBubble';
