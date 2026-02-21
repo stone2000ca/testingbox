@@ -112,10 +112,28 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 text-slate-900 font-semibold">
+            <div className="flex items-center gap-1 text-slate-900 font-semibold text-sm">
               <DollarSign className="h-4 w-4" />
-              {getCurrencySymbol(school.currency)}{school.tuition?.toLocaleString() || 'N/A'}
-              <span className="text-xs text-slate-500 font-normal">/year</span>
+              {school.dayTuition && school.boardingTuition ? (
+                <span className="text-xs">
+                  from {getCurrencySymbol(school.currency)}{school.dayTuition.toLocaleString()} (day) / {getCurrencySymbol(school.currency)}{school.boardingTuition.toLocaleString()} (boarding)
+                </span>
+              ) : school.dayTuition ? (
+                <>
+                  {getCurrencySymbol(school.currency)}{school.dayTuition.toLocaleString()}
+                  <span className="text-xs text-slate-500 font-normal">/year (day)</span>
+                </>
+              ) : school.boardingTuition ? (
+                <>
+                  {getCurrencySymbol(school.currency)}{school.boardingTuition.toLocaleString()}
+                  <span className="text-xs text-slate-500 font-normal">/year (boarding)</span>
+                </>
+              ) : (
+                <>
+                  {getCurrencySymbol(school.currency)}{school.tuition?.toLocaleString() || 'N/A'}
+                  <span className="text-xs text-slate-500 font-normal">/year</span>
+                </>
+              )}
             </div>
           </div>
 
