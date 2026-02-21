@@ -353,7 +353,7 @@ Return ONLY valid JSON. Do NOT explain.`;
        });
     }
     
-    if (currentState === STATES.BRIEF || currentState === STATES.BRIEF_EDIT) {
+    if (currentState === STATES.BRIEF) {
        let briefMessage;
        try {
          const { childName, childGrade, locationArea, budgetRange, maxTuition, interests, priorities, dealbreakers, currentSituation, academicStrengths } = conversationFamilyProfile;
