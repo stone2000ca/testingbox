@@ -1034,10 +1034,11 @@ Return empty array if user didn't provide any of these facts.`;
 
       {isIntakePhase ? (
         /* INTAKE PHASE - Centered Layout */
-        <div id="main-content" className="flex-1 overflow-hidden bg-[#1E1E2E] flex items-center justify-center p-2 sm:p-4">
-          <div className="w-full max-w-2xl h-full max-h-[95vh] sm:max-h-[90vh] bg-[#2A2A3D] rounded-xl sm:rounded-2xl shadow-2xl flex flex-col transition-all duration-400">
-            {/* Consultant Header */}
-            <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between bg-[#2A2A3D]">
+        <div id="main-content" className="flex-1 flex flex-col bg-[#1E1E2E] overflow-hidden relative">
+          <div className="flex-1 flex items-center justify-center p-2 sm:p-4">
+            <div className="w-full max-w-2xl h-full max-h-[95vh] sm:max-h-[90vh] bg-[#2A2A3D] rounded-xl sm:rounded-2xl shadow-2xl flex flex-col transition-all duration-400">
+              {/* Consultant Header */}
+              <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between bg-[#2A2A3D]">
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 <div className={`h-8 sm:h-10 w-8 sm:w-10 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0 ${
                   selectedConsultant === 'Jackie' ? 'bg-[#C27B8A]' : 'bg-[#6B9DAD]'
@@ -1081,8 +1082,8 @@ Return empty array if user didn't provide any of these facts.`;
               </TooltipProvider>
             </div>
 
-            {/* Messages */}
-            <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#1E1E2E]">
+              {/* Messages */}
+              <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#1E1E2E] pb-32">
               {currentView === 'welcome' && messages.length <= 1 && (
                 <div className="text-center space-y-6 py-8">
                   <div className="space-y-2">
@@ -1275,14 +1276,15 @@ Return empty array if user didn't provide any of these facts.`;
               </div>
             )}
 
-            {/* Chat Input */}
-            <ChatInput
-              ref={inputRef}
-              onSend={handleSendMessage}
-              disabled={isTyping}
-              tokenBalance={tokenBalance}
-              isPremium={isPremium}
-            />
+              {/* Chat Input - Fixed at bottom of modal */}
+              <ChatInput
+                ref={inputRef}
+                onSend={handleSendMessage}
+                disabled={isTyping}
+                tokenBalance={tokenBalance}
+                isPremium={isPremium}
+              />
+            </div>
           </div>
         </div>
       ) : (
