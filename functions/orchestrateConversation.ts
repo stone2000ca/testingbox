@@ -521,10 +521,10 @@ Deno.serve(async (req) => {
       matchingSchools = deduplicated.slice(0, 20); // Show up to 20 results
 
       // STEP 2.5: Generate match explanations if FamilyProfile exists
-      if (familyProfile && familyProfile.onboardingComplete && matchingSchools.length > 0) {
+      if (conversationFamilyProfile && conversationFamilyProfile.onboardingComplete && matchingSchools.length > 0) {
         try {
           const explanationsResult = await base44.asServiceRole.functions.invoke('generateMatchExplanations', {
-            familyProfile: familyProfile,
+            familyProfile: conversationFamilyProfile,
             schools: matchingSchools
           });
           
