@@ -75,6 +75,13 @@ export default function Consultant() {
   
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  
+  // Determine if we're in intake phase (centered) or results phase (sidebar)
+  const isIntakePhase = schools.length === 0 && 
+                        currentView !== 'schools' && 
+                        currentView !== 'detail' && 
+                        currentView !== 'comparison' && 
+                        currentView !== 'comparison-table';
 
   useEffect(() => {
     checkAuth();
@@ -782,7 +789,222 @@ Return empty array if user didn't provide any of these facts.`;
       {/* Header */}
       <Navbar variant="minimal" />
 
-      <div className="flex-1 flex overflow-hidden relative">
+      {isIntakePhase ? (
+        /* INTAKE PHASE - Centered Layout */
+        <div className="flex-1 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl h-full max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col transition-all duration-400">
+            {/* Consultant Header */}
+            <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-teal-50 to-blue-50">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold text-lg">
+                  {selectedConsultant === 'Jackie' ? 'J' : 'L'}
+                </div>
+                <div>
+                  <h2 className="font-bold text-lg text-slate-900">{selectedConsultant}</h2>
+                  <p className="text-xs text-slate-600">AI Education Consultant</p>
+                </div>
+              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={`text-xs px-3 py-1 rounded-full font-medium cursor-help ${
+                      isPremium 
+                        ? 'bg-purple-100 text-purple-700' 
+                        : tokenBalance > 50 
+                          ? 'bg-green-100 text-green-700'
+                          : tokenBalance > 10
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-700'
+                    }`}>
+                      {isPremium ? '∞ tokens' : `${tokenBalance} tokens`}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isPremium ? (
+                      <p>Unlimited tokens</p>
+                    ) : (
+                      <p>+{getPlanLimits(user?.subscriptionPlan || 'free').dailyReplenishment} tomorrow</p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {currentView === 'welcome' && messages.length <= 1 && (
+                <div className="text-center space-y-6 py-8">
+                  <div className="space-y-2">
+                    <h1 className="text-3xl font-bold text-slate-900">Welcome to NextSchool</h1>
+                    <p className="text-slate-600">Your personalized school search, simplified</p>
+                  </div>
+                  <div className="grid gap-4 max-w-md mx-auto text-left">
+                    <div className="flex items-start gap-3">
+                      <div className="h-8 w-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold flex-shrink-0">1</div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900">Tell us about your child</h3>
+                        <p className="text-sm text-slate-600">Grade, location, priorities</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="h-8 w-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold flex-shrink-0">2</div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900">Review your brief</h3>
+                        <p className="text-sm text-slate-600">Confirm what matters most</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="h-8 w-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold flex-shrink-0">3</div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900">See your matches</h3>
+                        <p className="text-sm text-slate-600">Personalized school recommendations</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {messages.map((msg, index) => (
+                <MessageBubble
+                  key={index}
+                  message={msg}
+                  isUser={msg.role === 'user'}
+                  schools={schools}
+                  onViewSchoolProfile={async (slug) => {
+                    let school = schools?.find(s => 
+                      s.slug === slug || 
+                      s.name.toLowerCase() === slug.toLowerCase() ||
+                      s.name.toLowerCase().replace(/[^a-z0-9]/g, '-') === slug
+                    );
+                    
+                    if (school) {
+                      setSelectedSchool(school);
+                      setCurrentView('detail');
+                    } else {
+                      try {
+                        let results = await base44.entities.School.filter({ slug });
+                        if (!results || results.length === 0) {
+                          const possibleName = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                          results = await base44.entities.School.filter({ name: { $regex: slug.replace(/-/g, ' '), $options: 'i' } });
+                        }
+                        if (results && results.length > 0) {
+                          setSelectedSchool(results[0]);
+                          setCurrentView('detail');
+                        }
+                      } catch (error) {
+                        console.error('Error finding school:', error);
+                      }
+                    }
+                  }}
+                />
+              ))}
+              {isTyping && <TypingIndicator message={loadingStages[loadingStage]} />}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Suggested Response Chips */}
+            {(() => {
+              const lastAIMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
+              const isBriefMessage = lastAIMessage?.content && (
+                lastAIMessage.content.includes("Does that capture") ||
+                lastAIMessage.content.includes("Anything I'm missing") ||
+                lastAIMessage.content.includes("Here's what I'm taking away") ||
+                lastAIMessage.content.includes("needs adjustment")
+              );
+              
+              const shouldShowChips = showResponseChips || 
+                                      onboardingPhase === 'confirm_brief' || 
+                                      currentConversation?.conversationContext?.state === 'BRIEF' ||
+                                      isBriefMessage;
+              
+              return shouldShowChips;
+            })() && (
+              <div className="p-4 border-t bg-slate-50 flex flex-wrap gap-2 justify-center">
+                {(() => {
+                  const lastAIMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
+                  const isBriefMessage = lastAIMessage?.content && (
+                    lastAIMessage.content.includes("Does that capture") ||
+                    lastAIMessage.content.includes("Anything I'm missing") ||
+                    lastAIMessage.content.includes("Here's what I'm taking away") ||
+                    lastAIMessage.content.includes("needs adjustment")
+                  );
+                  
+                  return showResponseChips && !onboardingPhase && currentConversation?.conversationContext?.state !== 'BRIEF' && !isBriefMessage;
+                })() && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleSendMessage("My child needs a new school")}
+                      disabled={isTyping}
+                      className="text-xs"
+                    >
+                      My child needs a new school
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleSendMessage("I'm comparing a few schools already")}
+                      disabled={isTyping}
+                      className="text-xs"
+                    >
+                      I'm comparing a few schools already
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleSendMessage("I'm not sure where to start")}
+                      disabled={isTyping}
+                      className="text-xs"
+                    >
+                      I'm not sure where to start
+                    </Button>
+                  </>
+                )}
+                {(() => {
+                  const lastAIMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
+                  const isBriefMessage = lastAIMessage?.content && (
+                    lastAIMessage.content.includes("Does that capture") ||
+                    lastAIMessage.content.includes("Anything I'm missing") ||
+                    lastAIMessage.content.includes("Here's what I'm taking away") ||
+                    lastAIMessage.content.includes("needs adjustment")
+                  );
+                  
+                  return onboardingPhase === 'confirm_brief' || 
+                         currentConversation?.conversationContext?.state === 'BRIEF' ||
+                         isBriefMessage;
+                })() && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleSendMessage("That's right, let's see the schools")}
+                      disabled={isTyping}
+                      className="text-sm px-4 py-2 rounded-full bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100"
+                    >
+                      That's right, let's see the schools
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleSendMessage("I'd like to adjust something")}
+                      disabled={isTyping}
+                      className="text-sm px-4 py-2 rounded-full bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    >
+                      I'd like to adjust something
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Chat Input */}
+            <ChatInput
+              ref={inputRef}
+              onSend={handleSendMessage}
+              disabled={isTyping}
+              tokenBalance={tokenBalance}
+              isPremium={isPremium}
+            />
+          </div>
+        </div>
+      ) : (
+        /* RESULTS PHASE - Sidebar Layout */
+        <div className="flex-1 flex overflow-hidden relative transition-all duration-400">
         {/* LEFT SIDEBAR */}
         <aside className={`
           ${sidebarCollapsed ? 'w-0' : 'w-64'}
@@ -1332,6 +1554,7 @@ Return empty array if user didn't provide any of these facts.`;
             onClose={() => setShowNotesPanel(false)}
           />
         </>
+      )}
       )}
     </div>
   );
