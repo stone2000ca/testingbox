@@ -77,7 +77,7 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
                    )}
                    </div>
                    {message.timestamp && (
-                   <span className="text-[10px] sm:text-xs text-[#E8E8ED]/40 mt-1 px-1">
+                   <span className={`text-[10px] sm:text-xs mt-1 px-1 ${isUser ? 'text-slate-500' : 'text-white/40'}`}>
                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                    </span>
                    )}
