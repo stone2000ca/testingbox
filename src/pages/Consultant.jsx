@@ -15,6 +15,7 @@ import ComparisonView from '@/components/schools/ComparisonView';
 import ComparisonTable from '@/components/schools/ComparisonTable';
 import SortControl from '@/components/schools/SortControl';
 import LoginGateModal from '@/components/dialogs/LoginGateModal';
+import FamilyBriefPanel from '@/components/chat/FamilyBriefPanel';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
@@ -69,6 +70,11 @@ export default function Consultant() {
   // Login gate
   const [showLoginGate, setShowLoginGate] = useState(false);
   
+  // Family Brief panel
+  const [briefExpanded, setBriefExpanded] = useState(false);
+  const [lastTypingTime, setLastTypingTime] = useState(Date.now());
+  const [familyProfile, setFamilyProfile] = useState(null);
+  
   // Progressive loading states
   const [loadingStage, setLoadingStage] = useState(0);
   const loadingStages = [
@@ -95,6 +101,41 @@ export default function Consultant() {
     loadUserLocation();
     restoreGuestSession();
   }, []);
+
+  // Load family profile for Brief panel
+  useEffect(() => {
+    if (user?.id && currentConversation?.id) {
+      loadFamilyProfile();
+    }
+  }, [user?.id, currentConversation?.id, messages]);
+
+  // Auto-expand Brief after 10 seconds of inactivity
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!isTyping && messages.length > 1 && !briefExpanded) {
+        setBriefExpanded(true);
+      }
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, [lastTypingTime, isTyping]);
+
+  const loadFamilyProfile = async () => {
+    if (!user?.id || !currentConversation?.id) return;
+    
+    try {
+      const profiles = await base44.entities.FamilyProfile.filter({
+        userId: user.id,
+        conversationId: currentConversation.id
+      });
+      
+      if (profiles.length > 0) {
+        setFamilyProfile(profiles[0]);
+      }
+    } catch (error) {
+      console.error('Failed to load family profile:', error);
+    }
+  };
 
   // Restore guest session data after login
   const restoreGuestSession = () => {
@@ -429,6 +470,7 @@ export default function Consultant() {
     setMessages(updatedMessages);
     setIsTyping(true);
     setShowResponseChips(false);
+    setLastTypingTime(Date.now());
 
     try {
       // Fetch user notes and shortlist for AI context
@@ -1619,6 +1661,20 @@ Return empty array if user didn't provide any of these facts.`;
         <LoginGateModal
           consultantName={selectedConsultant}
           onClose={() => setShowLoginGate(false)}
+        />
+      )}
+
+      {/* Family Brief Panel - Only show after intake starts and user is authenticated */}
+      {isAuthenticated && selectedConsultant && messages.length > 1 && (
+        <FamilyBriefPanel
+          familyProfile={familyProfile}
+          shortlist={shortlistData}
+          isExpanded={briefExpanded}
+          onToggleExpand={setBriefExpanded}
+          onSectionClick={(sectionId) => {
+            // TODO: Scroll to relevant message in chat
+            console.log('Section clicked:', sectionId);
+          }}
         />
       )}
     </div>
