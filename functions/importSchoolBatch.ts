@@ -111,6 +111,7 @@ Deno.serve(async (req) => {
     let updated = 0;
     let skipped = 0;
     const errors = [];
+    const dedupLog = [];
 
     // Process in chunks to avoid payload limits
     const CHUNK_SIZE = 50;
@@ -129,22 +130,45 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // Fuzzy match against existing schools
+          // Fetch existing schools by country
           const existingSchools = await base44.asServiceRole.entities.School.filter({
             country: school.country
           }, undefined, 1000);
 
           let matchedSchool = null;
-          let bestScore = 0;
+          let matchReason = null;
 
-          for (const existing of existingSchools) {
-            const nameScore = calculateSimilarity(school.name, existing.name);
-            const cityScore = calculateSimilarity(school.city || '', existing.city || '');
-            const combinedScore = (nameScore * 0.7) + (cityScore * 0.3);
+          // 1) First check: Normalized website URL match
+          if (school.website) {
+            const normInputUrl = normalizeUrl(school.website);
+            if (normInputUrl) {
+              const urlMatch = existingSchools.find(existing => {
+                const normExistingUrl = normalizeUrl(existing.website || '');
+                return normExistingUrl && normExistingUrl === normInputUrl;
+              });
 
-            if (combinedScore > bestScore) {
-              bestScore = combinedScore;
-              matchedSchool = combinedScore > 0.85 ? existing : null;
+              if (urlMatch) {
+                matchedSchool = urlMatch;
+                matchReason = 'website_url_match';
+              }
+            }
+          }
+
+          // 2) Second check: Name + city fuzzy match > 85%
+          if (!matchedSchool) {
+            let bestScore = 0;
+            for (const existing of existingSchools) {
+              const nameScore = calculateSimilarity(school.name, existing.name);
+              const cityScore = calculateSimilarity(school.city || '', existing.city || '');
+              const combinedScore = (nameScore * 0.7) + (cityScore * 0.3);
+
+              if (combinedScore > bestScore) {
+                bestScore = combinedScore;
+                if (combinedScore > 0.85) {
+                  matchedSchool = existing;
+                  matchReason = 'name_city_fuzzy_match';
+                }
+              }
             }
           }
 
@@ -167,6 +191,13 @@ Deno.serve(async (req) => {
 
             await base44.asServiceRole.entities.School.update(matchedSchool.id, updateData);
             updated++;
+            dedupLog.push({
+              action: 'updated_existing',
+              matchReason,
+              inputName: school.name,
+              existingId: matchedSchool.id,
+              existingName: matchedSchool.name
+            });
           } else {
             // Create new
             const newSchool = {
