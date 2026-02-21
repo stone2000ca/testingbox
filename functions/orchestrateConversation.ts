@@ -335,7 +335,7 @@ Respond as ${consultantName}. ONE question max. No filler.`;
           prompt: responsePrompt
         });
         
-        intakeMessage = aiResponse;
+        intakeMessage = aiResponse?.response || aiResponse || 'Tell me more about your child.';
       } catch (e) {
         console.error('[ERROR] INTAKE response failed:', e.message);
         intakeMessage = 'Tell me about your child — what grade are they in and what matters most to you?';
@@ -396,8 +396,8 @@ YOU ARE LIAM - Direct, strategic style.`;
           prompt: briefPrompt,
           add_context_from_internet: false
         });
-        
-        briefMessage = briefResult;
+
+        briefMessage = briefResult?.response || briefResult || 'Let me summarize what you\'ve shared.';
       } catch (e) {
         console.error('[ERROR] BRIEF response failed:', e.message);
         briefMessage = 'Let me summarize what you\'ve shared. Does that sound right?';
@@ -513,8 +513,8 @@ Respond as ${consultantName}. ONE question max.`;
           const aiResponse = await base44.integrations.Core.InvokeLLM({
             prompt: responsePrompt
           });
-          
-          let messageWithLinks = aiResponse;
+
+          let messageWithLinks = aiResponse?.response || aiResponse || 'Here are the schools I found:';
           
           // Replace school names with links
           matchingSchools.forEach(school => {
@@ -574,8 +574,8 @@ Respond as ${consultantName}. ONE question max.`;
         const aiResponse = await base44.integrations.Core.InvokeLLM({
           prompt: responsePrompt
         });
-        
-        let messageWithLinks = aiResponse;
+
+        let messageWithLinks = aiResponse?.response || aiResponse || 'Tell me more about what you\'re looking for.';
         
         if (currentSchools && currentSchools.length > 0) {
           currentSchools.forEach(school => {
