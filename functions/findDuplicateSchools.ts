@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     // Level 1: Same normalized website URL
     const urlMap = {};
     for (const school of schools) {
-      if (school.data.website) {
+      if (school?.data?.website) {
         const normUrl = normalizeUrl(school.data.website);
         if (!urlMap[normUrl]) urlMap[normUrl] = [];
         urlMap[normUrl].push(school);
