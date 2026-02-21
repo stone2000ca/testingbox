@@ -94,7 +94,17 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Fetched ${schools.length} schools`);
-    console.log(`Sample school structure:`, JSON.stringify(schools[0], null, 2).slice(0, 500));
+    
+    // Verify data structure
+    if (!Array.isArray(schools) || schools.length === 0) {
+      console.log('Schools is not an array or empty');
+      return Response.json({ error: 'Invalid school data' }, { status: 400 });
+    }
+
+    const firstSchool = schools[0];
+    console.log(`First school keys:`, Object.keys(firstSchool));
+    console.log(`First school has data:`, 'data' in firstSchool);
+    console.log(`First school.data keys:`, firstSchool.data ? Object.keys(firstSchool.data).slice(0, 10) : 'no data field');
 
     const report = {
       pass1: {
