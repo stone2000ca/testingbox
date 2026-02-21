@@ -19,8 +19,11 @@ Deno.serve(async (req) => {
         userNotes,
         shortlistedSchools,
         familyProfileData,
-        consultantName
+        consultantName,
+        state
       } = await req.json();
+
+      console.log(`[generateResponse] Intent: ${intent}, State: ${state}, Schools count: ${schools?.length || 0}`);
 
       // Handle GENERATE_BRIEF intent
       if (intent === 'GENERATE_BRIEF' && familyProfileData) {
@@ -80,8 +83,11 @@ Keep to 2-3 paragraphs. Sound warm and empathetic. NO school names.`;
         }
       }
 
-      // HALLUCINATION FIX: If no schools, return "no matches" message immediately without AI call
-      if (!schools || schools.length === 0) {
+      // HALLUCINATION FIX: If no schools and intent is school-related, return "no matches" message immediately without AI call
+      // CRITICAL: This fix should ONLY apply when schools are expected, e.g., in SEARCHING or NARROW_DOWN states.
+      // DO NOT apply this fix for INTAKE_QUESTION or GENERATE_BRIEF intents - those should generate conversational responses.
+      if ((intent === 'SEARCH_SCHOOLS' || intent === 'NARROW_DOWN' || state === 'SEARCHING' || state === 'RESULTS') && (!schools || schools.length === 0)) {
+        console.log(`[generateResponse] No schools found - returning "no matches" message`);
         return Response.json({
           message: "I don't have any schools in our database that match your criteria yet. Our database is growing - please try a nearby city or broader search criteria."
         });

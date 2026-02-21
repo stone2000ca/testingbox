@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
       }
     }
     
-    console.log(`STATE MACHINE: ${context.state || 'INIT'} → ${currentState}, extracted: ${Object.keys(extractedData).join(',')}`);
+    console.log(`[orchestrateConversation] STATE MACHINE: ${context.state || 'INIT'} → ${currentState}, extracted: ${Object.keys(extractedData).join(',')}`);
     
     // Update context with new state
     context.state = currentState;
@@ -142,6 +142,7 @@ Deno.serve(async (req) => {
     
     if (currentState === STATES.INTAKE) {
       // INTAKE: Ask ONE question about missing field
+      console.log(`[orchestrateConversation] INTAKE state: Calling generateResponse with intent 'INTAKE_QUESTION'`);
       const generateResult = await base44.functions.invoke('generateResponse', {
         message,
         intent: 'INTAKE_QUESTION',
@@ -163,6 +164,7 @@ Deno.serve(async (req) => {
         shortlistedSchools: shortlistedSchools || []
       });
       
+      console.log(`[orchestrateConversation] INTAKE state: Returning response with message: ${generateResult.data.message?.substring(0, 50)}...`);
       return Response.json({
         message: generateResult.data.message,
         state: STATES.INTAKE,
