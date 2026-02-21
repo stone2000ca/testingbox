@@ -28,8 +28,8 @@ export default function SchoolDirectory() {
   // Get provinces based on selected country
   const provincesByCountry = {
     Canada: ['Alberta', 'BC', 'Manitoba', 'New Brunswick', 'Newfoundland', 'Nova Scotia', 'Ontario', 'PEI', 'Quebec', 'Saskatchewan'],
-    US: ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'],
-    UK: ['England', 'Scotland', 'Wales', 'Northern Ireland']
+    'United States': ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'],
+    'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland']
   };
 
   useEffect(() => {
@@ -123,13 +123,16 @@ export default function SchoolDirectory() {
   const filteredSchools = allSchools.filter(school => {
     const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          school.city.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRegion = filterRegion === 'all' || school.region === filterRegion;
-    const matchesCountry = filterCountry === 'all' || school.country === filterCountry;
+    const matchesCountry = filterCountry === 'all' || (
+      (filterCountry === 'Canada' && school.country === 'Canada') ||
+      (filterCountry === 'US' && school.country === 'United States') ||
+      (filterCountry === 'UK' && school.country === 'United Kingdom')
+    );
     const matchesProvince = filterProvince === 'all' || school.provinceState === filterProvince;
     const matchesGrade = filterGrade === 'all' || (school.gradesServed && school.gradesServed.includes(filterGrade.charAt(0)));
     const matchesTuition = filterTuition === 'all' || matchesTuitionRange(school.tuition, filterTuition);
     const matchesCurriculum = filterCurriculum === 'all' || (school.curriculum && school.curriculum.some(c => c === filterCurriculum)) || school.curriculumType === filterCurriculum;
-    return matchesSearch && matchesRegion && matchesCountry && matchesProvince && matchesGrade && matchesTuition && matchesCurriculum;
+    return matchesSearch && matchesCountry && matchesProvince && matchesGrade && matchesTuition && matchesCurriculum;
   });
 
   const matchesTuitionRange = (tuition, range) => {
@@ -234,8 +237,8 @@ export default function SchoolDirectory() {
           >
             <option value="all">All Countries</option>
             <option value="Canada">Canada</option>
-            <option value="United States">United States</option>
-            <option value="United Kingdom">United Kingdom</option>
+            <option value="US">United States</option>
+            <option value="UK">United Kingdom</option>
           </select>
 
           <select

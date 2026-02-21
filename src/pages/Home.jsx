@@ -237,7 +237,13 @@ export default function Home() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {schools.map((school) => (
-                <SchoolCardUnified key={school.id} school={school} />
+                <Link 
+                  key={school.id} 
+                  to={`${createPageUrl('SchoolProfile')}?id=${school.id}`}
+                  className="block focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 rounded-lg"
+                >
+                  <SchoolCardUnified school={school} />
+                </Link>
               ))}
             </div>
           )}
