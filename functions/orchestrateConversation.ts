@@ -363,57 +363,65 @@ Respond as ${consultantName}. ONE question max. No filler.`;
     }
     
     if (currentState === STATES.BRIEF || currentState === STATES.BRIEF_EDIT) {
-      let briefMessage;
-      try {
-        const { childName, childGrade, locationArea, budgetRange, maxTuition, interests, priorities, dealbreakers, currentSituation, academicStrengths } = conversationFamilyProfile;
-        const interestsStr = interests?.length > 0 ? interests.join(', ') : '';
-        const prioritiesStr = priorities?.length > 0 ? priorities.join(', ') : '';
-        const strengthsStr = academicStrengths?.length > 0 ? academicStrengths.join(', ') : '';
-        const dealbreakersStr = dealbreakers?.length > 0 ? dealbreakers.join(', ') : '';
-        
-        let budgetDisplay = budgetRange || '(not specified)';
-        if (maxTuition === 'unlimited') {
-          budgetDisplay = 'Budget is flexible';
-        } else if (maxTuition) {
-          budgetDisplay = `$${maxTuition}/year`;
-        }
-        
-        const briefPrompt = consultantName === 'Jackie'
-          ? `[STATE: BRIEF] Generate a warm, narrative brief. Include child name, grade, location, interests, priorities, budget. Use these values EXACTLY. No school names. End: "Does that capture it? Anything to adjust?"
-        Max 150 words.
+       let briefMessage;
+       try {
+         const { childName, childGrade, locationArea, budgetRange, maxTuition, interests, priorities, dealbreakers, currentSituation, academicStrengths } = conversationFamilyProfile;
+         const interestsStr = interests?.length > 0 ? interests.join(', ') : '';
+         const prioritiesStr = priorities?.length > 0 ? priorities.join(', ') : '';
+         const strengthsStr = academicStrengths?.length > 0 ? academicStrengths.join(', ') : '';
+         const dealbreakersStr = dealbreakers?.length > 0 ? dealbreakers.join(', ') : '';
 
-        CRITICAL: Always use the child's actual name from the family profile data. Never use placeholder text like [Child] or [child's name].
+         let budgetDisplay = budgetRange || '(not specified)';
+         if (maxTuition === 'unlimited') {
+           budgetDisplay = 'Budget is flexible';
+         } else if (maxTuition) {
+           budgetDisplay = `$${maxTuition}/year`;
+         }
 
-        FAMILY DATA:
-        - CHILD: ${childName || '(not shared)'}
-        - GRADE: ${childGrade ? \`Grade \${childGrade}\` : '(not specified)'}
-        - LOCATION: ${locationArea || '(not specified)'}
-        - INTERESTS: ${interestsStr || '(not specified)'}
-        - PRIORITIES: ${prioritiesStr || '(not specified)'}
-        - BUDGET: ${budgetDisplay}
+         // Smart child name display: use actual name if available, otherwise "your child"
+         const childDisplayName = childName ? childName : 'your child';
 
-        YOU ARE JACKIE - Warm, narrative style.`
-          : `[STATE: BRIEF] Generate a direct, executive-style brief with bullets. Include child name, grade, location, interests, priorities, budget. Use these values EXACTLY. No school names. End: "Sound right?"
-        Max 150 words.
+         const briefPrompt = consultantName === 'Jackie'
+           ? `[STATE: BRIEF] Generate a warm, narrative brief. Include child name, grade, location, interests, priorities, budget. Use these values EXACTLY. No school names. End: "Does that capture it? Anything to adjust?"
+    Max 150 words.
 
-        CRITICAL: Always use the child's actual name from the family profile data. Never use placeholder text like [Child] or [child's name].
+    CRITICAL: Always use the child's actual name provided below in the CHILD field. If it says "your child", use "your child". NEVER output literal [Child], [child], [child's name], or any bracketed placeholder text in your response.
 
-        FAMILY DATA:
-        - CHILD: ${childName || '(not shared)'}
-        - GRADE: ${childGrade ? \`Grade \${childGrade}\` : '(not specified)'}
-        - LOCATION: ${locationArea || '(not specified)'}
-        - INTERESTS: ${interestsStr || '(not specified)'}
-        - PRIORITIES: ${prioritiesStr || '(not specified)'}
-        - BUDGET: ${budgetDisplay}
+    FAMILY DATA:
+    - CHILD: ${childDisplayName}
+    - GRADE: ${childGrade ? \`Grade \${childGrade}\` : '(not specified)'}
+    - LOCATION: ${locationArea || '(not specified)'}
+    - INTERESTS: ${interestsStr || '(not specified)'}
+    - PRIORITIES: ${prioritiesStr || '(not specified)'}
+    - BUDGET: ${budgetDisplay}
 
-        YOU ARE LIAM - Direct, strategic style.`;
-        
-        const briefResult = await base44.integrations.Core.InvokeLLM({
-          prompt: briefPrompt,
-          add_context_from_internet: false
-        });
+    YOU ARE JACKIE - Warm, narrative style.`
+           : `[STATE: BRIEF] Generate a direct, executive-style brief with bullets. Include child name, grade, location, interests, priorities, budget. Use these values EXACTLY. No school names. End: "Sound right?"
+    Max 150 words.
 
-        briefMessage = briefResult?.response || briefResult || 'Let me summarize what you\'ve shared.';
+    CRITICAL: Always use the child's actual name provided below in the CHILD field. If it says "your child", use "your child". NEVER output literal [Child], [child], [child's name], or any bracketed placeholder text in your response.
+
+    FAMILY DATA:
+    - CHILD: ${childDisplayName}
+    - GRADE: ${childGrade ? \`Grade \${childGrade}\` : '(not specified)'}
+    - LOCATION: ${locationArea || '(not specified)'}
+    - INTERESTS: ${interestsStr || '(not specified)'}
+    - PRIORITIES: ${prioritiesStr || '(not specified)'}
+    - BUDGET: ${budgetDisplay}
+
+    YOU ARE LIAM - Direct, strategic style.`;
+
+         const briefResult = await base44.integrations.Core.InvokeLLM({
+           prompt: briefPrompt,
+           add_context_from_internet: false
+         });
+
+         let briefMessage = briefResult?.response || briefResult || 'Let me summarize what you\'ve shared.';
+
+         // Post-processing safety net: replace any remaining [Child] or [child] placeholders
+         briefMessage = briefMessage.replace(/\[Child\]/gi, childDisplayName);
+         briefMessage = briefMessage.replace(/\[child's name\]/gi, childDisplayName);
+         briefMessage = briefMessage.replace(/\[child\]/gi, childDisplayName);
       } catch (e) {
         console.error('[ERROR] BRIEF response failed:', e.message);
         briefMessage = 'Let me summarize what you\'ve shared. Does that sound right?';
