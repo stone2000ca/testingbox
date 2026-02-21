@@ -566,13 +566,14 @@ Respond as ${consultantName}. ONE question max.`;
       }
       
       return Response.json({
-        message: aiMessage,
-        state: currentState,
-        schools: matchingSchools,
-        familyProfile: conversationFamilyProfile,
-        conversationContext: context
-      });
-    }
+         message: aiMessage,
+         state: currentState,
+         briefStatus: BRIEF_STATUS.CONFIRMED,
+         schools: matchingSchools,
+         familyProfile: conversationFamilyProfile,
+         conversationContext: context
+       });
+      }
 
     if (currentState === STATES.RESULTS || currentState === STATES.DEEP_DIVE) {
       let aiMessage = '';
