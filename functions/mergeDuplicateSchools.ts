@@ -117,15 +117,19 @@ Deno.serve(async (req) => {
     // PASS 1: Find and merge duplicate slugs
     const slugMap = {};
     for (const school of schools) {
-      if (school?.data?.slug) {
-        if (!slugMap[school.data.slug]) slugMap[school.data.slug] = [];
-        slugMap[school.data.slug].push(school);
+      const slug = school.slug || school.data?.slug;
+      if (slug) {
+        if (!slugMap[slug]) slugMap[slug] = [];
+        slugMap[slug].push(school);
       }
     }
 
-    console.log(`Total slugs: ${Object.keys(slugMap).length}, schools: ${schools.length}`);
+    console.log(`Total unique slugs: ${Object.keys(slugMap).length}, schools: ${schools.length}`);
     const duplicateSlugs = Object.entries(slugMap).filter(([_, list]) => list.length > 1);
-    console.log(`Duplicate slugs found: ${duplicateSlugs.length}`);
+    console.log(`Duplicate slug groups: ${duplicateSlugs.length}`);
+    if (duplicateSlugs.length > 0) {
+      console.log('Sample duplicates:', duplicateSlugs.slice(0, 3).map(([slug, list]) => ({ slug, count: list.length })));
+    }
 
     const deletedIds = new Set();
 
