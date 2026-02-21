@@ -15,6 +15,7 @@ function normalizeName(name) {
 // Count non-null fields
 function countCompleteFields(school) {
   let count = 0;
+  const data = school.data || school;
   const fields = [
     'name', 'address', 'city', 'provinceState', 'phone', 'email',
     'website', 'dayTuition', 'boardingTuition', 'currency', 'founded',
@@ -23,7 +24,7 @@ function countCompleteFields(school) {
     'financialAidAvailable', 'genderPolicy', 'schoolType'
   ];
   for (const field of fields) {
-    const val = school.data[field];
+    const val = data[field];
     if (val && val !== '' && (!Array.isArray(val) || val.length > 0)) {
       count++;
     }
