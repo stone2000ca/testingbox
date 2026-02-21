@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
     // Level 2 & 3: Name and location similarity
     for (let i = 0; i < schools.length; i++) {
       const school1 = schools[i];
-      if (merged.has(school1.id) || processed.has(school1.id)) continue;
+      if (!school1?.data?.name || merged.has(school1.id) || processed.has(school1.id)) continue;
 
       const norm1 = normalizeName(school1.data.name);
       
