@@ -407,24 +407,35 @@ Return ONLY valid JSON. Do NOT explain.`;
            add_context_from_internet: false
          });
 
-         let briefMessage = briefResult?.response || briefResult || 'Let me summarize what you\'ve shared.';
+         let briefMessageText = briefResult?.response || briefResult || 'Let me summarize what you\'ve shared.';
 
          // Post-processing safety net: replace any remaining [Child] or [child] placeholders
-         briefMessage = briefMessage.replace(/\[Child\]/gi, childDisplayName);
-         briefMessage = briefMessage.replace(/\[child's name\]/gi, childDisplayName);
-         briefMessage = briefMessage.replace(/\[child\]/gi, childDisplayName);
-      } catch (e) {
-        console.error('[ERROR] BRIEF response failed:', e.message);
-        briefMessage = 'Let me summarize what you\'ve shared. Does that sound right?';
-      }
-      
-      return Response.json({
-        message: briefMessage,
-        state: STATES.BRIEF,
-        familyProfile: conversationFamilyProfile,
-        conversationContext: context,
-        schools: []
-      });
+         briefMessageText = briefMessageText.replace(/\[Child\]/gi, childDisplayName);
+         briefMessageText = briefMessageText.replace(/\[child's name\]/gi, childDisplayName);
+         briefMessageText = briefMessageText.replace(/\[child\]/gi, childDisplayName);
+         briefMessage = briefMessageText;
+         } catch (e) {
+         console.error('[ERROR] BRIEF response failed:', e.message);
+         briefMessage = 'Let me summarize what you\'ve shared. Does that sound right?';
+         }
+
+         // Response validator: strip school names during DISCOVERY
+         if (currentState === STATES.DISCOVERY && currentSchools?.length > 0) {
+         currentSchools.forEach(school => {
+          const escapedName = school.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(?<!\\[)\\b${escapedName}\\b(?!\\])`, 'gi');
+          briefMessage = briefMessage.replace(regex, '');
+         });
+         }
+
+         return Response.json({
+         message: briefMessage,
+         state: STATES.BRIEF,
+         briefStatus: briefStatus,
+         familyProfile: conversationFamilyProfile,
+         conversationContext: context,
+         schools: []
+         });
     }
     
     // STEP 4: School search only in SEARCHING/RESULTS/DEEP_DIVE states
