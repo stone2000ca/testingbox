@@ -1535,8 +1535,8 @@ Return empty array if user didn't provide any of these facts.`;
             </TooltipProvider>
           </div>
 
-          {/* Messages */}
-          <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#1E1E2E]">
+          {/* Messages - Dynamic height with scroll */}
+          <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#1E1E2E] min-h-0">
             {/* Feedback Prompt in Sidebar */}
             {feedbackPromptShown && schools.length > 0 && !isTyping && (
               <div className="bg-teal-900/30 border border-teal-500/30 rounded-lg p-3 mb-2">
