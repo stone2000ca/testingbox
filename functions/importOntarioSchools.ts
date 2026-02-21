@@ -53,12 +53,17 @@ Deno.serve(async (req) => {
 
     console.log('Fetching Ontario schools Excel file...');
     
-    // Fetch the Excel file
+    // Fetch the Excel file with User-Agent and common headers
     const fileUrl = 'https://files.ontario.ca/opendata/private_schools_contact_information_apr_2019_en.xlsx';
-    const response = await fetch(fileUrl);
+    const response = await fetch(fileUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': '*/*'
+      }
+    });
     
     if (!response.ok) {
-      throw new Error(`Failed to download file: ${response.statusText}`);
+      throw new Error(`Failed to download file: ${response.status} ${response.statusText}`);
     }
 
     const buffer = await response.arrayBuffer();
