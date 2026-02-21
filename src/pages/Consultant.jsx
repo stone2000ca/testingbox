@@ -102,13 +102,13 @@ export default function Consultant() {
   const inputRef = useRef(null);
   
   // Determine UI phase based on state and schools
-  const currentState = currentConversation?.conversationContext?.state || 'GREETING';
+  const currentState = currentConversation?.conversationContext?.state || STATES.WELCOME;
   const isIntakePhase = schools.length === 0 && 
                         currentView !== 'schools' && 
                         currentView !== 'detail' && 
                         currentView !== 'comparison' && 
                         currentView !== 'comparison-table' &&
-                        !['RESULTS', 'DEEP_DIVE'].includes(currentState);
+                        ![STATES.RESULTS, STATES.DEEP_DIVE].includes(currentState);
 
   // TASK B: Save/restore scroll position during transition
   useEffect(() => {
