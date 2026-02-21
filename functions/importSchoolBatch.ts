@@ -29,6 +29,16 @@ const calculateSimilarity = (str1, str2) => {
   return Math.max(0, 1 - (distance / maxLen));
 };
 
+const normalizeUrl = (url) => {
+  if (!url) return '';
+  return url
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/$/, '')
+    .trim();
+};
+
 const calculateCompletenessScore = (school) => {
   const scoringFields = {
     name: 10,
