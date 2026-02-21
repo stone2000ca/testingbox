@@ -183,16 +183,7 @@ export default function Consultant() {
     }
   }, [user?.id, currentConversation?.id, messages]);
 
-  // Auto-expand Brief after 10 seconds of inactivity
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isTyping && messages.length > 1 && !briefExpanded) {
-        setBriefExpanded(true);
-      }
-    }, 10000);
 
-    return () => clearTimeout(timer);
-  }, [lastTypingTime, isTyping]);
 
   const loadFamilyProfile = async () => {
     if (!user?.id || !currentConversation?.id) return;
@@ -1084,7 +1075,7 @@ Return empty array if user didn't provide any of these facts.`;
 
               {/* Messages */}
               <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#1E1E2E] pb-32">
-              {currentView === 'welcome' && messages.length <= 1 && (
+                {currentView === 'welcome' && messages.length <= 1 && (
                 <div className="text-center space-y-6 py-8">
                   <div className="space-y-2">
                     <h1 className="text-3xl font-bold text-[#E8E8ED]">Welcome to NextSchool</h1>
@@ -1157,7 +1148,7 @@ Return empty array if user didn't provide any of these facts.`;
                 />
               ))}
               {isTyping && <TypingIndicator message={loadingStages[loadingStage]} consultantName={selectedConsultant} />}
-              
+
               {/* Feedback Prompt */}
               {feedbackPromptShown && schools.length > 0 && !isTyping && (
                 <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-4 flex items-start gap-3">
@@ -1179,10 +1170,10 @@ Return empty array if user didn't provide any of these facts.`;
               )}
 
               <div ref={messagesEndRef} />
-            </div>
+              </div>
 
-            {/* Suggested Response Chips */}
-            {(() => {
+                {/* Suggested Response Chips */}
+              {(() => {
               const lastAIMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
               const isBriefMessage = lastAIMessage?.content && (
                 lastAIMessage.content.includes("Does that capture") ||
@@ -1196,9 +1187,9 @@ Return empty array if user didn't provide any of these facts.`;
                                       currentConversation?.conversationContext?.state === 'BRIEF' ||
                                       isBriefMessage;
               
-              return shouldShowChips;
-            })() && (
-              <div className="p-3 sm:p-4 border-t border-white/10 bg-[#2A2A3D] flex flex-col sm:flex-row flex-wrap gap-2 justify-center">
+                return shouldShowChips;
+              })() && (
+                <div className="p-3 sm:p-4 border-t border-white/10 bg-[#2A2A3D] flex flex-col sm:flex-row flex-wrap gap-2 justify-center">
                 {(() => {
                   const lastAIMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
                   const isBriefMessage = lastAIMessage?.content && (
@@ -1273,11 +1264,11 @@ Return empty array if user didn't provide any of these facts.`;
                     </Button>
                   </>
                 )}
-              </div>
-            )}
+                </div>
+                )}
 
-              {/* Chat Input - Fixed at bottom of modal */}
-              <ChatInput
+                {/* Chat Input - Fixed at bottom of modal */}
+                <ChatInput
                 ref={inputRef}
                 onSend={handleSendMessage}
                 disabled={isTyping}
