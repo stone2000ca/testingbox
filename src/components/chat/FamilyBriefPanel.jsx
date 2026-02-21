@@ -11,28 +11,26 @@ export default function FamilyBriefPanel({
 }) {
   const [newlyPopulated, setNewlyPopulated] = useState(null);
 
-  // Auto-expand when new stage is populated
+  // Track newly populated stages for visual highlighting (no auto-expand)
   useEffect(() => {
     if (!familyProfile) return;
     
     const populatedStages = getPopulatedStages();
     const prevStages = JSON.parse(localStorage.getItem('briefStages') || '[]');
     
-    // Check if a new stage was populated
+    // Check if a new stage was populated and highlight it
     const newStage = populatedStages.find(s => !prevStages.includes(s));
     if (newStage && prevStages.length > 0) {
       setNewlyPopulated(newStage);
-      onToggleExpand(true);
       
-      // Auto-collapse after 2 seconds
+      // Clear highlight after 2 seconds
       setTimeout(() => {
-        onToggleExpand(false);
         setNewlyPopulated(null);
       }, 2000);
     }
     
     localStorage.setItem('briefStages', JSON.stringify(populatedStages));
-  }, [familyProfile, onToggleExpand]);
+  }, [familyProfile]);
 
   const getPopulatedStages = () => {
     if (!familyProfile) return [];
