@@ -53,52 +53,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CHOOSE YOUR CONSULTANT */}
-      <section className="py-20 sm:py-28 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl sm:text-5xl font-bold text-center mb-6 text-slate-900">Two Consultant Styles, One Goal</h2>
-          <p className="text-xl text-slate-600 text-center max-w-3xl mx-auto mb-16">Choose the consultant approach that fits your family's needs — and switch anytime you'd like.</p>
-          
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 p-8 rounded-2xl">
-              <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-2xl mb-6 overflow-hidden mx-auto">
-                <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699717aa28903550c09d4d26/150ea2350_Jackie.jpg" alt="Jackie" className="w-full h-full object-cover" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2 text-center">Jackie</h3>
-              <p className="text-sm text-rose-700 font-semibold mb-4">Warm & Supportive</p>
-              <p className="text-slate-700 mb-6">Jackie brings empathy and emotional intelligence to your school search. She validates your concerns, celebrates your child's strengths, and makes sure your family truly feels heard.</p>
-              <ul className="space-y-2 text-sm text-slate-700">
-                <li>✓ Emotionally attuned & understanding</li>
-                <li>✓ Thoughtful & thorough conversations</li>
-                <li>✓ Celebrates strengths & personalities</li>
-              </ul>
-            </div>
-            
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 p-8 rounded-2xl">
-              <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-2xl mb-6 overflow-hidden mx-auto">
-                <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699717aa28903550c09d4d26/b1163e434_Liam.png" alt="Liam" className="w-full h-full object-cover" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2 text-center">Liam</h3>
-              <p className="text-sm text-blue-700 font-semibold mb-4">Direct & Strategic</p>
-              <p className="text-slate-700 mb-6">Liam cuts straight to the analysis. He matches your priorities with school data, gets you fast results, and focuses on the strategic metrics that matter to your family's goals.</p>
-              <ul className="space-y-2 text-sm text-slate-700">
-                <li>✓ Data-driven & strategic</li>
-                <li>✓ Efficient & focused conversations</li>
-                <li>✓ Clear analysis & recommendations</li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <Link to={createPageUrl('Consultant')}>
-              <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6">
-                Choose Your Consultant
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* HOW IT WORKS */}
       <section className="py-20 sm:py-28 bg-slate-50">

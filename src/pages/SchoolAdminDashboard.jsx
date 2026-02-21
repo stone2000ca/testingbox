@@ -65,6 +65,11 @@ export default function SchoolAdminDashboard() {
       <div className="bg-white border-b sticky top-0 z-40">
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <Link to={createPageUrl('Home')}>
+              <Button variant="ghost" size="sm" className="gap-2">
+                ← Back
+              </Button>
+            </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden"
@@ -155,7 +160,9 @@ export default function SchoolAdminDashboard() {
             <TabsContent value="overview" className="p-8 space-y-8">
               <div>
                 <h2 className="text-xl font-bold mb-6">Profile Completeness</h2>
-                <ProfileCompletenessRing school={school} />
+                <div className="flex flex-wrap gap-6">
+                  <ProfileCompletenessRing school={school} />
+                </div>
               </div>
             </TabsContent>
 

@@ -177,38 +177,6 @@ export default function ParentDashboard() {
           </div>
         </div>
 
-        <div className="mt-6 pt-6 border-t">
-          <Button
-            variant="outline"
-            className="gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-            onClick={() => setClearMemoryDialogOpen(true)}
-          >
-            <AlertCircle className="h-4 w-4" />
-            Clear AI Memory & Family Profile
-          </Button>
-        </div>
-
-        {/* Clear Memory Dialog */}
-        <AlertDialog open={clearMemoryDialogOpen} onOpenChange={setClearMemoryDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Clear AI Memory & Family Profile?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete your AI conversation memory and family profile data. You'll start fresh with a new onboarding conversation. This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleClearMemory}
-                disabled={clearingMemory}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {clearingMemory ? 'Clearing...' : 'Clear Everything'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
 
 
         {/* Tabs */}

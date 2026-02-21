@@ -24,7 +24,11 @@ export default function ConsultantSelection({ onSelectConsultant }) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-teal-500 rounded-full blur-3xl animate-slowFloat" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500 rounded-full blur-3xl animate-slowFloatReverse" />
+      </div>
       <div className="max-w-5xl w-full">
         {/* Header */}
         <div className="text-center mb-16">
@@ -58,7 +62,7 @@ export default function ConsultantSelection({ onSelectConsultant }) {
                   <h2 className="text-3xl font-bold text-white mb-1 text-center">
                     {consultant.name}
                   </h2>
-                  <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-400">
+                  <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-400 text-center">
                     {consultant.title}
                   </p>
                 </div>

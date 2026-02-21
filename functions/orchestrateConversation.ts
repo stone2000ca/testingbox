@@ -353,7 +353,7 @@ Return ONLY valid JSON. Do NOT explain.`;
     // STEP 4: Handle state-specific response generation BEFORE school search
     if (currentState === STATES.GREETING) {
       return Response.json({
-        message: "Hi! I'm your NextSchool education consultant. I help families across Canada, the US, and Europe find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you in a school?",
+        message: "I'm your NextSchool education consultant. I help families across Canada, the US, and Europe find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you in a school?",
         state: STATES.GREETING,
         conversationContext: context,
         schools: []
