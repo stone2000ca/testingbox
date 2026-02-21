@@ -127,19 +127,73 @@ Deno.serve(async (req) => {
 
     console.log(`Importing ${schools.length} Ontario schools...`);
 
-    // Call importSchoolBatch
-    const result = await base44.asServiceRole.functions.invoke('importSchoolBatch', {
-      schools,
-      importBatchId
-    });
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    const errors = [];
 
-    console.log('Import result:', result);
+    // Bulk create schools in batches
+    for (let i = 0; i < schools.length; i += 10) {
+      const batch = schools.slice(i, i + 10);
+      
+      for (const school of batch) {
+        try {
+          if (!school.name || !school.city || !school.country) {
+            skipped++;
+            errors.push({
+              schoolName: school.name || 'Unknown',
+              error: 'Missing required fields'
+            });
+            continue;
+          }
+
+          // Check if school already exists (by governmentId)
+          let existing = null;
+          if (school.governmentId) {
+            const matches = await base44.asServiceRole.entities.School.filter({
+              governmentId: school.governmentId
+            });
+            existing = matches?.[0];
+          }
+
+          if (existing) {
+            // Update existing
+            await base44.asServiceRole.entities.School.update(existing.id, {
+              ...school,
+              importBatchId,
+              lastEnriched: new Date().toISOString()
+            });
+            updated++;
+          } else {
+            // Create new
+            await base44.asServiceRole.entities.School.create({
+              ...school,
+              importBatchId,
+              lastEnriched: new Date().toISOString()
+            });
+            created++;
+          }
+        } catch (error) {
+          skipped++;
+          errors.push({
+            schoolName: school.name,
+            error: error.message
+          });
+        }
+      }
+    }
 
     return Response.json({
       success: true,
       importBatchId,
       totalSchools: schools.length,
-      results: result
+      results: {
+        created,
+        updated,
+        skipped,
+        total: schools.length,
+        errors: errors.length > 0 ? errors : null
+      }
     });
   } catch (error) {
     console.error('Error:', error);
