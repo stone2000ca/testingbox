@@ -200,8 +200,9 @@ Deno.serve(async (req) => {
     const nameMap = {};
 
     for (const school of remaining) {
-      if (school?.data?.name && school?.data?.city) {
-        const key = `${normalizeName(school.data.name)}|${school.data.city}`;
+      const data = school.data || school;
+      if (data?.name && data?.city) {
+        const key = `${normalizeName(data.name)}|${data.city}`;
         if (!nameMap[key]) nameMap[key] = [];
         nameMap[key].push(school);
       }
@@ -210,24 +211,26 @@ Deno.serve(async (req) => {
     for (const [key, schoolList] of Object.entries(nameMap)) {
       if (schoolList.length > 1) {
         // Check if they have different slugs
-        const slugs = new Set(schoolList.map(s => s.data.slug));
+        const slugs = new Set(schoolList.map(s => (s.data || s).slug));
         if (slugs.size > 1) {
           report.pass2.duplicatesFound++;
 
           const primary = selectPrimary(schoolList);
           const duplicates = schoolList.filter(s => s.id !== primary.id);
 
-          let mergedData = { ...primary.data };
+          const primaryData = primary.data || primary;
+          let mergedData = { ...primaryData };
           let fieldsCopied = 0;
 
           for (const duplicate of duplicates) {
+            const dupData = duplicate.data || duplicate;
             const before = JSON.stringify(mergedData);
-            mergedData = mergeRecords({ data: mergedData }, duplicate);
+            mergedData = mergeRecords({ data: mergedData }, { data: dupData });
             const after = JSON.stringify(mergedData);
             
             if (before !== after) {
-              const newFields = Object.keys(duplicate.data).filter(
-                k => duplicate.data[k] && !primary.data[k]
+              const newFields = Object.keys(dupData).filter(
+                k => dupData[k] && !primaryData[k]
               ).length;
               fieldsCopied += newFields;
             }
@@ -244,11 +247,11 @@ Deno.serve(async (req) => {
           }
 
           report.pass2.merges.push({
-            schoolNames: schoolList.map(s => s.data.name),
-            city: schoolList[0].data.city,
+            schoolNames: schoolList.map(s => (s.data || s).name),
+            city: (schoolList[0].data || schoolList[0]).city,
             slugsConsolidated: Array.from(slugs),
             primaryId: primary.id,
-            primarySlug: primary.data.slug,
+            primarySlug: primaryData.slug,
             duplicatesDeleted: duplicates.length,
             fieldsCopied: fieldsCopied
           });
