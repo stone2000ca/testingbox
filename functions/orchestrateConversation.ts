@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     const context = conversationContext || {};
     const msgLower = message.toLowerCase();
     
-    // STATE MACHINE STATES
+    // STATE MACHINE STATES (7 states, strictly ordered)
     const STATES = {
       GREETING: 'GREETING',
       INTAKE: 'INTAKE',
@@ -33,8 +33,12 @@ Deno.serve(async (req) => {
       BRIEF_EDIT: 'BRIEF_EDIT',
       SEARCHING: 'SEARCHING',
       RESULTS: 'RESULTS',
-      COMPARING: 'COMPARING'
+      DEEP_DIVE: 'DEEP_DIVE'
     };
+    
+    // Track edit cycles to prevent infinite loops
+    let briefEditCount = context.briefEditCount || 0;
+    const MAX_BRIEF_EDITS = 3;
     
     // STEP 0: Initialize/retrieve conversation-scoped FamilyProfile
     let conversationFamilyProfile = null;
