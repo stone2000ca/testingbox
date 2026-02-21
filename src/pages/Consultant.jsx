@@ -609,8 +609,8 @@ export default function Consultant() {
         setCurrentView('welcome'); // Show in chat view with suggested response chips
         setSchools([]);
       }
-      // FIX #3: First priority - if schools are returned, display them
-      else if (response.data.schools && response.data.schools.length > 0) {
+      // FIX #3: First priority - if schools are returned, display them (ALWAYS, regardless of state)
+      if (response.data.schools && response.data.schools.length > 0) {
         // Track schools shown
         base44.functions.invoke('trackSessionEvent', {
           eventType: 'schools_shown',
@@ -652,6 +652,23 @@ export default function Consultant() {
         setSortDirection('asc');
         // CRITICAL: Always switch to schools view when schools are returned
         setCurrentView('schools');
+      }
+      // Handle comparison intent
+      else if (response.data.intent === 'COMPARE_SCHOOLS' && response.data.schools?.length >= 2) {
+        setPreviousSearchResults(schools);
+        setComparisonData(response.data.schools);
+        setCurrentView('comparison-table');
+      }
+      // Handle onboarding response (still in intake)
+      else if (response.data.onboardingPhase && response.data.onboardingComplete === false) {
+        // Still in onboarding - stay in welcome/chat view, don't show schools
+        setCurrentView('welcome');
+      }
+      else {
+        // No schools found - keep welcome or previous view
+        if (schools.length === 0) {
+          setCurrentView('welcome');
+        }
       }
       // Handle comparison intent
       else if (response.data.intent === 'COMPARE_SCHOOLS' && response.data.schools?.length >= 2) {
