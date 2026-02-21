@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
       
       for (let j = i + 1; j < schools.length; j++) {
         const school2 = schools[j];
-        if (merged.has(school2.id) || processed.has(school2.id)) continue;
+        if (!school2?.data?.name || merged.has(school2.id) || processed.has(school2.id)) continue;
 
         const norm2 = normalizeName(school2.data.name);
         const similarity = stringSimilarity(norm1, norm2);
