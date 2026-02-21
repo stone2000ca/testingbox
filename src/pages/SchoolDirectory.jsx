@@ -33,6 +33,32 @@ export default function SchoolDirectory() {
   };
 
   useEffect(() => {
+    // Log visitor event and update lastSignedOn
+    const logVisitor = async () => {
+      try {
+        const authenticated = await base44.auth.isAuthenticated();
+        let userId = null;
+        if (authenticated) {
+          const userData = await base44.auth.me();
+          userId = userData.id;
+          // Update lastSignedOn timestamp
+          await base44.auth.updateMe({ lastSignedOn: new Date().toISOString() });
+        }
+        
+        // Log visitor
+        await base44.entities.VisitorLog.create({
+          userId,
+          sessionId,
+          timestamp: new Date().toISOString(),
+          page: 'SchoolDirectory',
+          referrer: document.referrer || null,
+          userAgent: navigator.userAgent
+        });
+      } catch (err) {
+        console.error('Failed to log visitor:', err);
+      }
+    };
+
     // Track page view
     base44.functions.invoke('trackSessionEvent', {
       eventType: 'page_view',
@@ -49,9 +75,10 @@ export default function SchoolDirectory() {
       document.head.appendChild(metaDesc);
     }
 
+    logVisitor();
     loadSchools();
     checkAuth();
-  }, []);
+  }, [sessionId]);
 
   // Update meta description when schools are loaded
   useEffect(() => {
