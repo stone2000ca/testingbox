@@ -67,6 +67,7 @@ import SchoolAdminDashboard from './pages/SchoolAdminDashboard';
 import SchoolDirectory from './pages/SchoolDirectory';
 import SchoolProfile from './pages/SchoolProfile';
 import Terms from './pages/Terms';
+import stateMachineConfig from './pages/stateMachineConfig';
 import __Layout from './Layout.jsx';
 
 
@@ -91,6 +92,7 @@ export const PAGES = {
     "SchoolDirectory": SchoolDirectory,
     "SchoolProfile": SchoolProfile,
     "Terms": Terms,
+    "stateMachineConfig": stateMachineConfig,
 }
 
 export const pagesConfig = {
