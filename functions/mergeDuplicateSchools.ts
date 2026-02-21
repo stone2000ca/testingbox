@@ -149,17 +149,19 @@ Deno.serve(async (req) => {
         const duplicates = schoolList.filter(s => s.id !== primary.id);
 
         // Merge fields from duplicates into primary
-        let mergedData = { ...primary.data };
+        const primaryData = primary.data || primary;
+        let mergedData = { ...primaryData };
         let fieldsCopied = 0;
 
         for (const duplicate of duplicates) {
+          const dupData = duplicate.data || duplicate;
           const before = JSON.stringify(mergedData);
-          mergedData = mergeRecords({ data: mergedData }, duplicate);
+          mergedData = mergeRecords({ data: mergedData }, { data: dupData });
           const after = JSON.stringify(mergedData);
           
           if (before !== after) {
-            const newFields = Object.keys(duplicate.data).filter(
-              k => duplicate.data[k] && !primary.data[k]
+            const newFields = Object.keys(dupData).filter(
+              k => dupData[k] && !primaryData[k]
             ).length;
             fieldsCopied += newFields;
           }
@@ -179,11 +181,11 @@ Deno.serve(async (req) => {
         report.pass1.merges.push({
           slug: slug,
           primaryId: primary.id,
-          primaryName: primary.data.name,
-          primarySource: primary.data.dataSource,
+          primaryName: primaryData.name,
+          primarySource: primaryData.dataSource,
           primaryCompleteFields: countCompleteFields(primary),
           duplicatesDeleted: duplicates.length,
-          duplicateNames: duplicates.map(d => d.data.name),
+          duplicateNames: duplicates.map(d => (d.data || d).name),
           fieldsCopied: fieldsCopied
         });
       }
