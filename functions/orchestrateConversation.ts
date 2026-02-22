@@ -446,8 +446,12 @@ Return ONLY valid JSON. Do NOT explain.`;
     if (currentState === STATES.BRIEF) {
        let briefMessage;
        
-       // BUG 2 FIX: If user wants to adjust, ask what to change instead of regenerating
-       if (briefStatus === BRIEF_STATUS.EDITING) {
+       // BUG FIX: Handle adjust flow properly
+       const isInitialAdjustRequest = /\b(change|adjust|edit|actually|wait|hold on|no|not right|different|let me|redo)\b/i.test(msgLower) && 
+                                       !/budget|grade|location|school|curriculum|priority/i.test(msgLower);
+       
+       if (briefStatus === BRIEF_STATUS.EDITING && isInitialAdjustRequest) {
+         // First adjustment request - ask what to change
          const adjustPrompt = consultantName === 'Jackie'
            ? `The parent wants to adjust something in their brief. Ask them a warm, open-ended question about what they'd like to change. Max 50 words. Be encouraging.`
            : `The parent wants to adjust their brief. Ask them directly what needs to change. Max 50 words.`;
@@ -469,6 +473,12 @@ Return ONLY valid JSON. Do NOT explain.`;
            conversationContext: context,
            schools: []
          });
+       } else if (briefStatus === BRIEF_STATUS.EDITING && !isInitialAdjustRequest) {
+         // User provided specific changes - update entities and regenerate brief
+         // Entity extraction already ran at STEP 1, so conversationFamilyProfile is already updated
+         // Now regenerate the brief with updated data and set to PENDING_REVIEW
+         briefStatus = BRIEF_STATUS.PENDING_REVIEW;
+         context.briefStatus = briefStatus;
        }
        
        // Only generate brief if not in editing mode
