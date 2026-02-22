@@ -105,10 +105,11 @@ export default function Consultant() {
   // Determine UI phase based on state and schools
   const currentState = currentConversation?.conversationContext?.state || STATES.WELCOME;
   
-  // FIX #3: Sync briefStatus from conversationContext
+  // FIX 17: Sync briefStatus from conversationContext whenever it changes
   useEffect(() => {
     const contextBriefStatus = currentConversation?.conversationContext?.briefStatus;
-    if (contextBriefStatus && contextBriefStatus !== briefStatus) {
+    if (contextBriefStatus !== briefStatus) {
+      console.log('[FIX 17] Syncing briefStatus:', contextBriefStatus);
       setBriefStatus(contextBriefStatus);
     }
   }, [currentConversation?.conversationContext?.briefStatus]);
