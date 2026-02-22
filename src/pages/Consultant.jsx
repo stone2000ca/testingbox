@@ -627,9 +627,10 @@ export default function Consultant() {
         console.log('[BRIEF STATUS] Updated to:', newBriefStatus);
       }
       
-      // CRITICAL FIX: Update conversation context with state AND schools
+      // CRITICAL FIX: Merge backend's full context (including extractedEntities) with frontend state
       const updatedContext = { 
         ...(currentConversation?.conversationContext || {}), 
+        ...(response.data.conversationContext || {}),
         state: response.data.state,
         briefStatus: newBriefStatus,
         schools: response.data.schools || [],
