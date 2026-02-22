@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-// deploy-trigger-v3
+// deploy-trigger-v4
 
 Deno.serve(async (req) => {
   const TIMEOUT_MS = 25000;
