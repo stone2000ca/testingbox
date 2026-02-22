@@ -445,6 +445,33 @@ Return ONLY valid JSON. Do NOT explain.`;
     
     if (currentState === STATES.BRIEF) {
        let briefMessage;
+       
+       // BUG 2 FIX: If user wants to adjust, ask what to change instead of regenerating
+       if (briefStatus === BRIEF_STATUS.EDITING) {
+         const adjustPrompt = consultantName === 'Jackie'
+           ? `The parent wants to adjust something in their brief. Ask them a warm, open-ended question about what they'd like to change. Max 50 words. Be encouraging.`
+           : `The parent wants to adjust their brief. Ask them directly what needs to change. Max 50 words.`;
+         
+         try {
+           const adjustResponse = await base44.integrations.Core.InvokeLLM({
+             prompt: adjustPrompt
+           });
+           briefMessage = adjustResponse?.response || adjustResponse || "What would you like to adjust?";
+         } catch (e) {
+           briefMessage = "What would you like to adjust?";
+         }
+         
+         return Response.json({
+           message: briefMessage,
+           state: STATES.BRIEF,
+           briefStatus: BRIEF_STATUS.EDITING,
+           familyProfile: conversationFamilyProfile,
+           conversationContext: context,
+           schools: []
+         });
+       }
+       
+       // Only generate brief if not in editing mode
        try {
          const { childName, childGrade, locationArea, budgetRange, maxTuition, interests, priorities, dealbreakers, currentSituation, academicStrengths } = conversationFamilyProfile;
          const interestsStr = interests?.length > 0 ? interests.join(', ') : '';

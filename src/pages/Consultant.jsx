@@ -1023,10 +1023,10 @@ Return empty array if user didn't provide any of these facts.`;
     }
   }, [messages]);
 
-  // FIX 1: Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages (works in both views)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+  }, [messages]);
 
   const handleScrollDownClick = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
