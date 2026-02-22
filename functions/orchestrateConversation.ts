@@ -235,7 +235,8 @@ Return ONLY valid JSON. Do NOT explain.`;
       }
       if (conversationFamilyProfile?.id) {
         try {
-          conversationFamilyProfile = await base44.entities.FamilyProfile.update(conversationFamilyProfile.id, extractedData);
+          // CRITICAL FIX: Pass the fully merged conversationFamilyProfile object to preserve all existing data
+          conversationFamilyProfile = await base44.entities.FamilyProfile.update(conversationFamilyProfile.id, conversationFamilyProfile);
         } catch (e) {
           console.error('FamilyProfile update failed:', e);
         }
