@@ -497,6 +497,10 @@ Return ONLY valid JSON. Do NOT explain.`;
        }
        
        // Only generate brief if not in editing mode
+           // FALLBACK: Merge context.extractedEntities into conversationFamilyProfile for fields that are null/undefined
+    const _ents = context.extractedEntities || {};
+    for (const [_k, _v] of Object.entries(_ents)) { if (_v !== null && _v !== undefined && (conversationFamilyProfile[_k] === null || conversationFamilyProfile[_k] === undefined || conversationFamilyProfile[_k] === '')) { conversationFamilyProfile[_k] = _v; } }
+    console.log('[BRIEF GEN] Profile:', JSON.stringify({g: conversationFamilyProfile.childGrade, l: conversationFamilyProfile.locationArea, t: conversationFamilyProfile.maxTuition, p: conversationFamilyProfile.priorities}));
        try {
          const { childName, childGrade, locationArea, budgetRange, maxTuition, interests, priorities, dealbreakers, currentSituation, academicStrengths } = conversationFamilyProfile;
          const interestsStr = interests?.length > 0 ? interests.join(', ') : '';
