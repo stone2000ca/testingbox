@@ -201,6 +201,16 @@ Return ONLY valid JSON. Do NOT explain.`;
       console.error('[ERROR] Extraction failed:', e.message);
     }
     
+    // FIX A: Merge extracted entities into context for accumulation
+    if (!context.extractedEntities) {
+      context.extractedEntities = {};
+    }
+    for (const [key, value] of Object.entries(extractedData)) {
+      if (value !== null && value !== undefined) {
+        context.extractedEntities[key] = value;
+      }
+    }
+    
     // Persist extracted data to FamilyProfile immediately
     if (conversationFamilyProfile && Object.keys(extractedData).length > 0) {
       for (const [key, value] of Object.entries(extractedData)) {
@@ -231,20 +241,25 @@ Return ONLY valid JSON. Do NOT explain.`;
       currentState = STATES.DISCOVERY;
     }
 
+    // FIX B: Question detection function
+    function isDirectQuestion(text) {
+      const t = text.trim();
+      if (t.endsWith('?')) return true;
+      const l = t.toLowerCase();
+      return ['what ','how ','why ','do ','does ','can ','could ','are ','is ','should ','would '].some(p => l.startsWith(p));
+    }
+    
     // Rule 2: DISCOVERY -> BRIEF when Tier 1 data is met (entity-based, NOT message count)
-    // FIX 10: QUESTION-FIRST GUARD - Stay in DISCOVERY if user asks a question ANYWHERE in their message
+    // FIX A: Check accumulated entities in context.extractedEntities
     if (currentState === STATES.DISCOVERY) {
-      const hasLocation = !!(conversationFamilyProfile?.locationArea);
-      const hasGradeOrCurriculum = !!(conversationFamilyProfile?.childGrade ||
-        conversationFamilyProfile?.curriculumPreference?.length > 0 ||
-        conversationFamilyProfile?.schoolType);
+      const hasLocation = !!(context.extractedEntities?.locationArea || context.extractedEntities?.city || region);
+      const hasGradeOrType = !!(context.extractedEntities?.childGrade || context.extractedEntities?.curriculumPreference || context.extractedEntities?.schoolType);
       
-      // CRITICAL: Check if the message contains a question ANYWHERE (not just at start)
-      const hasQuestionMark = message.includes('?');
-      const hasQuestionPattern = /(what is|what's|what are|how does|how do|how can|do schools|can i|can you|is it possible|is there|are there|will|would|could|where|when|why|who|which|tell me about|explain)/i.test(message);
-      const isQuestion = hasQuestionMark || hasQuestionPattern;
+      console.log('[TIER1 CHECK]', {hasLocation, hasGradeOrType, entities: context.extractedEntities});
       
-      if (hasLocation && hasGradeOrCurriculum && !isQuestion) {
+      const isQuestion = isDirectQuestion(message);
+      
+      if (hasLocation && hasGradeOrType && !isQuestion) {
         currentState = STATES.BRIEF;
         briefStatus = BRIEF_STATUS.GENERATING;
       } else if (isQuestion) {
