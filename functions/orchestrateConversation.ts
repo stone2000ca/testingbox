@@ -496,8 +496,8 @@ Return ONLY valid JSON. Do NOT explain.`;
        } else if (briefStatus === BRIEF_STATUS.EDITING && !isInitialAdjustRequest) {
          // User provided specific changes - update entities and regenerate brief
          // Entity extraction already ran at STEP 1, so conversationFamilyProfile is already updated
-         // Now regenerate the brief with updated data and set to PENDING_REVIEW
-         briefStatus = BRIEF_STATUS.PENDING_REVIEW;
+         // Now regenerate the brief - set to GENERATING so it becomes PENDING_REVIEW after generation
+         briefStatus = BRIEF_STATUS.GENERATING;
          context.briefStatus = briefStatus;
        }
        
