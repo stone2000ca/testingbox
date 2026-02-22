@@ -221,16 +221,20 @@ Return ONLY valid JSON. Do NOT explain.`;
       for (const [key, value] of Object.entries(extractedData)) {
         if (value !== null && value !== undefined) {
           const existing = conversationFamilyProfile[key];
-          if (existing === null || existing === undefined || 
-              (Array.isArray(existing) && existing.length === 0) ||
-              (Array.isArray(value) && value.length > 0)) {
-                          // Merge arrays instead of replacing in FamilyProfile
-                if (Array.isArray(value) && Array.isArray(existing) && existing.length > 0) {
-                  conversationFamilyProfile[key] = [...new Set([...existing, ...value])];
-                } else {
-                  conversationFamilyProfile[key] = value;
-                }
+          
+          // Array fields: merge and deduplicate
+          if (Array.isArray(value)) {
+            if (Array.isArray(existing) && existing.length > 0) {
+              conversationFamilyProfile[key] = [...new Set([...existing, ...value])];
+            } else {
+              conversationFamilyProfile[key] = value;
+            }
+          } 
+          // Scalar fields: overwrite if new value is non-empty
+          else if (value !== '') {
+            conversationFamilyProfile[key] = value;
           }
+          // If value is empty string, keep existing value (no update)
         }
       }
       if (conversationFamilyProfile?.id) {
