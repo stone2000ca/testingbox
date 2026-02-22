@@ -501,6 +501,20 @@ Return ONLY valid JSON. Do NOT explain.`;
          context.briefStatus = briefStatus;
        }
        
+       // CRITICAL FIX: Sync conversationFamilyProfile with context.extractedEntities before generating brief
+       // This ensures ALL accumulated data across ALL messages is present, not just the latest extraction
+       if (context.extractedEntities) {
+         for (const [key, value] of Object.entries(context.extractedEntities)) {
+           if (value !== null && value !== undefined) {
+             // Only update if conversationFamilyProfile doesn't have this data yet
+             if (conversationFamilyProfile[key] === null || conversationFamilyProfile[key] === undefined || 
+                 (Array.isArray(conversationFamilyProfile[key]) && conversationFamilyProfile[key].length === 0)) {
+               conversationFamilyProfile[key] = value;
+             }
+           }
+         }
+       }
+       
        // Only generate brief if not in editing mode
        try {
          const { childName, childGrade, locationArea, budgetRange, maxTuition, interests, priorities, dealbreakers, currentSituation, academicStrengths } = conversationFamilyProfile;
