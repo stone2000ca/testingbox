@@ -123,7 +123,7 @@ Extract ONLY:
 - locationArea: string (city name)
 - maxTuition: "unlimited" OR number OR null
 - interests: array of strings or null
-- priorities: array of strings or null (FIX 4: Include "Arts", "STEM", "Sports", "Languages" when mentioned as important/priorities)
+- priorities: array of strings or null (FIX 4: When user says "arts", "music", "theater", "drama" → priorities: ["Arts"]. When "STEM", "science", "math" → priorities: ["STEM"]. When "sports" → priorities: ["Sports"]. When "languages", "French", "Spanish" → priorities: ["Languages"])
 - concerns: array or null
 - dealbreakers: array or null
 - learning_needs: array or null (e.g., "ADHD", "ASD", "dyslexia", "ESL", "gifted", "learning disability")
