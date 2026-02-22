@@ -612,16 +612,17 @@ export default function Consultant() {
         } : null
       });
 
-      // Update briefStatus from response
-      if (response.data.briefStatus) {
-        setBriefStatus(response.data.briefStatus);
+      // FIX 17: Update briefStatus from response and ensure it's synced
+      const newBriefStatus = response.data.briefStatus || null;
+      if (newBriefStatus !== briefStatus) {
+        setBriefStatus(newBriefStatus);
       }
       
       // CRITICAL FIX: Update conversation context with state AND schools
       const updatedContext = { 
         ...(currentConversation?.conversationContext || {}), 
         state: response.data.state,
-        briefStatus: response.data.briefStatus,
+        briefStatus: newBriefStatus,
         schools: response.data.schools || [],
         conversationId: currentConversation?.id || null
       };
