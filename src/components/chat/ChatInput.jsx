@@ -34,7 +34,7 @@ const ChatInput = forwardRef(({ onSend, disabled, tokenBalance, isPremium }, ref
       <div className="flex justify-between items-center mb-3 text-xs">
         <span className="text-slate-500">
           {isPremium ? (
-            <span className="text-teal-600 font-medium">✨ Unlimited tokens</span>
+            <span className="text-teal-600 font-medium">✨ Chat as much as you like</span>
           ) : (
             <>
               Tokens: <span className={`font-medium ${tokenBalance <= 20 ? 'text-amber-600' : 'text-slate-700'}`}>
