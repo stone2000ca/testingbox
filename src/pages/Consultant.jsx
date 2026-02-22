@@ -104,6 +104,15 @@ export default function Consultant() {
   
   // Determine UI phase based on state and schools
   const currentState = currentConversation?.conversationContext?.state || STATES.WELCOME;
+  
+  // FIX #3: Sync briefStatus from conversationContext
+  useEffect(() => {
+    const contextBriefStatus = currentConversation?.conversationContext?.briefStatus;
+    if (contextBriefStatus && contextBriefStatus !== briefStatus) {
+      setBriefStatus(contextBriefStatus);
+    }
+  }, [currentConversation?.conversationContext?.briefStatus]);
+  
   const isIntakePhase = schools.length === 0 && 
                         currentView !== 'schools' && 
                         currentView !== 'detail' && 
@@ -474,6 +483,14 @@ export default function Consultant() {
 
   const selectConversation = (convo) => {
     setCurrentConversation(convo);
+    
+    // FIX #3: Set briefStatus from conversation context
+    const contextBriefStatus = convo.conversationContext?.briefStatus;
+    if (contextBriefStatus) {
+      setBriefStatus(contextBriefStatus);
+    } else {
+      setBriefStatus(null);
+    }
     
     // Then set messages from this conversation
     const msgs = convo.messages || [];
@@ -1080,7 +1097,7 @@ Return empty array if user didn't provide any of these facts.`;
                   </TooltipTrigger>
                   <TooltipContent>
                     {isPremium ? (
-                      <p>Unlimited tokens</p>
+                      <p>Chat as much as you like</p>
                     ) : (
                       <p>+{getPlanLimits(user?.subscriptionPlan || 'free').dailyReplenishment} tomorrow</p>
                     )}
@@ -1520,7 +1537,7 @@ Return empty array if user didn't provide any of these facts.`;
                 </TooltipTrigger>
                 <TooltipContent>
                   {isPremium ? (
-                    <p>Unlimited tokens</p>
+                    <p>Chat as much as you like</p>
                   ) : (
                     <p>+{getPlanLimits(user?.subscriptionPlan || 'free').dailyReplenishment} tomorrow</p>
                   )}
