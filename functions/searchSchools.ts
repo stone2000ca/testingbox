@@ -275,8 +275,8 @@ async function performSearch(req) {
       });
     }
 
-    // Apply general region filter (Canada, US, Europe) - only if no aliases were used
-    if (region && !aliasedCities.length && !aliasedProvinces.length) {
+    // Apply general region filter ONLY if no explicit city was provided
+    if (region && !aliasedCities.length && !aliasedProvinces.length && !city) {
       locationFiltered = locationFiltered.filter(s => s.region === region);
     }
     if (country) {
