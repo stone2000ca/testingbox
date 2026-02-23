@@ -165,7 +165,7 @@ Extract ONLY:
 - locationArea: string (city name)
 - budgetMin: number or null (minimum budget in dollars)
 - budgetMax: number or null (maximum budget in dollars)
-- budgetSingle: number or null (KI-15: ONLY set if user gives ONE number. Convert shorthand to full: "$20K"→20000, "$25K"→25000, "35k"→35000)
+- budgetSingle: number or null (KI-15: Set if user states a budget amount, INCLUDING approximate or hedged amounts like "around", "about", "roughly", "up to", "no more than", "hoping to stay under". Extract the numeric value. Convert shorthand: $25K=25000, $30K=30000, 30k=30000. If user gives a range, use budgetMin/budgetMax instead.)
 - maxTuition: "unlimited" OR number OR null (for backward compatibility)
 - interests: array of strings or null
 - priorities: array of strings or null (FIX 4: When user says "arts", "music", "theater", "drama" → priorities: ["Arts"]. When "STEM", "science", "math" → priorities: ["STEM"]. When "sports" → priorities: ["Sports"]. When "languages", "French", "Spanish" → priorities: ["Languages"])
@@ -189,6 +189,9 @@ EXAMPLES:
 - "My daughter is in Grade 5" → childGrade: 5, childGender: "female"
 - "He has anxiety and ADHD" → childGender: "male", learning_needs: ["ADHD"], wellbeing_needs: ["anxiety"]
 - "Budget around $20K" → budgetSingle: 20000
+- "Budget is around $30K" → budgetSingle: 30000
+- "About $25K" → budgetSingle: 25000
+- "Hoping to stay under $40K" → budgetSingle: 40000
 - "$25K" → budgetSingle: 25000
 - "35k budget" → budgetSingle: 35000
 - "Between $15,000 and $25,000" → budgetMin: 15000, budgetMax: 25000
