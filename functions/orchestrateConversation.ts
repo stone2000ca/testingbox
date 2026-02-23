@@ -776,6 +776,7 @@ Return ONLY valid JSON. Do NOT explain.`;
          ... (all applicable fields)
 
          ONLY use the FAMILY DATA fields below if there is exactly ONE child mentioned in the conversation.`;
+         }
 
          const briefPrompt = consultantName === 'Jackie'
           ? `[STATE: BRIEF] Generate a factual brief summary using the structured format below. Use ONLY what was explicitly stated by the parent.
