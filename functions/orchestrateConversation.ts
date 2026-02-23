@@ -273,21 +273,24 @@ Return ONLY valid JSON. Do NOT explain.`;
       return ['what ','how ','why ','do ','does ','can ','could ','are ','is ','should ','would '].some(p => l.startsWith(p));
     }
     
-    // Rule 2: DISCOVERY -> BRIEF when Tier 1 data is met (entity-based, NOT message count)
+    // Rule 2: DISCOVERY -> BRIEF when Tier 1 data is met AND minimum turn count reached
     // FIX A: Check accumulated entities in context.extractedEntities
     if (currentState === STATES.DISCOVERY) {
       const hasLocation = !!(context.extractedEntities?.locationArea || context.extractedEntities?.city || region);
       const hasGradeOrType = !!(context.extractedEntities?.childGrade || context.extractedEntities?.curriculumPreference || context.extractedEntities?.schoolType);
+      const userMessageCount = conversationHistory?.filter(m => m.role === 'user').length || 0;
       
-      console.log('[TIER1 CHECK]', {hasLocation, hasGradeOrType, entities: context.extractedEntities});
+      console.log('[TIER1 CHECK]', {hasLocation, hasGradeOrType, userMessageCount, entities: context.extractedEntities});
       
       const isQuestion = isDirectQuestion(message);
       
-      if (hasLocation && hasGradeOrType && !isQuestion) {
+      if (hasLocation && hasGradeOrType && userMessageCount >= 3 && !isQuestion) {
         currentState = STATES.BRIEF;
         briefStatus = BRIEF_STATUS.GENERATING;
       } else if (isQuestion) {
         console.log('[QUESTION-FIRST GUARD] Question detected, staying in DISCOVERY');
+      } else if (hasLocation && hasGradeOrType && userMessageCount < 3) {
+        console.log('[TURN COUNT GUARD] Tier 1 data met but only', userMessageCount, 'user messages, staying in DISCOVERY');
       }
     }
 
