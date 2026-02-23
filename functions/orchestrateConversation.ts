@@ -872,8 +872,11 @@ Return ONLY valid JSON. Do NOT explain.`;
         if (briefMsg) {
           const locMatch = briefMsg.content.match(/•\s*Location:\s*([^\n•]+)/i);
           if (locMatch && locMatch[1]) {
-            conversationFamilyProfile.locationArea = locMatch[1].trim();
-            console.log('[KI-12 FALLBACK 3] Recovered from Brief text:', conversationFamilyProfile.locationArea);
+            const extractedLoc = locMatch[1].trim();
+            if (!/not specified/i.test(extractedLoc)) {
+              conversationFamilyProfile.locationArea = extractedLoc;
+              console.log('[KI-12 FALLBACK 3] Recovered from Brief text:', conversationFamilyProfile.locationArea);
+            }
           }
         }
       }
@@ -940,8 +943,10 @@ Return ONLY valid JSON. Do NOT explain.`;
       if (statedLocation && CITY_COORDS[statedLocation]) {
         searchParams.userLat = CITY_COORDS[statedLocation].lat;
         searchParams.userLng = CITY_COORDS[statedLocation].lng;
-        console.log('[KI-12 GEOCODE] Overriding browser coords with stated location:', statedLocation, CITY_COORDS[statedLocation]);
-      } else if (userLocation?.lat && userLocation?.lng) {
+        console.log('[KI-12 GEOCODE] Using geocoded coords for stated location:', statedLocation);
+      }
+      
+      if (!searchParams.userLat && !searchParams.userLng && userLocation?.lat && userLocation?.lng) {
         searchParams.userLat = userLocation.lat;
         searchParams.userLng = userLocation.lng;
         console.log('[KI-12 GEOCODE] Using browser coords as fallback');
