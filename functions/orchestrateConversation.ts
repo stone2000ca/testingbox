@@ -173,6 +173,7 @@ Extract ONLY:
 - dealbreakers: array or null
 - learning_needs: array or null (e.g., "ADHD", "ASD", "dyslexia", "ESL", "gifted", "learning disability")
 - wellbeing_needs: array or null (KI-13: "anxiety", "behavioral issues", "acting out", "feeling unsafe", "divorce impact", "depression", "social struggles", "confidence issues")
+- childrenJson: string or null (KI-10: If the parent mentions MORE THAN ONE child, return a JSON array string of child objects. Each object should have: name (string or null), age (number or null), grade (number or null), gender ("male"/"female"/null), interests (array of strings), priorities (array of strings), learningNeeds (array of strings). Example: '[{"name":"Emma","grade":9,"gender":"female","interests":["STEM","robotics"],"priorities":["AP courses"],"learningNeeds":[]},{"name":"Noah","grade":3,"gender":"male","interests":[],"priorities":["small classes"],"learningNeeds":["dyslexia"]}]'. If only ONE child mentioned, return null.)
 - curriculumPreference: array or null (e.g., "French immersion", "IB", "AP", "Montessori", "progressive", "traditional")
 - programPreferences: array or null (e.g., "outdoor education", "French immersion", "arts focus", "STEM", "athletics", "music program")
 - religiousPreference: string or null
@@ -225,6 +226,7 @@ Return ONLY valid JSON. Do NOT explain.`;
             dealbreakers: { type: ["array", "null"], items: { type: "string" } },
             learning_needs: { type: ["array", "null"], items: { type: "string" } },
             wellbeing_needs: { type: ["array", "null"], items: { type: "string" } },
+            childrenJson: { type: ["string", "null"] },
             curriculumPreference: { type: ["array", "null"], items: { type: "string" } },
             programPreferences: { type: ["array", "null"], items: { type: "string" } },
             religiousPreference: { type: ["string", "null"] },
@@ -287,6 +289,11 @@ Return ONLY valid JSON. Do NOT explain.`;
               context.extractedEntities[key] = value;
             }
       }
+    }
+    
+    // KI-10: Store childrenJson in context (not persisted to FamilyProfile entity)
+    if (extractedData.childrenJson) {
+      context.extractedEntities.childrenJson = extractedData.childrenJson;
     }
     
     // Persist extracted data to FamilyProfile immediately
@@ -696,10 +703,52 @@ Return ONLY valid JSON. Do NOT explain.`;
          const learningNeedsStr = learningNeeds.length > 0 ? learningNeeds.join(', ') : '';
          const curriculumStr = conversationFamilyProfile.curriculumPreference?.length > 0 ? conversationFamilyProfile.curriculumPreference.join(', ') : '';
 
-         // KI-10: Replace FAMILY DATA section if multi-child detected
-         const familyDataSection = isMultiChild 
-           ? `MULTI-CHILD DETECTED: The parent has mentioned MULTIPLE children in the conversation. Do NOT use any single-child data fields. Instead, read the conversation carefully and create SEPARATE profile sections for EACH child mentioned. Each child must have their own: name/description, Grade, Location, Budget, Gender preference, Class size, Top priorities, Learning needs, Wellbeing needs, Program preferences, Interests, and Extracurriculars. Label them as Child 1 and Child 2.`
-           : `FAMILY DATA:
+         // KI-10: Build FAMILY DATA section - use structured childrenJson if available
+         let familyDataSection;
+         if (isMultiChild) {
+           let parsedChildren = null;
+           try {
+             if (context.extractedEntities?.childrenJson) {
+               parsedChildren = JSON.parse(context.extractedEntities.childrenJson);
+             }
+           } catch (e) {
+             console.error('[KI-10] Failed to parse childrenJson:', e);
+           }
+
+           if (parsedChildren && Array.isArray(parsedChildren) && parsedChildren.length >= 2) {
+             // Structured multi-child data available
+             let childSections = '';
+             parsedChildren.forEach((child, idx) => {
+               const childNum = idx + 1;
+               const childName = child.name || `Child ${childNum}`;
+               const gradeDisplay = child.grade !== null && child.grade !== undefined 
+                 ? (child.grade === -1 ? 'JK' : child.grade === 0 ? 'SK' : `Grade ${child.grade}`) 
+                 : '(not specified)';
+               const genderDisplay = child.gender || '(not specified)';
+               const interestsDisplay = child.interests?.length > 0 ? child.interests.join(', ') : '(not specified)';
+               const prioritiesDisplay = child.priorities?.length > 0 ? child.priorities.join(', ') : '(not specified)';
+               const learningNeedsDisplay = child.learningNeeds?.length > 0 ? child.learningNeeds.join(', ') : '(not specified)';
+
+               childSections += `\nCHILD ${childNum}: ${childName}
+         - GRADE: ${gradeDisplay}
+         - GENDER: ${genderDisplay}
+         - INTERESTS: ${interestsDisplay}
+         - PRIORITIES: ${prioritiesDisplay}
+         - LEARNING NEEDS: ${learningNeedsDisplay}\n`;
+             });
+
+             familyDataSection = `MULTI-CHILD FAMILY DATA:${childSections}
+         SHARED FAMILY FIELDS:
+         - LOCATION: ${locationArea || '(not specified)'}
+         - BUDGET: ${budgetDisplay}
+         - CURRICULUM: ${curriculumStr || '(not specified)'}
+         - DEALBREAKERS: ${dealbreakersStr || '(not specified)'}`;
+           } else {
+             // Fallback: tell AI to parse conversation
+             familyDataSection = `MULTI-CHILD DETECTED: The parent has mentioned MULTIPLE children in the conversation. Do NOT use any single-child data fields. Instead, read the conversation carefully and create SEPARATE profile sections for EACH child mentioned. Each child must have their own: name/description, Grade, Location, Budget, Gender preference, Class size, Top priorities, Learning needs, Wellbeing needs, Program preferences, Interests, and Extracurriculars. Label them as Child 1 and Child 2.`;
+           }
+         } else {
+           familyDataSection = `FAMILY DATA:
          - CHILD: ${childDisplayName}
          - GRADE: ${childGrade !== null && childGrade !== undefined ? (childGrade === -1 ? 'JK' : childGrade === 0 ? 'SK' : 'Grade ' + childGrade) : '(not specified)'}
          - LOCATION: ${locationArea || '(not specified)'}
