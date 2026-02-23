@@ -593,7 +593,7 @@ Return ONLY valid JSON. Do NOT explain.`;
     - DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
 
     UNIFIED FORMAT (FIX 14) - Use this exact structure:
-    [Optional warm intro sentence - Jackie tone]
+    [REQUIRED warm, conversational intro - Jackie tone. Sound like you're reflecting back what you heard, NOT generating a report. Examples: "If I'm understanding correctly...", "Let me make sure I've got this right...", "Based on everything you've shared...". Be genuine and empathetic.]
     
     • Student: ${childDisplayName}, Grade ${childGrade || '(not specified)'}
     • Location: ${locationArea || '(not specified)'}
@@ -628,7 +628,7 @@ Return ONLY valid JSON. Do NOT explain.`;
     - DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
 
     UNIFIED FORMAT (FIX 14) - Use this exact structure:
-    [Optional direct intro sentence - Liam tone]
+    [REQUIRED direct, conversational intro - Liam tone. Sound like you're confirming what you heard, NOT generating a report. Examples: "Let me make sure I've got this right...", "Based on what you've told me...", "Here's what I'm hearing...". Be natural and straightforward.]
     
     • Student: ${childDisplayName}, Grade ${childGrade || '(not specified)'}
     • Location: ${locationArea || '(not specified)'}
