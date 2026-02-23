@@ -729,12 +729,30 @@ Return ONLY valid JSON. Do NOT explain.`;
         familyProfile: conversationFamilyProfile
       };
 
+      // KI-12: CRITICAL - Proper location filtering
+      // Extract location from FamilyProfile - locationArea can be "City, Province" or just "City"
       if (conversationFamilyProfile?.locationArea) {
-        searchParams.city = conversationFamilyProfile.locationArea;
+        const locationParts = conversationFamilyProfile.locationArea.split(',').map(s => s.trim());
+        if (locationParts.length >= 2) {
+          // Has both city and province/state
+          searchParams.city = locationParts[0];
+          searchParams.provinceState = locationParts[1];
+        } else if (locationParts.length === 1) {
+          // Only city specified
+          searchParams.city = locationParts[0];
+        }
       }
+      
+      // Override with explicit provinceState if available
       if (conversationFamilyProfile?.provinceState) {
         searchParams.provinceState = conversationFamilyProfile.provinceState;
       }
+      
+      // Set region filter to ensure we don't show cross-region results
+      if (region) {
+        searchParams.region = region;
+      }
+      
       if (conversationFamilyProfile?.childGrade) {
         searchParams.minGrade = conversationFamilyProfile.childGrade;
         searchParams.maxGrade = conversationFamilyProfile.childGrade;
@@ -757,6 +775,13 @@ Return ONLY valid JSON. Do NOT explain.`;
         searchParams.userLat = userLocation.lat;
         searchParams.userLng = userLocation.lng;
       }
+      
+      console.log('[KI-12 LOCATION FILTER]', {
+        locationArea: conversationFamilyProfile?.locationArea,
+        city: searchParams.city,
+        provinceState: searchParams.provinceState,
+        region: searchParams.region
+      });
 
       let schools = [];
       try {
