@@ -129,16 +129,20 @@ PARENT'S MESSAGE:
 
 Extract ONLY:
 - childName: string or null
-- childGrade: number or null (e.g., 3 for Grade 3)
+- childAge: number or null (KI-14: extract if user mentions age in years, e.g., "14 years old" → 14)
+- childGrade: number or null (e.g., 3 for Grade 3, -1 for JK, 0 for SK)
+- childGender: "male" OR "female" OR null (KI-16: "son", "boy", "he/him" → "male"; "daughter", "girl", "she/her" → "female")
 - locationArea: string (city name)
 - budgetMin: number or null (minimum budget)
 - budgetMax: number or null (maximum budget)
+- budgetSingle: number or null (KI-15: ONLY set if user gives ONE number like "$20K" or "around 25000", NOT a range)
 - maxTuition: "unlimited" OR number OR null (for backward compatibility)
 - interests: array of strings or null
 - priorities: array of strings or null (FIX 4: When user says "arts", "music", "theater", "drama" → priorities: ["Arts"]. When "STEM", "science", "math" → priorities: ["STEM"]. When "sports" → priorities: ["Sports"]. When "languages", "French", "Spanish" → priorities: ["Languages"])
 - concerns: array or null
 - dealbreakers: array or null
 - learning_needs: array or null (e.g., "ADHD", "ASD", "dyslexia", "ESL", "gifted", "learning disability")
+- wellbeing_needs: array or null (KI-13: "anxiety", "behavioral issues", "acting out", "feeling unsafe", "divorce impact", "depression", "social struggles", "confidence issues")
 - curriculumPreference: array or null (e.g., "French immersion", "IB", "AP", "Montessori", "progressive", "traditional")
 - programPreferences: array or null (e.g., "outdoor education", "French immersion", "arts focus", "STEM", "athletics", "music program")
 - religiousPreference: string or null
@@ -150,16 +154,19 @@ Extract ONLY:
 - specialNeeds: array or null (e.g., "ADHD", "ASD", "dyslexia", "ESL support")
 
 EXAMPLES:
-- "She has ADHD" → learning_needs: ["ADHD"], specialNeeds: ["ADHD"]
+- "My 14-year-old son" → childAge: 14, childGender: "male"
+- "She's 7" → childAge: 7, childGender: "female"
+- "My daughter is in Grade 5" → childGrade: 5, childGender: "female"
+- "He has anxiety and ADHD" → childGender: "male", learning_needs: ["ADHD"], wellbeing_needs: ["anxiety"]
+- "Budget around $20K" → budgetSingle: 20000
+- "Between $15,000 and $25,000" → budgetMin: 15000, budgetMax: 25000
+- "She has ADHD" → learning_needs: ["ADHD"], specialNeeds: ["ADHD"], childGender: "female"
 - "Looking for French immersion" → curriculumPreference: ["French immersion"], programPreferences: ["French immersion"]
-- "Need financial aid" → financialAidInterest: true
+- "She's been acting out after the divorce" → wellbeing_needs: ["behavioral issues", "divorce impact"], childGender: "female"
+- "He feels unsafe at his current school" → wellbeing_needs: ["feeling unsafe"], childGender: "male"
 - "Small class sizes important" → classSize: "small"
-- "We want arts and small classes" → priorities: ["Arts"], classSize: "small"
 - "Music and theater are important" → priorities: ["Arts"]
-- "Strong in STEM" → priorities: ["STEM"], programPreferences: ["STEM"]
 - "Co-ed school preferred" → genderPreference: "Co-Ed"
-- "Budget $20k-$35k" → budgetMin: 20000, budgetMax: 35000
-- "Outdoor education important" → programPreferences: ["outdoor education"]
 
 Return ONLY valid JSON. Do NOT explain.`;
 
@@ -169,16 +176,20 @@ Return ONLY valid JSON. Do NOT explain.`;
           type: "object",
           properties: {
             childName: { type: ["string", "null"] },
+            childAge: { type: ["number", "null"] },
             childGrade: { type: ["number", "null"] },
+            childGender: { type: ["string", "null"] },
             locationArea: { type: ["string", "null"] },
             budgetMin: { type: ["number", "null"] },
             budgetMax: { type: ["number", "null"] },
+            budgetSingle: { type: ["number", "null"] },
             maxTuition: { type: ["number", "string", "null"] },
             interests: { type: ["array", "null"], items: { type: "string" } },
             priorities: { type: ["array", "null"], items: { type: "string" } },
             concerns: { type: ["array", "null"], items: { type: "string" } },
             dealbreakers: { type: ["array", "null"], items: { type: "string" } },
             learning_needs: { type: ["array", "null"], items: { type: "string" } },
+            wellbeing_needs: { type: ["array", "null"], items: { type: "string" } },
             curriculumPreference: { type: ["array", "null"], items: { type: "string" } },
             programPreferences: { type: ["array", "null"], items: { type: "string" } },
             religiousPreference: { type: ["string", "null"] },
@@ -195,6 +206,24 @@ Return ONLY valid JSON. Do NOT explain.`;
       let finalResult = result;
       if (extractedGrade !== null && !result.childGrade) {
        finalResult = { ...result, childGrade: extractedGrade };
+      }
+      
+      // KI-14: Age-to-grade conversion
+      if (finalResult.childAge && !finalResult.childGrade) {
+        const ageToGradeMap = {
+          4: -1, 5: 0, 6: 1, 7: 2, 8: 3, 9: 4, 10: 5, 11: 6, 12: 7, 13: 8, 14: 9, 15: 10, 16: 11, 17: 12, 18: 12
+        };
+        const convertedGrade = ageToGradeMap[finalResult.childAge];
+        if (convertedGrade !== undefined) {
+          finalResult = { ...finalResult, childGrade: convertedGrade };
+          console.log('[KI-14] Converted age', finalResult.childAge, 'to grade', convertedGrade);
+        }
+      }
+      
+      // KI-15: Budget single-value handling
+      if (finalResult.budgetSingle && !finalResult.budgetMin && !finalResult.budgetMax) {
+        finalResult = { ...finalResult, maxTuition: finalResult.budgetSingle };
+        console.log('[KI-15] Set budgetSingle', finalResult.budgetSingle, 'as maxTuition');
       }
 
       const cleaned = {};
@@ -590,26 +619,36 @@ Return ONLY valid JSON. Do NOT explain.`;
        
        // Only generate brief if not in editing mode
        try {
-         const { childName, childGrade, locationArea, budgetRange, budgetMin, budgetMax, maxTuition, interests, priorities, dealbreakers, currentSituation, academicStrengths, genderPreference, classSize, programPreferences } = conversationFamilyProfile;
+         const { childName, childGrade, childGender, locationArea, budgetRange, budgetMin, budgetMax, maxTuition, interests, priorities, dealbreakers, currentSituation, academicStrengths, genderPreference, classSize, programPreferences, wellbeing_needs } = conversationFamilyProfile;
          const interestsStr = interests?.length > 0 ? interests.join(', ') : '';
          const prioritiesStr = priorities?.length > 0 ? priorities.join(', ') : '';
          const strengthsStr = academicStrengths?.length > 0 ? academicStrengths.join(', ') : '';
          const dealbreakersStr = dealbreakers?.length > 0 ? dealbreakers.join(', ') : '';
          const programPreferencesStr = programPreferences?.length > 0 ? programPreferences.join(', ') : '';
+         const wellbeingNeedsStr = wellbeing_needs?.length > 0 ? wellbeing_needs.join(', ') : '';
 
+         // KI-15: Fix budget display - single value OR range
          let budgetDisplay = budgetRange || '(not specified)';
          if (maxTuition === 'unlimited') {
            budgetDisplay = 'Budget is flexible';
-         } else if (budgetMin && budgetMax) {
+         } else if (budgetMin && budgetMax && budgetMin !== budgetMax) {
            budgetDisplay = `$${budgetMin.toLocaleString()}-$${budgetMax.toLocaleString()}/year`;
+         } else if (budgetMin && budgetMax && budgetMin === budgetMax) {
+           // KI-15: Don't show duplicate range like "$25,000-$25,000"
+           budgetDisplay = `$${budgetMin.toLocaleString()}/year`;
          } else if (budgetMax) {
            budgetDisplay = `Up to $${budgetMax.toLocaleString()}/year`;
-         } else if (maxTuition) {
-           budgetDisplay = `$${maxTuition}/year`;
+         } else if (maxTuition && typeof maxTuition === 'number') {
+           budgetDisplay = `$${maxTuition.toLocaleString()}/year`;
          }
 
-         // Smart child name display: use actual name if available, otherwise "your child"
-         const childDisplayName = childName ? childName : 'your child';
+         // KI-16: Smart child name display with gender
+         let childDisplayName = childName ? childName : 'your child';
+         if (!childName && childGender === 'male') {
+           childDisplayName = 'your son';
+         } else if (!childName && childGender === 'female') {
+           childDisplayName = 'your daughter';
+         }
 
          // KI-10: MULTI-CHILD DETECTION at code level
          const conversationText = conversationHistory?.map(m => m.content).join(' ') || '';
@@ -624,10 +663,10 @@ Return ONLY valid JSON. Do NOT explain.`;
 
          // KI-10: Replace FAMILY DATA section if multi-child detected
          const familyDataSection = isMultiChild 
-           ? `MULTI-CHILD DETECTED: The parent has mentioned MULTIPLE children in the conversation. Do NOT use any single-child data fields. Instead, read the conversation carefully and create SEPARATE profile sections for EACH child mentioned. Each child must have their own: name/description, Grade, Location, Budget, Gender preference, Class size, Top priorities, Learning needs, Program preferences, Interests, and Extracurriculars. Label them as Child 1 and Child 2.`
+           ? `MULTI-CHILD DETECTED: The parent has mentioned MULTIPLE children in the conversation. Do NOT use any single-child data fields. Instead, read the conversation carefully and create SEPARATE profile sections for EACH child mentioned. Each child must have their own: name/description, Grade, Location, Budget, Gender preference, Class size, Top priorities, Learning needs, Wellbeing needs, Program preferences, Interests, and Extracurriculars. Label them as Child 1 and Child 2.`
            : `FAMILY DATA:
          - CHILD: ${childDisplayName}
-         - GRADE: ${childGrade ? 'Grade ' + childGrade : '(not specified)'}
+         - GRADE: ${childGrade !== null && childGrade !== undefined ? (childGrade === -1 ? 'JK' : childGrade === 0 ? 'SK' : 'Grade ' + childGrade) : '(not specified)'}
          - LOCATION: ${locationArea || '(not specified)'}
          - BUDGET: ${budgetDisplay}
          - GENDER PREFERENCE: ${genderPreference || '(not specified)'}
@@ -635,6 +674,7 @@ Return ONLY valid JSON. Do NOT explain.`;
          - CURRICULUM: ${curriculumStr || '(not specified)'}
          - PROGRAM PREFERENCES: ${programPreferencesStr || '(not specified)'}
          - LEARNING NEEDS: ${learningNeedsStr || '(not specified)'}
+         - WELLBEING NEEDS: ${wellbeingNeedsStr || '(not specified)'}
          - INTERESTS: ${interestsStr || '(not specified)'}
          - PRIORITIES: ${prioritiesStr || '(not specified)'}
          - DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
@@ -677,10 +717,10 @@ Return ONLY valid JSON. Do NOT explain.`;
 
     **IF MULTIPLE CHILDREN DETECTED IN CONVERSATION: Repeat the bullet list below for EACH child with their own header (e.g., "Child 1:" and "Child 2:") and their specific details.**
 
-    • Student: ${childDisplayName}, Grade ${childGrade || '(not specified)'}
+    • Student: ${childDisplayName}, ${childGrade !== null && childGrade !== undefined ? (childGrade === -1 ? 'JK' : childGrade === 0 ? 'SK' : 'Grade ' + childGrade) : '(not specified)'}
     • Location: ${locationArea || '(not specified)'}
     • Budget: ${budgetDisplay}
-    ${genderPreference ? '• Gender preference: ' + genderPreference + '\n' : ''}${classSize ? '• Class size: ' + classSize + '\n' : ''}${prioritiesStr ? '• Top priorities: ' + prioritiesStr + '\n' : ''}${learningNeedsStr ? '• Learning needs: ' + learningNeedsStr + '\n' : ''}${programPreferencesStr ? '• Program preferences: ' + programPreferencesStr + '\n' : ''}${dealbreakersStr ? '• Dealbreakers: ' + dealbreakersStr + '\n' : ''}${curriculumStr ? '• Curriculum: ' + curriculumStr + '\n' : ''}${interestsStr ? '• Interests: ' + interestsStr + '\n' : ''}
+    ${genderPreference ? '• Gender preference: ' + genderPreference + '\n' : ''}${classSize ? '• Class size: ' + classSize + '\n' : ''}${prioritiesStr ? '• Top priorities: ' + prioritiesStr + '\n' : ''}${learningNeedsStr ? '• Learning needs: ' + learningNeedsStr + '\n' : ''}${wellbeingNeedsStr ? '• Wellbeing needs: ' + wellbeingNeedsStr + '\n' : ''}${programPreferencesStr ? '• Program preferences: ' + programPreferencesStr + '\n' : ''}${dealbreakersStr ? '• Dealbreakers: ' + dealbreakersStr + '\n' : ''}${curriculumStr ? '• Curriculum: ' + curriculumStr + '\n' : ''}${interestsStr ? '• Interests: ' + interestsStr + '\n' : ''}
     Does that capture it? Anything to adjust?
 
     YOU ARE JACKIE - Warm intro, structured data.`
