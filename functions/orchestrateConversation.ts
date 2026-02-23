@@ -569,31 +569,21 @@ Return ONLY valid JSON. Do NOT explain.`;
          // Smart child name display: use actual name if available, otherwise "your child"
          const childDisplayName = childName ? childName : 'your child';
 
+         // KI-10: MULTI-CHILD DETECTION at code level
+         const conversationText = conversationHistory?.map(m => m.content).join(' ') || '';
+         const multiChildPatterns = /\b(two kids|two children|both kids|both children|my son and daughter|my daughter and son|older one and younger|younger one and older|first child|second child|one child.*another child|siblings|each child|each of them)\b/i;
+         const isMultiChild = multiChildPatterns.test(conversationText);
+         console.log('[KI-10 MULTI-CHILD CHECK]', {isMultiChild, conversationSnippet: conversationText.substring(0, 200)});
+
          // FIX #6: UNIFIED BRIEF FORMAT + FIX #2: STOP FABRICATING PERSONALITY
          const learningNeeds = conversationFamilyProfile.learning_needs || conversationFamilyProfile.specialNeeds || [];
          const learningNeedsStr = learningNeeds.length > 0 ? learningNeeds.join(', ') : '';
          const curriculumStr = conversationFamilyProfile.curriculumPreference?.length > 0 ? conversationFamilyProfile.curriculumPreference.join(', ') : '';
-         
-         const briefPrompt = consultantName === 'Jackie'
-          ? `[STATE: BRIEF] Generate a factual brief summary using the structured format below. Use ONLY what was explicitly stated by the parent.
 
-         CRITICAL RULES - DO NOT VIOLATE (FIX 11):
-         - Do NOT invent personality traits, motivations, or character descriptions that were not explicitly stated by the parent.
-         - If the parent said the child is struggling or has ADHD/learning differences, acknowledge that plainly and respectfully. Do NOT romanticize it.
-         - If no personality was described, skip that section entirely.
-         - Never use phrases like "bright and curious", "eager to explore the world", "joyful inquisitiveness" unless the parent used those exact words.
-         - Never call any budget "generous", "modest", "tight", or "comfortable". Use neutral factual language. (FIX 15)
-         - If parent mentions ADHD, ASD, ESL, or learning differences, name them explicitly in the Brief. Do NOT euphemize as "unique learning style".
-
-         MULTI-CHILD SUPPORT (KI-10 P0):
-         - If parent mentioned MULTIPLE children with different grades/needs, you MUST present SEPARATE profiles for each child.
-         - Example: "Child 1: Emma, Grade 9 - STEM focus, robotics, AP courses" followed by "Child 2: Noah, Grade 3 - dyslexia support, small classes, Montessori"
-         - Do NOT merge multiple children into one profile. Each child gets their own bullet section with their specific grade, needs, and priorities.
-         - If only one child was mentioned, use the standard single-child format.
-
-         IMPORTANT: Review the FULL conversation history above. If the parent mentioned MULTIPLE children, IGNORE the single-child data fields below and instead extract each child separately from the conversation. Present a SEPARATE bullet section for each child.
-
-         FAMILY DATA:
+         // KI-10: Replace FAMILY DATA section if multi-child detected
+         const familyDataSection = isMultiChild 
+           ? `MULTI-CHILD DETECTED: The parent has mentioned MULTIPLE children in the conversation. Do NOT use any single-child data fields. Instead, read the conversation carefully and create SEPARATE profile sections for EACH child mentioned. Each child must have their own: name/description, Grade, Location, Budget, Gender preference, Class size, Top priorities, Learning needs, Program preferences, Interests, and Extracurriculars. Label them as Child 1 and Child 2.`
+           : `FAMILY DATA:
          - CHILD: ${childDisplayName}
          - GRADE: ${childGrade ? 'Grade ' + childGrade : '(not specified)'}
          - LOCATION: ${locationArea || '(not specified)'}
@@ -619,7 +609,26 @@ Return ONLY valid JSON. Do NOT explain.`;
          - Budget: [from conversation]
          ... (all applicable fields)
 
-         ONLY use the FAMILY DATA fields below if there is exactly ONE child mentioned in the conversation.
+         ONLY use the FAMILY DATA fields below if there is exactly ONE child mentioned in the conversation.`;
+
+         const briefPrompt = consultantName === 'Jackie'
+          ? `[STATE: BRIEF] Generate a factual brief summary using the structured format below. Use ONLY what was explicitly stated by the parent.
+
+         CRITICAL RULES - DO NOT VIOLATE (FIX 11):
+         - Do NOT invent personality traits, motivations, or character descriptions that were not explicitly stated by the parent.
+         - If the parent said the child is struggling or has ADHD/learning differences, acknowledge that plainly and respectfully. Do NOT romanticize it.
+         - If no personality was described, skip that section entirely.
+         - Never use phrases like "bright and curious", "eager to explore the world", "joyful inquisitiveness" unless the parent used those exact words.
+         - Never call any budget "generous", "modest", "tight", or "comfortable". Use neutral factual language. (FIX 15)
+         - If parent mentions ADHD, ASD, ESL, or learning differences, name them explicitly in the Brief. Do NOT euphemize as "unique learning style".
+
+         MULTI-CHILD SUPPORT (KI-10 P0):
+         - If parent mentioned MULTIPLE children with different grades/needs, you MUST present SEPARATE profiles for each child.
+         - Example: "Child 1: Emma, Grade 9 - STEM focus, robotics, AP courses" followed by "Child 2: Noah, Grade 3 - dyslexia support, small classes, Montessori"
+         - Do NOT merge multiple children into one profile. Each child gets their own bullet section with their specific grade, needs, and priorities.
+         - If only one child was mentioned, use the standard single-child format.
+
+         ${familyDataSection}
 
          UNIFIED FORMAT (FIX 14) - Use this exact structure:
     [REQUIRED warm, conversational intro - Jackie tone. Sound like you're reflecting back what you heard, NOT generating a report. Examples: "If I'm understanding correctly...", "Let me make sure I've got this right...", "Based on everything you've shared...". Be genuine and empathetic.]
@@ -648,36 +657,8 @@ Return ONLY valid JSON. Do NOT explain.`;
     - Example: "Child 1: Emma, Grade 9 - STEM focus, robotics, AP courses" followed by "Child 2: Noah, Grade 3 - dyslexia support, small classes, Montessori"
     - Do NOT merge multiple children into one profile. Each child gets their own bullet section with their specific grade, needs, and priorities.
     - If only one child was mentioned, use the standard single-child format.
-    
-    IMPORTANT: Review the FULL conversation history above. If the parent mentioned MULTIPLE children, IGNORE the single-child data fields below and instead extract each child separately from the conversation. Present a SEPARATE bullet section for each child.
 
-    FAMILY DATA:
-    - CHILD: ${childDisplayName}
-    - GRADE: ${childGrade ? 'Grade ' + childGrade : '(not specified)'}
-    - LOCATION: ${locationArea || '(not specified)'}
-    - BUDGET: ${budgetDisplay}
-    - GENDER PREFERENCE: ${genderPreference || '(not specified)'}
-    - CLASS SIZE: ${classSize || '(not specified)'}
-    - CURRICULUM: ${curriculumStr || '(not specified)'}
-    - PROGRAM PREFERENCES: ${programPreferencesStr || '(not specified)'}
-    - LEARNING NEEDS: ${learningNeedsStr || '(not specified)'}
-    - INTERESTS: ${interestsStr || '(not specified)'}
-    - PRIORITIES: ${prioritiesStr || '(not specified)'}
-    - DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
-
-    MULTI-CHILD CHECK: Review the conversation history. If the parent mentioned MORE THAN ONE child, you MUST create separate sections. Do NOT use the FAMILY DATA fields below (they only contain one child). Instead, extract each child's details directly from the conversation and present them as:
-
-    Child 1: [name or description], [grade]
-    - Location: [from conversation]
-    - Budget: [from conversation]
-    ... (all applicable fields)
-
-    Child 2: [name or description], [grade]
-    - Location: [from conversation]
-    - Budget: [from conversation]
-    ... (all applicable fields)
-
-    ONLY use the FAMILY DATA fields below if there is exactly ONE child mentioned in the conversation.
+    ${familyDataSection}
 
     UNIFIED FORMAT (FIX 14) - Use this exact structure:
     [REQUIRED direct, conversational intro - Liam tone. Sound like you're confirming what you heard, NOT generating a report. Examples: "Let me make sure I've got this right...", "Based on what you've told me...", "Here's what I'm hearing...". Be natural and straightforward.]
