@@ -76,27 +76,35 @@ Deno.serve(async (req) => {
           return;
         }
 
-        // Parse JSON arrays or objects - these need special handling
+        // Special handling for string fields that may contain arrays/objects
+        const stringFields = ['scholarshipsJson', 'universityPlacements'];
+        
+        // Parse JSON arrays or objects
         if ((value.startsWith('[') && value.endsWith(']')) || (value.startsWith('{') && value.endsWith('}'))) {
-          try {
-            // Handle CSV-escaped quotes (double quotes)
-            let cleanValue = value.replace(/""/g, '"');
-            
-            // Try to parse as JSON
-            school[header] = JSON.parse(cleanValue);
-          } catch (e) {
-            // If JSON parsing fails, try as a simple comma-separated list for arrays
-            if (value.startsWith('[') && value.endsWith(']')) {
-              const inner = value.slice(1, -1).trim();
-              if (inner) {
-                school[header] = inner.split(',').map(item => item.trim());
-              } else {
-                school[header] = [];
+          // If it's a string field, keep it as a string
+          if (stringFields.includes(header)) {
+            school[header] = value;
+          } else {
+            try {
+              // Handle CSV-escaped quotes (double quotes)
+              let cleanValue = value.replace(/""/g, '"');
+              
+              // Try to parse as JSON
+              school[header] = JSON.parse(cleanValue);
+            } catch (e) {
+              // If JSON parsing fails, try as a simple comma-separated list for arrays
+              if (value.startsWith('[') && value.endsWith(']')) {
+                const inner = value.slice(1, -1).trim();
+                if (inner) {
+                  school[header] = inner.split(',').map(item => item.trim());
+                } else {
+                  school[header] = [];
+                }
               }
-            }
-            // For objects, if parsing fails, convert to JSON string
-            else {
-              school[header] = value;
+              // For objects, keep as string
+              else {
+                school[header] = value;
+              }
             }
           }
         }
@@ -106,8 +114,8 @@ Deno.serve(async (req) => {
         } else if (value === 'FALSE' || value === 'false') {
           school[header] = false;
         }
-        // Parse numbers
-        else if (!isNaN(value) && value !== '') {
+        // Parse numbers (but not for string fields like governmentId, email)
+        else if (!isNaN(value) && value !== '' && !stringFields.includes(header) && header !== 'governmentId' && header !== 'email' && header !== 'phone') {
           school[header] = Number(value);
         }
         // Keep as string
