@@ -1261,41 +1261,52 @@ FAMILY NEEDS:
 - Curriculum Preference: ${conversationFamilyProfile?.curriculumPreference?.join(', ') || 'Not specified'}
 `;
         
-        const responsePrompt = `[STATE: DEEP_DIVE] Generate a structured evaluation card for ${selectedSchool?.name || 'School'}.
+        const responsePrompt = `[STATE: DEEP_DIVE] Generate a comprehensive school evaluation using the 6-AREA FRAMEWORK below.
 
 ${schoolDataStr}
 ${familyDataStr}
 
 Parent: "${message}"
 
-CRITICAL: You MUST output in this EXACT structured format (not a paragraph):
+CRITICAL: You MUST output in this EXACT 6-AREA structured format:
 
 **${selectedSchool?.name || 'School Name'}** - [Strong Match / Good Match / Worth Exploring]
 ${selectedSchool?.city || 'City'} | ${selectedSchool?.lowestGrade ? `Grade ${selectedSchool.lowestGrade}-${selectedSchool.highestGrade}` : 'Grades N/A'} | ${selectedSchool?.genderPolicy || 'Co-ed'}
 
-**Why ${selectedSchool?.name || 'this school'} for ${conversationFamilyProfile?.childName || 'your child'}:**
-[Write 2-3 sentences connecting this child's specific needs/priorities from the Brief to what this school offers. Use concrete details, not generic statements.]
+**1. ACADEMIC FIT:**
+[2-3 sentences: How does this school's curriculum (${selectedSchool?.curriculumType || 'Traditional'}) match the child's grade (${conversationFamilyProfile?.childGrade || 'N/A'}) and academic needs? Mention class sizes, student-teacher ratio, learning support if available. Be specific with data from SchoolProfile.]
 
-**What to Know:**
-• [Trade-off 1: What school offers vs. what it doesn't - use ONLY real SchoolProfile data]
-• [Trade-off 2: Another honest consideration - if data missing, say "Not listed - ask school about X"]
-• [Trade-off 3: Logistics, commute, or program consideration]
+**2. SPECIAL PROGRAMS:**
+[2-3 sentences: What programs align with family priorities (${conversationFamilyProfile?.priorities?.join(', ') || 'Not specified'})? Cover arts (${selectedSchool?.artsPrograms?.length > 0 ? selectedSchool.artsPrograms.join(', ') : 'Not listed'}), sports (${selectedSchool?.sportsPrograms?.length > 0 ? selectedSchool.sportsPrograms.join(', ') : 'Not listed'}), specializations (${selectedSchool?.specializations?.join(', ') || 'Not listed'}). If data missing, say "Not listed - ask about X".]
 
-**Cost Reality:**
-Tuition: ${selectedSchool?.tuition ? `$${selectedSchool.tuition}/year` : 'Not specified - contact school'}
-${selectedSchool?.financialAidAvailable ? '✓ Financial aid available' : '⚠ Financial aid status unknown - ask admissions'}
-[One sentence: How does tuition compare to family budget? ${conversationFamilyProfile?.maxTuition ? `Budget: $${conversationFamilyProfile.maxTuition}` : 'No budget specified'}]
+**3. CULTURE & COMMUNITY:**
+[2-3 sentences: What's the school's vibe? Use mission statement, values, campus feel, parent involvement, diversity if available from SchoolProfile. Connect to family's stated priorities about community/culture. Be honest if data is thin.]
+
+**4. PRACTICAL CONSIDERATIONS:**
+• **Tuition:** ${selectedSchool?.tuition ? `$${selectedSchool.tuition}/year` : 'Not specified - contact school'}
+• **Financial Aid:** ${selectedSchool?.financialAidAvailable ? 'Available' : 'Unknown - ask admissions'}
+• **Budget Fit:** [One sentence comparing to family budget: ${conversationFamilyProfile?.maxTuition ? `$${conversationFamilyProfile.maxTuition}` : 'No budget specified'}]
+• **Location:** ${selectedSchool?.city || 'City'}, ${selectedSchool?.provinceState || 'Province'} [Add commute note if relevant]
+• **Admissions:** [Mention application deadlines, entrance requirements if listed in SchoolProfile. Otherwise: "Contact school for deadlines and requirements"]
+
+**5. WHAT PARENTS SAY:**
+[1-2 sentences: If SchoolProfile has parent testimonials, community vibe, or reputation data, summarize it here. If not available, say: "Parent feedback not available - consider visiting the school or asking for parent references."]
+
+**6. QUESTIONS TO ASK THE SCHOOL:**
+• [Question 1: Target a gap in the data - e.g., if no learning support info, ask about that]
+• [Question 2: Based on family priorities - e.g., if arts important, ask about showcase opportunities]
+• [Question 3: Practical - e.g., waitlist status, mid-year admissions, sibling priority]
 
 ---
 
-${consultantName === 'Jackie' ? 'After the card, add 1-2 warm sentences bridging to conversation. Use "I think..." or "It sounds like..."' : 'After the card, add 1-2 direct sentences. Use "Bottom line:" or "Here\'s what stands out..."'}
+${consultantName === 'Jackie' ? 'After the 6 areas, add 1-2 warm sentences bridging to conversation. Use "I think..." or "It sounds like..." to make it conversational.' : 'After the 6 areas, add 1-2 direct sentences. Use "Bottom line:" or "Here\'s what stands out..." to summarize.'}
 
 FIT LABEL LOGIC:
-- Strong Match = 3+ family priorities directly met by school
+- Strong Match = 3+ family priorities directly met by school data
 - Good Match = 2 priorities met
-- Worth Exploring = 1 or fewer priorities met
+- Worth Exploring = 1 or fewer priorities met OR insufficient data
 
-NEVER fabricate data. If missing, say "Not listed" and suggest a question to ask the school.`;
+NEVER fabricate data. If data is missing, explicitly state "Not listed" and suggest what to ask the school.`;
         
         const aiResponse = await base44.integrations.Core.InvokeLLM({
           prompt: responsePrompt

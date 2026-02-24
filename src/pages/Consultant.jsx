@@ -115,6 +115,25 @@ export default function Consultant() {
     }
   }, [currentConversation?.conversationContext?.briefStatus]);
   
+  // DETAIL VIEW BUG FIX: Prevent currentView from being reset when selectedSchool exists
+  useEffect(() => {
+    // Guard: If a school is selected and we're in detail view, don't allow view changes
+    if (selectedSchool && currentView === 'detail') {
+      console.log('[DETAIL VIEW GUARD] Maintaining detail view for:', selectedSchool.name);
+      return;
+    }
+    
+    // Only sync view from state if no school is selected
+    if (!selectedSchool) {
+      const conversationState = currentConversation?.conversationContext?.state || STATES.WELCOME;
+      if ([STATES.WELCOME, STATES.DISCOVERY, STATES.BRIEF].includes(conversationState)) {
+        setCurrentView('chat');
+      } else if (conversationState === STATES.RESULTS) {
+        setCurrentView('schools');
+      }
+    }
+  }, [currentConversation?.conversationContext?.state, selectedSchool, currentView]);
+  
   const isIntakePhase = schools.length === 0 && 
                         currentView !== 'schools' && 
                         currentView !== 'detail' && 
