@@ -530,7 +530,10 @@ export default function Consultant() {
       }
     }
     setSchools(convo.conversationContext?.schools || []);
-    setSelectedSchool(null);
+    // BUG-DD-001 FIX: Only clear selectedSchool if NOT in DEEP_DIVE state
+    if (convo.conversationContext?.state !== STATES.DEEP_DIVE) {
+      setSelectedSchool(null);
+    }
   };
 
   const handleBackToResults = () => {
@@ -654,13 +657,19 @@ export default function Consultant() {
         });
       }
 
-      // Map backend state to currentView
-      // CRITICAL FIX: Don't override currentView if already viewing a school detail
-      if (response.data.state && !selectedSchool) {
-        if ([STATES.WELCOME, STATES.DISCOVERY, STATES.BRIEF].includes(response.data.state)) {
+      // BUG-DD-001 FIX: Maintain detail view in DEEP_DIVE state with selected school
+      if (response.data.state) {
+        const isInDeepDive = response.data.state === STATES.DEEP_DIVE && selectedSchool;
+        
+        if (isInDeepDive) {
+          // Already in DEEP_DIVE with school selected - maintain detail view
+          setCurrentView('detail');
+        } else if ([STATES.WELCOME, STATES.DISCOVERY, STATES.BRIEF].includes(response.data.state)) {
           setCurrentView('chat');
+          setSelectedSchool(null);
         } else if (response.data.state === STATES.RESULTS) {
           setCurrentView('schools');
+          setSelectedSchool(null);
         } else if (response.data.state === STATES.DEEP_DIVE) {
           setCurrentView('detail');
         }
@@ -707,10 +716,7 @@ export default function Consultant() {
         // Reset sort to relevance when new schools arrive
         setSortField('relevance');
         setSortDirection('asc');
-        // CRITICAL: Always switch to schools view when schools are returned (ONLY if not viewing a school detail)
-        if (!selectedSchool) {
-          setCurrentView('schools');
-        }
+        // BUG-DD-001 FIX: View switching handled in state mapping logic above
       }
 
       const aiMessage = {
