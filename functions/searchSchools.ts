@@ -286,20 +286,29 @@ async function performSearch(req) {
     // STAGE 1: HARD FILTERS (eliminate schools that don't meet constraints)
     let hardFiltered = locationFiltered.filter(school => {
       // Hard filter 1: GRADE - child's grade must be within school's range
-      if (minGrade !== undefined && (school.lowestGrade === null || school.highestGrade === null)) {
-        return false; // School has no grade info
-      }
-      if (minGrade !== undefined && !(school.lowestGrade <= minGrade && school.highestGrade >= minGrade)) {
-        return false; // Child's grade not served
+      if (minGrade !== undefined) {
+        console.log(`[GRADE FILTER] Evaluating ${school.name}: lowestGrade=${school.lowestGrade}, highestGrade=${school.highestGrade}, minGrade=${minGrade}`);
+        
+        if (school.lowestGrade === null || school.highestGrade === null) {
+          console.log(`[GRADE FILTER] Filtered out ${school.name}: Missing grade info`);
+          return false; // School has no grade info
+        }
+        
+        if (!(school.lowestGrade <= minGrade && school.highestGrade >= minGrade)) {
+          console.log(`[GRADE FILTER] Filtered out ${school.name}: Child's grade ${minGrade} not served (school serves ${school.lowestGrade}-${school.highestGrade})`);
+          return false; // Child's grade not served
+        }
+        
+        console.log(`[GRADE FILTER] Keeping ${school.name}: Child's grade ${minGrade} is served (${school.lowestGrade}-${school.highestGrade})`);
       }
       
       // Hard filter 2: BUDGET - tuition must be within hard limits (skip if 'unlimited')
-      if (maxTuition && maxTuition !== 'unlimited' && school.tuition) {
-        const hardLimit = school.financialAidAvailable ? maxTuition * 1.3 : maxTuition;
-        if (school.tuition > hardLimit) {
-          console.log(`Hard-filtered ${school.name}: tuition $${school.tuition} exceeds hard limit $${hardLimit}`);
+      if (maxTuition && maxTuition !== 'unlimited') {
+        if (school.tuition && school.tuition > maxTuition) {
+          console.log(`[BUDGET FILTER] Filtered out ${school.name}: tuition $${school.tuition} exceeds budget $${maxTuition}`);
           return false;
         }
+        // Schools with N/A tuition (null/undefined) are still included
       }
       
       // Hard filter 3: RELIGIOUS DEALBREAKER - if marked, exclude non-secular schools
@@ -438,50 +447,17 @@ async function performSearch(req) {
     const otherSchools = schools.filter(s => !requestedSchoolIds.has(s.id));
     let finalSchools = [...requestedSchoolsList, ...otherSchools];
     
-    // TASK E: FILTER EDGE CASE HANDLING
+    // EDGE CASE HANDLING - Return empty array if hard filters result in 0 schools
     const originalFilteredCount = finalSchools.length;
     let edgeCaseMessage = null;
     let relaxedFilters = false;
     
-    // Edge case 1: ALL schools filtered out - relax budget by 20%
-    if (finalSchools.length === 0 && maxTuition && maxTuition !== 'unlimited') {
-      edgeCaseMessage = "I couldn't find any schools matching all your criteria. Let me relax some filters and try again.";
-      const relaxedBudget = maxTuition * 1.2;
-      
-      // Retry with relaxed budget
-      finalSchools = hardFiltered.filter(school => {
-        if (school.tuition && school.tuition <= relaxedBudget) {
-          return true;
-        }
-        return !school.tuition; // Include schools without tuition data
-      });
-      
-      relaxedFilters = true;
-      
-      // If still none, relax location radius by 50%
-      if (finalSchools.length === 0 && maxDistanceKm) {
-        const relaxedDistance = maxDistanceKm * 1.5;
-        finalSchools = locationFiltered.filter(s => 
-          !s.distanceKm || s.distanceKm <= relaxedDistance
-        );
-      }
+    // If ALL schools filtered out by hard filters, return empty array with message
+    if (finalSchools.length === 0) {
+      edgeCaseMessage = "No schools matched your criteria. Try expanding your location, budget, or grade range.";
+      console.log('[EDGE CASE] All schools filtered out - returning empty array');
     }
-    // Edge case 2: Fewer than 3 schools - relax budget by 20%
-    else if (finalSchools.length < 3 && finalSchools.length > 0 && maxTuition && maxTuition !== 'unlimited') {
-      edgeCaseMessage = "I've expanded the budget range slightly to show you more options.";
-      const relaxedBudget = maxTuition * 1.2;
-      
-      const additionalSchools = hardFiltered.filter(school => {
-        if (!requestedSchoolIds.has(school.id) && school.tuition) {
-          return school.tuition > maxTuition && school.tuition <= relaxedBudget;
-        }
-        return false;
-      });
-      
-      finalSchools = [...finalSchools, ...additionalSchools];
-      relaxedFilters = true;
-    }
-    // Edge case 3: Too many schools (>15) - prompt user to narrow down
+    // Edge case: Too many schools (>15) - prompt user to narrow down
     else if (finalSchools.length > 15) {
       edgeCaseMessage = "I found quite a few options! Would you like to narrow it down by adding more preferences (budget, curriculum, specializations)?";
     }

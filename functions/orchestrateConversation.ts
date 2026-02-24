@@ -967,12 +967,39 @@ Return ONLY valid JSON. Do NOT explain.`;
         console.log('[KI-12] Prioritizing explicit location:', conversationFamilyProfile.locationArea, 'over auto-detected region:', region);
       }
       
-      if (conversationFamilyProfile?.childGrade) {
-        searchParams.minGrade = conversationFamilyProfile.childGrade;
-        searchParams.maxGrade = conversationFamilyProfile.childGrade;
+      // GRADE FILTER FIX: Convert childGrade to numeric and ensure it's passed correctly
+      if (conversationFamilyProfile?.childGrade !== null && conversationFamilyProfile?.childGrade !== undefined) {
+        let numericGrade = conversationFamilyProfile.childGrade;
+        
+        // Handle string grade values (in case they slipped through)
+        if (typeof numericGrade === 'string') {
+          const gradeLower = numericGrade.toLowerCase().trim();
+          const gradeMap = {
+            'pk': -2, 'preschool': -2,
+            'jk': -1, 'junior kindergarten': -1,
+            'k': 0, 'kindergarten': 0, 'sk': 0, 'senior kindergarten': 0
+          };
+          
+          if (gradeMap[gradeLower] !== undefined) {
+            numericGrade = gradeMap[gradeLower];
+          } else {
+            // Extract numeric value from "Grade 9" format
+            const match = numericGrade.match(/\d+/);
+            if (match) {
+              numericGrade = parseInt(match[0]);
+            }
+          }
+        }
+        
+        searchParams.minGrade = numericGrade;
+        searchParams.maxGrade = numericGrade;
+        console.log('[GRADE FILTER] Passing minGrade:', numericGrade, 'from childGrade:', conversationFamilyProfile.childGrade);
       }
-      if (conversationFamilyProfile?.maxTuition) {
+      
+      // BUDGET FILTER FIX: Ensure maxTuition is used as hard cap
+      if (conversationFamilyProfile?.maxTuition && conversationFamilyProfile.maxTuition !== 'unlimited') {
         searchParams.maxTuition = conversationFamilyProfile.maxTuition;
+        console.log('[BUDGET FILTER] Passing maxTuition:', conversationFamilyProfile.maxTuition);
       }
       if (conversationFamilyProfile?.curriculumPreference?.length > 0) {
         searchParams.curriculumType = conversationFamilyProfile.curriculumPreference[0];
