@@ -1021,13 +1021,51 @@ Return empty array if user didn't provide any of these facts.`;
     return R * c;
   };
 
-  const getSortedSchools = () => {
-    if (sortField === 'relevance' || schools.length === 0) {
-      return schools;
-    }
-
-    const sorted = [...schools];
+  const getFilteredAndSortedSchools = () => {
+    if (schools.length === 0) return schools;
     
+    // FRONTEND FILTERING: Apply grade and budget filters
+    const familyProfile = currentConversation?.conversationContext?.familyProfile || familyProfile;
+    let filtered = [...schools];
+    
+    // Grade Filter: Exclude schools where highestGrade < child's grade
+    if (familyProfile?.childGrade !== null && familyProfile?.childGrade !== undefined) {
+      const childGrade = typeof familyProfile.childGrade === 'number' 
+        ? familyProfile.childGrade 
+        : parseInt(familyProfile.childGrade);
+      
+      if (!isNaN(childGrade)) {
+        filtered = filtered.filter(school => {
+          const highestGrade = school.highestGrade;
+          if (highestGrade === null || highestGrade === undefined) return true;
+          return highestGrade >= childGrade;
+        });
+        console.log('[FRONTEND FILTER] Grade filter applied:', childGrade, 'Schools after:', filtered.length);
+      }
+    }
+    
+    // Budget Filter: Exclude schools where tuition > budget (keep N/A tuition)
+    if (familyProfile?.maxTuition && familyProfile.maxTuition !== 'unlimited') {
+      const maxBudget = typeof familyProfile.maxTuition === 'number'
+        ? familyProfile.maxTuition
+        : parseInt(familyProfile.maxTuition);
+      
+      if (!isNaN(maxBudget)) {
+        filtered = filtered.filter(school => {
+          const tuition = school.tuition || school.dayTuition;
+          if (!tuition || tuition === null) return true; // Keep schools with N/A tuition
+          return tuition <= maxBudget;
+        });
+        console.log('[FRONTEND FILTER] Budget filter applied:', maxBudget, 'Schools after:', filtered.length);
+      }
+    }
+    
+    // Apply sorting
+    if (sortField === 'relevance') {
+      return filtered;
+    }
+    
+    const sorted = [...filtered];
     switch (sortField) {
       case 'name':
         sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -1500,7 +1538,7 @@ Return empty array if user didn't provide any of these facts.`;
             <div className="h-full flex flex-col animate-fadeIn">
               <div className="p-3 sm:p-4 border-b flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <h2 className="text-base sm:text-lg font-semibold text-slate-900">
-                  Results ({schools.length})
+                  Results ({getFilteredAndSortedSchools().length})
                 </h2>
                 <SortControl
                   sortField={sortField}
@@ -1511,7 +1549,7 @@ Return empty array if user didn't provide any of these facts.`;
               </div>
               <div className="flex-1 overflow-auto p-3 sm:p-4">
                 <SchoolGrid
-                  schools={getSortedSchools()}
+                  schools={getFilteredAndSortedSchools()}
                   onViewDetails={handleViewSchoolDetail}
                   onToggleShortlist={handleToggleShortlist}
                   shortlistedIds={user?.shortlist || []}
