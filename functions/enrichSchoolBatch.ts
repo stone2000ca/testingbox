@@ -14,8 +14,24 @@ Deno.serve(async (req) => {
       archived: [],
       updated: [],
       skipped: [],
-      errors: []
+      errors: [],
+      restored: []
     };
+
+    // 0. RESTORE - Undo accidental archiving of Lakecrest Independent School
+    try {
+      const lakecrestSchools = await base44.asServiceRole.entities.School.filter({ 
+        name: 'Lakecrest Independent School' 
+      });
+      if (lakecrestSchools.length > 0) {
+        await base44.asServiceRole.entities.School.update(lakecrestSchools[0].id, {
+          status: 'active'
+        });
+        results.restored.push('Lakecrest Independent School');
+      }
+    } catch (error) {
+      results.errors.push(`Restore Lakecrest Independent School: ${error.message}`);
+    }
 
     // 1. ARCHIVE 5 invalid schools - try multiple name variations
     const schoolsToArchive = [
@@ -23,7 +39,7 @@ Deno.serve(async (req) => {
       { variations: ['Kingswood University', 'Kingswood College'] },
       { variations: ['Oak Park High School', 'Oak Park School'] },
       { variations: ['Kelvin High School', 'Kelvin Technical School'] },
-      { variations: ['Lakecrest-St. John\'s', 'Lakecrest School', 'Lakecrest Independent School'] }
+      { variations: ['Lakecrest-St. John\'s', 'Lakecrest St Johns'] }
     ];
 
     for (const schoolEntry of schoolsToArchive) {
@@ -420,6 +436,7 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       summary: {
+        restored: results.restored.length,
         archived: results.archived.length,
         updated: results.updated.length,
         skipped: results.skipped.length,
