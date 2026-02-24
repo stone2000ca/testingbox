@@ -72,30 +72,33 @@ Deno.serve(async (req) => {
         }
 
         // Skip empty values
-        if (!value || value === '') {
+        if (!value || value === '' || value === 'NULL' || value === 'null') {
           return;
         }
 
-        // Parse JSON arrays
+        // Parse JSON arrays (replace escaped quotes first)
         if (value.startsWith('[') && value.endsWith(']')) {
           try {
-            school[header] = JSON.parse(value);
-          } catch {
-            school[header] = value;
+            const cleanValue = value.replace(/""/g, '"');
+            school[header] = JSON.parse(cleanValue);
+          } catch (e) {
+            console.error(`Failed to parse array field ${header}:`, value);
+            school[header] = [];
           }
         }
         // Parse JSON objects
         else if (value.startsWith('{') && value.endsWith('}')) {
           try {
-            school[header] = JSON.parse(value);
-          } catch {
-            school[header] = value;
+            const cleanValue = value.replace(/""/g, '"');
+            school[header] = JSON.parse(cleanValue);
+          } catch (e) {
+            console.error(`Failed to parse object field ${header}:`, value);
           }
         }
         // Parse booleans
-        else if (value === 'TRUE') {
+        else if (value === 'TRUE' || value === 'true') {
           school[header] = true;
-        } else if (value === 'FALSE') {
+        } else if (value === 'FALSE' || value === 'false') {
           school[header] = false;
         }
         // Parse numbers
