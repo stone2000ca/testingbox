@@ -1234,67 +1234,6 @@ Respond as ${consultantName}. ONE question max.`;
         console.log('[STATE TRANSITION] User requested back to results from DEEP_DIVE');
       }
     }
-
-    if (currentState === STATES.RESULTS) {
-      let aiMessage = '';
-      try {
-        const history = conversationHistory || [];
-        const recentMessages = history.slice(-10);
-        const conversationSummary = recentMessages
-          .map(msg => `${msg.role === 'user' ? 'Parent' : 'Consultant'}: ${msg.content}`)
-          .join('\n');
-        
-        const schoolContext = currentSchools && currentSchools.length > 0
-          ? `\n\nSCHOOLS:\n` + currentSchools.map(s => {
-              const tuitionStr = s.tuition ? `$${s.tuition}` : 'N/A';
-              return `${s.name} | ${s.city} | Grade ${s.lowestGrade}-${s.highestGrade} | Tuition: ${tuitionStr}`;
-            }).join('\n')
-          : '';
-        
-        const responsePrompt = `[STATE: RESULTS] Discuss schools. Do NOT ask intake questions. Max 150 words.
-
-${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic.' : 'YOU ARE LIAM - Direct, strategic.'}
-
-Recent chat:
-${conversationSummary}
-${schoolContext}
-
-Parent: "${message}"
-
-Respond as ${consultantName}. ONE question max.`;
-        
-        const aiResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: responsePrompt
-        });
-
-        let messageWithLinks = aiResponse?.response || aiResponse || 'Tell me more about what you\'re looking for.';
-        
-        if (currentSchools && currentSchools.length > 0) {
-          currentSchools.forEach(school => {
-            const escapedName = school.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const schoolNameRegex = new RegExp(`(?<!\\[)\\b${escapedName}\\b(?!\\]\\()`, 'gi');
-            messageWithLinks = messageWithLinks.replace(
-              schoolNameRegex,
-              `[${school.name}](school:${school.slug})`
-            );
-          });
-        }
-        
-        aiMessage = messageWithLinks;
-      } catch (e) {
-        console.error('[ERROR] RESULTS response failed:', e.message);
-        aiMessage = 'Tell me more about what you\'re looking for.';
-      }
-      
-      return Response.json({
-         message: aiMessage,
-         state: currentState,
-         briefStatus: briefStatus,
-         schools: currentSchools || [],
-         familyProfile: conversationFamilyProfile,
-         conversationContext: context
-       });
-    }
     
     if (currentState === STATES.DEEP_DIVE) {
       let aiMessage = '';
