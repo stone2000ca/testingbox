@@ -936,31 +936,26 @@ Return ONLY valid JSON. Do NOT explain.`;
       }
       
       // Parse and normalize childGrade BEFORE building searchParams
-      let normalizedGrade = conversationFamilyProfile?.childGrade;
-      if (normalizedGrade !== null && normalizedGrade !== undefined) {
-        if (typeof normalizedGrade === 'string') {
-          const gradeLower = normalizedGrade.toLowerCase().trim();
-          const gradeMap = {
-            'pk': -2, 'preschool': -2,
-            'jk': -1, 'junior kindergarten': -1,
-            'k': 0, 'kindergarten': 0, 'sk': 0, 'senior kindergarten': 0
-          };
-          
-          if (gradeMap[gradeLower] !== undefined) {
-            normalizedGrade = gradeMap[gradeLower];
-          } else {
-            const match = normalizedGrade.match(/\d+/);
-            if (match) {
-              normalizedGrade = parseInt(match[0]);
-            }
-          }
-          console.log('[GRADE PARSE] Converted string grade:', conversationFamilyProfile.childGrade, '→', normalizedGrade);
+      const rawGrade = conversationFamilyProfile?.childGrade;
+      let parsedGrade = null;
+      if (rawGrade !== null && rawGrade !== undefined) {
+        if (typeof rawGrade === 'number') { parsedGrade = rawGrade; }
+        else if (typeof rawGrade === 'string') {
+          const cleaned = rawGrade.toString().toLowerCase().trim();
+          if (cleaned === 'jk' || cleaned === 'junior kindergarten') { parsedGrade = -1; }
+          else if (cleaned === 'k' || cleaned === 'kindergarten') { parsedGrade = 0; }
+          else if (cleaned === 'sk' || cleaned === 'senior kindergarten') { parsedGrade = 0; }
+          else if (cleaned.startsWith('grade ')) { parsedGrade = parseInt(cleaned.replace('grade ', '')); }
+          else if (cleaned.startsWith('gr')) { parsedGrade = parseInt(cleaned.replace(/^gr\.?\s*/, '')); }
+          else { parsedGrade = parseInt(cleaned); }
+          if (isNaN(parsedGrade)) { parsedGrade = null; }
         }
-        // Update conversationFamilyProfile with normalized value
-        conversationFamilyProfile.childGrade = normalizedGrade;
       }
+      console.log('[GRADE DEBUG] rawGrade:', rawGrade, 'parsedGrade:', parsedGrade);
       
-      console.log('[SEARCH] Building params with childGrade:', conversationFamilyProfile?.childGrade, 'maxTuition:', conversationFamilyProfile?.maxTuition);
+      // Parse maxTuition
+      const parsedTuition = conversationFamilyProfile?.maxTuition ? parseInt(conversationFamilyProfile.maxTuition) : null;
+      console.log('[SEARCH] Building params with parsedGrade:', parsedGrade, 'parsedTuition:', parsedTuition);
       
       const searchParams = {
         limit: 50,
@@ -995,17 +990,17 @@ Return ONLY valid JSON. Do NOT explain.`;
         console.log('[KI-12] Prioritizing explicit location:', conversationFamilyProfile.locationArea, 'over auto-detected region:', region);
       }
       
-      // GRADE FILTER: childGrade already normalized above, pass directly
-      if (conversationFamilyProfile?.childGrade !== null && conversationFamilyProfile?.childGrade !== undefined) {
-        searchParams.minGrade = conversationFamilyProfile.childGrade;
-        searchParams.maxGrade = conversationFamilyProfile.childGrade;
-        console.log('[GRADE FILTER] Passing minGrade/maxGrade:', conversationFamilyProfile.childGrade);
+      // GRADE FILTER: Use parsedGrade
+      if (parsedGrade !== null) {
+        searchParams.minGrade = parsedGrade;
+        searchParams.maxGrade = parsedGrade;
+        console.log('[GRADE FILTER] Passing minGrade/maxGrade:', parsedGrade);
       }
       
-      // BUDGET FILTER FIX: Ensure maxTuition is used as hard cap
-      if (conversationFamilyProfile?.maxTuition && conversationFamilyProfile.maxTuition !== 'unlimited') {
-        searchParams.maxTuition = conversationFamilyProfile.maxTuition;
-        console.log('[BUDGET FILTER] Passing maxTuition:', conversationFamilyProfile.maxTuition);
+      // BUDGET FILTER FIX: Use parsedTuition
+      if (parsedTuition && parsedTuition !== 'unlimited') {
+        searchParams.maxTuition = parsedTuition;
+        console.log('[BUDGET FILTER] Passing maxTuition:', parsedTuition);
       }
       if (conversationFamilyProfile?.curriculumPreference?.length > 0) {
         searchParams.curriculumType = conversationFamilyProfile.curriculumPreference[0];

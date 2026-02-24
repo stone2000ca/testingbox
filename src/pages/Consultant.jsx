@@ -582,7 +582,9 @@ export default function Consultant() {
     // SOFT LOGIN GATE: Check if user is confirming the Brief without being logged in
     const isBriefConfirmation = messageText.toLowerCase().includes("that's right") || 
                                  messageText.toLowerCase().includes("let's see the schools") ||
-                                 messageText.toLowerCase().includes("see the schools");
+                                 messageText.toLowerCase().includes("see the schools") ||
+                                 messageText.toLowerCase().includes("that looks right") ||
+                                 messageText.toLowerCase().includes("show me schools");
     
     if (isBriefConfirmation && !isAuthenticated && !isDevMode) {
       // Save current conversation data to localStorage before showing gate

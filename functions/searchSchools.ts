@@ -286,26 +286,26 @@ async function performSearch(req) {
     // STAGE 1: HARD FILTERS (eliminate schools that don't meet constraints)
     let hardFiltered = locationFiltered.filter(school => {
       // Hard filter 1: GRADE - child's grade must be within school's range
-      if (minGrade !== undefined) {
-        console.log(`[GRADE FILTER] Evaluating ${school.name}: lowestGrade=${school.lowestGrade}, highestGrade=${school.highestGrade}, minGrade=${minGrade}`);
-        
-        if (school.lowestGrade === null || school.highestGrade === null) {
+      const parsedMinGrade = minGrade !== undefined && minGrade !== null ? parseInt(minGrade) : null;
+      if (parsedMinGrade !== null) {
+        let sLow = parseInt(school.lowestGrade);
+        let sHigh = parseInt(school.highestGrade);
+        if (isNaN(sLow) || isNaN(sHigh)) {
           console.log(`[GRADE FILTER] Filtered out ${school.name}: Missing grade info`);
-          return false; // School has no grade info
+          return false;
         }
-        
-        if (!(school.lowestGrade <= minGrade && school.highestGrade >= minGrade)) {
-          console.log(`[GRADE FILTER] Filtered out ${school.name}: Child's grade ${minGrade} not served (school serves ${school.lowestGrade}-${school.highestGrade})`);
-          return false; // Child's grade not served
+        if (!(sLow <= parsedMinGrade && sHigh >= parsedMinGrade)) {
+          console.log(`[GRADE FILTER] Excluded ${school.name}: grades ${sLow}-${sHigh}, need ${parsedMinGrade}`);
+          return false;
         }
-        
-        console.log(`[GRADE FILTER] Keeping ${school.name}: Child's grade ${minGrade} is served (${school.lowestGrade}-${school.highestGrade})`);
+        console.log(`[GRADE FILTER] Keeping ${school.name}: grade ${parsedMinGrade} is served (${sLow}-${sHigh})`);
       }
       
       // Hard filter 2: BUDGET - tuition must be within hard limits (skip if 'unlimited')
+      const schoolTuition = school.tuition || school.dayTuition || school.tuitionMin || null;
       if (maxTuition && maxTuition !== 'unlimited') {
-        if (school.tuition && school.tuition > maxTuition) {
-          console.log(`[BUDGET FILTER] Filtered out ${school.name}: tuition $${school.tuition} exceeds budget $${maxTuition}`);
+        if (schoolTuition && schoolTuition > maxTuition) {
+          console.log(`[BUDGET FILTER] Filtered out ${school.name}: tuition $${schoolTuition} exceeds budget $${maxTuition}`);
           return false;
         }
         // Schools with N/A tuition (null/undefined) are still included
@@ -355,6 +355,17 @@ async function performSearch(req) {
     });
     
     console.log(`Hard filters: ${locationFiltered.length} → ${hardFiltered.length} schools`);
+    
+    // If hard filters result in 0 schools, return empty with message
+    if (hardFiltered.length === 0) {
+      return Response.json({ 
+        schools: [], 
+        total: 0,
+        returned: 0,
+        edgeCaseMessage: "No schools matched your criteria. Try expanding your location, budget, or grade range.",
+        relaxedFilters: false
+      });
+    }
 
     // STAGE 2: RELEVANCE SCORING (rank what remains)
     const scored = hardFiltered.map(school => {
