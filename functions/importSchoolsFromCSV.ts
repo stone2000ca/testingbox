@@ -76,23 +76,28 @@ Deno.serve(async (req) => {
           return;
         }
 
-        // Parse JSON arrays (replace escaped quotes first)
-        if (value.startsWith('[') && value.endsWith(']')) {
+        // Parse JSON arrays or objects - these need special handling
+        if ((value.startsWith('[') && value.endsWith(']')) || (value.startsWith('{') && value.endsWith('}'))) {
           try {
-            const cleanValue = value.replace(/""/g, '"');
+            // Handle CSV-escaped quotes (double quotes)
+            let cleanValue = value.replace(/""/g, '"');
+            
+            // Try to parse as JSON
             school[header] = JSON.parse(cleanValue);
           } catch (e) {
-            console.error(`Failed to parse array field ${header}:`, value);
-            school[header] = [];
-          }
-        }
-        // Parse JSON objects
-        else if (value.startsWith('{') && value.endsWith('}')) {
-          try {
-            const cleanValue = value.replace(/""/g, '"');
-            school[header] = JSON.parse(cleanValue);
-          } catch (e) {
-            console.error(`Failed to parse object field ${header}:`, value);
+            // If JSON parsing fails, try as a simple comma-separated list for arrays
+            if (value.startsWith('[') && value.endsWith(']')) {
+              const inner = value.slice(1, -1).trim();
+              if (inner) {
+                school[header] = inner.split(',').map(item => item.trim());
+              } else {
+                school[header] = [];
+              }
+            }
+            // For objects, if parsing fails, convert to JSON string
+            else {
+              school[header] = value;
+            }
           }
         }
         // Parse booleans
