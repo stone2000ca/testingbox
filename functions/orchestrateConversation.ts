@@ -1360,11 +1360,9 @@ Respond as ${consultantName}. ONE question max.`;
           });
         }
         
-        // TEMPORARY: Skip InvokeLLM due to timeout - use programmatic fallback
-        console.log('[DEEPDIVE] Skipping InvokeLLM, using programmatic fallback');
-        aiMessage = null;
+        // PROGRAMMATIC CARD BUILDER - Build structured card without AI call
+        console.log('[DEEPDIVE] Building programmatic structured card');
         
-        // PROGRAMMATIC CARD BUILDER
         // FIX 1: Smart child name resolution with proper fallback chain
         let childDisplayName = 'your child';
         
@@ -1417,12 +1415,95 @@ Respond as ${consultantName}. ONE question max.`;
         
         const fitLabel = determineFitLabel(selectedSchool, conversationFamilyProfile);
         
-        // Build card header programmatically - standalone Fit Label
-        const gradeRange = `${selectedSchool.lowestGrade}-${selectedSchool.highestGrade}`;
-        const genderType = selectedSchool.genderPolicy || 'Co-ed';
-        const location = `${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country}`;
+        // FIX 2: Build Cost Reality with actual budget comparison
+        const schoolTuition = selectedSchool.tuition || selectedSchool.dayTuition;
+        const familyBudget = conversationFamilyProfile?.maxTuition || conversationFamilyProfile?.budgetMax || context.extractedEntities?.maxTuition || context.extractedEntities?.budgetSingle;
+        let costRealityText = '';
         
-        const cardHeader = `**${fitLabel}**\n\n`;
+        if (schoolTuition && familyBudget && familyBudget !== 'unlimited') {
+          const tuitionNum = typeof schoolTuition === 'number' ? schoolTuition : parseFloat(schoolTuition);
+          const budgetNum = typeof familyBudget === 'number' ? familyBudget : parseFloat(familyBudget);
+          
+          if (tuitionNum <= budgetNum) {
+            const difference = budgetNum - tuitionNum;
+            costRealityText = `$${tuitionNum.toLocaleString()}/year — Under your $${budgetNum.toLocaleString()} budget by $${difference.toLocaleString()}`;
+          } else {
+            const difference = tuitionNum - budgetNum;
+            costRealityText = `$${tuitionNum.toLocaleString()}/year — Above your $${budgetNum.toLocaleString()} budget by $${difference.toLocaleString()}`;
+          }
+        } else if (schoolTuition) {
+          costRealityText = `$${(typeof schoolTuition === 'number' ? schoolTuition : parseFloat(schoolTuition)).toLocaleString()}/year`;
+        } else {
+          costRealityText = 'Tuition not specified';
+        }
+        
+        // Build "Why [School] for [Child]" section
+        const interests = conversationFamilyProfile?.interests || [];
+        const priorities = conversationFamilyProfile?.priorities || [];
+        let whySection = `**Why ${selectedSchool.name} for ${childDisplayName}**\n`;
+        
+        // Generate personalized why text based on matches
+        const matchReasons = [];
+        if (priorities.includes('Arts') && selectedSchool.artsPrograms?.length > 0) {
+          matchReasons.push(`strong arts programs including ${selectedSchool.artsPrograms.slice(0, 2).join(' and ')}`);
+        }
+        if (priorities.includes('STEM') && selectedSchool.specializations?.includes('STEM')) {
+          matchReasons.push('STEM specialization');
+        }
+        if (priorities.includes('Sports') && selectedSchool.sportsPrograms?.length > 0) {
+          matchReasons.push(`athletics with ${selectedSchool.sportsPrograms.slice(0, 2).join(' and ')}`);
+        }
+        if (selectedSchool.avgClassSize && selectedSchool.avgClassSize <= 15) {
+          matchReasons.push(`small class sizes (average ${selectedSchool.avgClassSize} students)`);
+        }
+        
+        if (matchReasons.length > 0) {
+          whySection += `${selectedSchool.name} stands out with ${matchReasons.join(', ')}. `;
+        } else {
+          whySection += `${selectedSchool.name} offers a ${selectedSchool.curriculumType || 'traditional'} curriculum. `;
+        }
+        
+        if (selectedSchool.description) {
+          whySection += selectedSchool.description.substring(0, 150) + '...';
+        }
+        whySection += '\n\n';
+        
+        // Build "What to Know" bullets
+        let whatToKnowSection = '**What to Know**\n';
+        const bullets = [];
+        
+        // Positive bullet
+        if (selectedSchool.enrollment) {
+          bullets.push(`• Community of ${selectedSchool.enrollment} students across grades ${selectedSchool.lowestGrade}-${selectedSchool.highestGrade}`);
+        }
+        
+        // Curriculum bullet
+        if (selectedSchool.curriculum?.length > 0) {
+          bullets.push(`• Offers ${selectedSchool.curriculum.join(', ')} curriculum`);
+        }
+        
+        // FIX 3: Gender policy bullet with null check
+        if (selectedSchool.genderPolicy && selectedSchool.genderPolicy !== 'Co-ed' && !conversationFamilyProfile?.genderPreference) {
+          bullets.push(`• This is a ${selectedSchool.genderPolicy} school`);
+        }
+        
+        // Unknown data bullet
+        if (!selectedSchool.facilities || selectedSchool.facilities.length === 0) {
+          bullets.push(`• Facility details not listed — worth asking on a visit`);
+        }
+        
+        whatToKnowSection += bullets.join('\n') + '\n\n';
+        
+        // Build Cost Reality section
+        const costSection = `**Cost Reality**\n${costRealityText}\n\n`;
+        
+        // Closing bridge
+        const bridge = consultantName === 'Jackie' 
+          ? `What stands out to you about ${selectedSchool.name}?`
+          : `Want me to dig into any specific aspect?`;
+        
+        // Combine all sections
+        aiMessage = `**${fitLabel}**\n\n${whySection}${whatToKnowSection}${costSection}${bridge}`;
         
         // Build detailed school data string for AI
         const schoolDataStr = `
