@@ -718,12 +718,12 @@ Return ONLY valid JSON. Do NOT explain.`;
            budgetDisplay = `$${maxTuition.toLocaleString()}/year`;
          }
 
-         // KI-16: Smart child name display with gender
-         let childDisplayName = childName ? childName : 'your child';
+         // KI-16: Smart child name display with gender (used in BRIEF state)
+         let briefChildDisplayName = childName ? childName : 'your child';
          if (!childName && childGender === 'male') {
-           childDisplayName = 'your son';
+           briefChildDisplayName = 'your son';
          } else if (!childName && childGender === 'female') {
-           childDisplayName = 'your daughter';
+           briefChildDisplayName = 'your daughter';
          }
 
          // KI-10: MULTI-CHILD DETECTION at code level
