@@ -1363,6 +1363,174 @@ Respond as ${consultantName}. ONE question max.`;
         // TEMPORARY: Skip InvokeLLM due to timeout - use programmatic fallback
         console.log('[DEEPDIVE] Skipping InvokeLLM, using programmatic fallback');
         aiMessage = null;
+        
+        /* COMMENTED OUT: InvokeLLM call (timing out)
+        // PROGRAMMATIC CARD BUILDER
+        const childName = conversationFamilyProfile?.childName || 'your child';
+        
+        // Function to determine fit label
+        const determineFitLabel = (school, brief) => {
+          const dealbreakers = brief?.dealbreakers || [];
+          const priorities = brief?.priorities || [];
+          
+          // Check if any dealbreaker maps to null/unknown
+          let hasMissingDealbreaker = false;
+          for (const db of dealbreakers) {
+            const dbLower = db.toLowerCase();
+            if (dbLower.includes('single-sex') && !school.genderPolicy) hasMissingDealbreaker = true;
+            if (dbLower.includes('religious') && !school.religiousAffiliation) hasMissingDealbreaker = true;
+            if (dbLower.includes('boarding') && school.boardingAvailable === null) hasMissingDealbreaker = true;
+          }
+          
+          if (hasMissingDealbreaker) return 'Worth a Closer Look';
+          
+          // Count priority matches
+          let priorityMatches = 0;
+          for (const priority of priorities) {
+            const pLower = priority.toLowerCase();
+            if (pLower.includes('arts') && school.artsPrograms?.length > 0) priorityMatches++;
+            if (pLower.includes('stem') && school.specializations?.includes('STEM')) priorityMatches++;
+            if (pLower.includes('sports') && school.sportsPrograms?.length > 0) priorityMatches++;
+            if (pLower.includes('language') && school.languages?.length > 1) priorityMatches++;
+          }
+          
+          const priorityMatchRate = priorities.length > 0 ? priorityMatches / priorities.length : 0.5;
+          
+          if (priorityMatchRate >= 0.7) return `Great Fit for ${childName}`;
+          if (priorityMatchRate >= 0.4) return `Solid Option for ${childName}`;
+          return 'Worth a Closer Look';
+        };
+        
+        const fitLabel = determineFitLabel(selectedSchool, conversationFamilyProfile);
+        
+        // Build card header programmatically - standalone Fit Label
+        const gradeRange = `${selectedSchool.lowestGrade}-${selectedSchool.highestGrade}`;
+        const genderType = selectedSchool.genderPolicy || 'Co-ed';
+        const location = `${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country}`;
+        
+        const cardHeader = `**${fitLabel}**\n\n`;
+        
+        // Build detailed school data string for AI
+        const schoolDataStr = `
+SCHOOL PROFILE (${selectedSchool.name}):
+- Name: ${selectedSchool.name}
+- Location: ${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country}
+- Grades Served: ${selectedSchool.lowestGrade}-${selectedSchool.highestGrade}
+- Tuition: ${selectedSchool.tuition || selectedSchool.dayTuition ? '$' + (selectedSchool.tuition || selectedSchool.dayTuition) : 'Not specified'}
+- Boarding Tuition: ${selectedSchool.boardingTuition ? '$' + selectedSchool.boardingTuition : 'N/A'}
+- Financial Aid: ${selectedSchool.financialAidAvailable ? 'Available' : 'Unknown'}
+- Curriculum: ${selectedSchool.curriculumType || 'Traditional'}
+- Curriculum Offerings: ${selectedSchool.curriculum?.join(', ') || 'Not listed'}
+- Specializations: ${selectedSchool.specializations?.join(', ') || 'None listed'}
+- Gender Policy: ${selectedSchool.genderPolicy || 'Co-ed'}
+- Enrollment: ${selectedSchool.enrollment || 'Not specified'}
+- Average Class Size: ${selectedSchool.avgClassSize || 'Not specified'}
+- Student-Teacher Ratio: ${selectedSchool.studentTeacherRatio || 'Not specified'}
+- Description: ${selectedSchool.description || 'No description available'}
+- Mission Statement: ${selectedSchool.missionStatement || 'Not available'}
+- Values: ${selectedSchool.values?.join(', ') || 'Not listed'}
+- Arts Programs: ${selectedSchool.artsPrograms?.join(', ') || 'None listed'}
+- Sports Programs: ${selectedSchool.sportsPrograms?.join(', ') || 'None listed'}
+- Languages: ${selectedSchool.languages?.join(', ') || 'Not listed'}
+- Facilities: ${selectedSchool.facilities?.join(', ') || 'Not listed'}
+- Campus Size: ${selectedSchool.campusSize || 'Not specified'}
+- Community Vibe: ${selectedSchool.communityVibe || 'Not available'}
+- Accreditations: ${selectedSchool.accreditations?.join(', ') || 'Not listed'}
+- Application Deadline: ${selectedSchool.applicationDeadline || 'Not specified'}
+- Entrance Requirements: ${selectedSchool.entranceRequirements || 'Not specified'}
+`;
+        
+        // Build family brief data string
+        const familyDataStr = `
+FAMILY BRIEF:
+- Child: ${childName}
+- Grade: ${conversationFamilyProfile?.childGrade !== null && conversationFamilyProfile?.childGrade !== undefined ? (conversationFamilyProfile.childGrade === -1 ? 'JK' : conversationFamilyProfile.childGrade === 0 ? 'SK' : 'Grade ' + conversationFamilyProfile.childGrade) : 'Not specified'}
+- Location: ${conversationFamilyProfile?.locationArea || 'Not specified'}
+- Budget: ${conversationFamilyProfile?.maxTuition ? '$' + conversationFamilyProfile.maxTuition : 'Not specified'}
+- Interests: ${conversationFamilyProfile?.interests?.join(', ') || 'Not specified'}
+- Priorities: ${conversationFamilyProfile?.priorities?.join(', ') || 'Not specified'}
+- Learning Needs: ${conversationFamilyProfile?.learning_needs?.join(', ') || 'None mentioned'}
+- Wellbeing Needs: ${conversationFamilyProfile?.wellbeing_needs?.join(', ') || 'None mentioned'}
+- Curriculum Preference: ${conversationFamilyProfile?.curriculumPreference?.join(', ') || 'Not specified'}
+- Program Preferences: ${conversationFamilyProfile?.programPreferences?.join(', ') || 'Not specified'}
+- Dealbreakers: ${conversationFamilyProfile?.dealbreakers?.join(', ') || 'Not specified'}
+`;
+        
+        // SIMPLIFIED AI PROMPT - Only generate narrative content
+        const tuitionDisplay = selectedSchool.tuition || selectedSchool.dayTuition 
+          ? `$${(selectedSchool.tuition || selectedSchool.dayTuition).toLocaleString()}/yr` 
+          : 'Not specified';
+        const aidAvailable = selectedSchool.financialAidAvailable ? 'Yes' : 'Unknown';
+        const budgetDisplay = conversationFamilyProfile?.maxTuition 
+          ? `$${conversationFamilyProfile.maxTuition.toLocaleString()}` 
+          : 'not specified';
+        
+        const responsePrompt = `${schoolDataStr}
+${familyDataStr}
+
+Parent's message: "${message}"
+
+Generate EXACT structured format:
+
+**Why ${selectedSchool.name} for ${childName}**
+2-3 personalized sentences connecting ${childName}'s interests (${conversationFamilyProfile?.interests?.join(', ') || 'not specified'}), grade ${conversationFamilyProfile?.childGrade !== null ? conversationFamilyProfile.childGrade : 'not specified'}, and needs to THIS school's actual programs. Use ONLY real data from School Profile. If missing data, say: "I don't have detailed program info yet — worth asking on a visit."
+
+**What to Know**
+3-4 bullet points (use •):
+• What this school does well for THIS family
+• An honest trade-off or limitation
+• What's unknown - "I don't have enough detail on [X] — worth asking on a visit"
+${!conversationFamilyProfile?.genderPreference && selectedSchool.genderPolicy !== 'Co-ed' ? '• This is a ' + selectedSchool.genderPolicy + ' school' : ''}
+
+**Cost Reality**
+${tuitionDisplay}/year — One sentence comparing to family budget (${budgetDisplay})
+
+${consultantName === 'Jackie' 
+  ? `Add warm bridge (1 sentence). Example: "The arts program stands out for ${childName}. What jumps out?"` 
+  : `Add direct bridge (1 sentence). Example: "Small class sizes stand out. Want me to dig in?"`}
+
+Rules: Start with "**Why ${selectedSchool.name}**", use ** for headers, • for bullets, ONLY real data, say "I don't have [X] data" if missing.`;
+        
+        // DIAGNOSTIC: Log that DEEP_DIVE handler is firing
+        try {
+          await base44.asServiceRole.entities.SearchLog.create({
+            query: 'DEEPDIVE_HANDLER_FIRED',
+            inputFilters: {
+              searchType: 'DEEPDIVE_HANDLER_FIRED',
+              selectedSchoolId: selectedSchoolId,
+              currentState: currentState,
+              selectedSchoolName: selectedSchool?.name,
+              promptPreview: responsePrompt.substring(0, 200)
+            },
+            totalSchoolsPassingFilters: 1,
+            topResults: [],
+            conversationId: conversationId,
+            userId: userId
+          });
+          console.log('[DIAGNOSTIC] DEEPDIVE handler SearchLog created');
+        } catch (logErr) {
+          console.error('[DIAGNOSTIC] Failed to create SearchLog:', logErr);
+        }
+        
+        console.log('[DEEPDIVE] Calling InvokeLLM with prompt length:', responsePrompt.length);
+        const aiResponse = await base44.integrations.Core.InvokeLLM({
+          prompt: responsePrompt,
+          add_context_from_internet: false
+        });
+        console.log('DEEPDIVE_RESPONSE', typeof aiResponse, aiResponse);
+
+        const aiContent = typeof aiResponse === 'string' ? aiResponse : (aiResponse?.response || null);
+        console.log('[DEEPDIVE] aiContent extracted, type:', typeof aiContent, 'length:', aiContent?.length);
+        
+        // COMBINE: Programmatic header + AI content
+        aiMessage = aiContent ? cardHeader + aiContent : null;
+        console.log('[DEEPDIVE] aiMessage built, length:', aiMessage?.length);
+      } catch (e) {
+        console.error('[DEEPDIVE ERROR] InvokeLLM failed:', e.message, 'Stack:', e.stack);
+        console.error('[DEEPDIVE ERROR] Full error object:', JSON.stringify(e, null, 2));
+        aiMessage = null;
+      }
+      END COMMENTED OUT */
       
       // BUG-DD-002 FIX #4: Fallback if InvokeLLM fails
       if (!aiMessage) {
