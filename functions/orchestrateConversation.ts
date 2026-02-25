@@ -362,8 +362,8 @@ Return ONLY valid JSON. Do NOT explain.`;
     }
     
     // STEP 2: DETERMINISTIC STATE TRANSITIONS
-    let currentState = context.state || STATES.WELCOME;
-    let briefStatus = context.briefStatus || null;
+    var currentState = context.state || STATES.WELCOME;
+    var briefStatus = context.briefStatus || null;
 
     // Rule 1: WELCOME -> DISCOVERY on first message
     if (currentState === STATES.WELCOME && message) {
