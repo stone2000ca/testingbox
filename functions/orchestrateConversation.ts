@@ -1364,7 +1364,7 @@ Respond as ${consultantName}. ONE question max.`;
         console.log('[DEEPDIVE] Skipping InvokeLLM, using programmatic fallback');
         aiMessage = null;
         
-        /* COMMENTED OUT: InvokeLLM call (timing out)
+            // COMMENTED OUT: InvokeLLM call (timing out)
         // PROGRAMMATIC CARD BUILDER
         const childName = conversationFamilyProfile?.childName || 'your child';
         
@@ -1530,7 +1530,7 @@ Rules: Start with "**Why ${selectedSchool.name}**", use ** for headers, • for 
         console.error('[DEEPDIVE ERROR] Full error object:', JSON.stringify(e, null, 2));
         aiMessage = null;
       }
-      END COMMENTED OUT */
+          // END COMMENTED OUT
       
       // BUG-DD-002 FIX #4: Fallback if InvokeLLM fails
       if (!aiMessage) {
