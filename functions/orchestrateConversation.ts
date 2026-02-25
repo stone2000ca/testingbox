@@ -128,15 +128,15 @@ Deno.serve(async (req) => {
     
     // STEP 3: BUILD PROFILE DATA FOR TRANSITION RESOLUTION
     const profileData = {
-      location: conversationFamilyProfile?.locationArea || null,
-      gradeLevel: conversationFamilyProfile?.childGrade || null,
+      location: conversationFamilyProfile?.locationArea || context.extractedEntities?.locationArea || null,
+      gradeLevel: conversationFamilyProfile?.childGrade || context.extractedEntities?.childGrade || null,
       priorities: conversationFamilyProfile?.priorities || [],
       dealbreakers: conversationFamilyProfile?.dealbreakers || [],
       curriculum: conversationFamilyProfile?.curriculumPreference || [],
       schoolType: conversationFamilyProfile?.schoolType || null
     };
     
-    const turnCount = conversationHistory?.filter(m => m.role === 'user').length || 0;
+    const turnCount = (conversationHistory?.filter(m => m.role === 'user').length || 0) + 1;
     const currentBriefEditCount = context.briefEditCount || 0;
     const previousSchoolId = context.previousSchoolId || null;
     
