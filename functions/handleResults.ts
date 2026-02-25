@@ -50,16 +50,16 @@ export async function handleResults(params) {
 
   // GUARD: Force DEEP_DIVE if selectedSchoolId present
   if (selectedSchoolId) {
-    console.log('[RESULTS GUARD] selectedSchoolId present, forcing DEEP_DIVE state');
-    // Don't process RESULTS - return empty to fall through to DEEP_DIVE
-    return null;
-  }
-
-  // BLOCKER 2 FIX: If selectedSchoolId present, skip RESULTS handler and fall through to DEEP_DIVE
-  if (selectedSchoolId) {
-    console.log('[RESULTS SKIP] selectedSchoolId present, falling through to DEEP_DIVE handler');
-    // Don't process RESULTS - let execution continue to DEEP_DIVE handler below
-    return null;
+    console.log('[RESULTS GUARD] selectedSchoolId present, this should not happen — resolveTransition R2 should route to DEEP_DIVE');
+    // Return a redirect response instead of null to avoid orchestrator fallthrough
+    return Response.json({
+      message: "Let me pull up that school's details for you.",
+      state: 'DEEP_DIVE',
+      briefStatus: briefStatus,
+      schools: [],
+      familyProfile: conversationFamilyProfile,
+      conversationContext: { ...context, state: 'DEEP_DIVE' }
+    });
   }
 
   // ALWAYS run fresh search when entering RESULTS state, regardless of currentSchools

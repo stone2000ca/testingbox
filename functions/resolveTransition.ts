@@ -41,6 +41,7 @@ export function resolveTransition(params) {
   };
 
   let nextState = currentState;
+  let briefStatus = null;
   let transitionReason = 'natural';
 
   console.log('[RESOLVE] Input:', { currentState, intentSignal, sufficiency, turnCount, briefEditCount, selectedSchoolId });
@@ -187,14 +188,4 @@ export function resolveTransition(params) {
   return { nextState: currentState, sufficiency, flags, transitionReason };
 }
 
-// Deno handler wrapper (optional, for standalone testing)
-Deno.serve(async (req) => {
-  try {
-    const params = await req.json();
-    const result = resolveTransition(params);
-    return Response.json(result);
-  } catch (error) {
-    console.error('[resolveTransition ERROR]', error);
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-});
+// Note: Deno.serve wrapper removed — this module is imported directly by orchestrateConversation.ts

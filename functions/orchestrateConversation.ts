@@ -55,35 +55,8 @@ Deno.serve(async (req) => {
       CONFIRMED: 'confirmed'
     };
     
-    // KI-12 FIX PART B: City coordinates lookup table
-    const CITY_COORDS = {
-      'vancouver': { lat: 49.2827, lng: -123.1207 },
-      'toronto': { lat: 43.6532, lng: -79.3832 },
-      'montreal': { lat: 45.5017, lng: -73.5673 },
-      'ottawa': { lat: 45.4215, lng: -75.6972 },
-      'calgary': { lat: 51.0447, lng: -114.0719 },
-      'edmonton': { lat: 53.5461, lng: -113.4938 },
-      'victoria': { lat: 48.4284, lng: -123.3656 },
-      'winnipeg': { lat: 49.8951, lng: -97.1384 },
-      'halifax': { lat: 44.6488, lng: -63.5752 },
-      'new york': { lat: 40.7128, lng: -74.0060 },
-      'los angeles': { lat: 34.0522, lng: -118.2437 },
-      'chicago': { lat: 41.8781, lng: -87.6298 },
-      'boston': { lat: 42.3601, lng: -71.0589 },
-      'san francisco': { lat: 37.7749, lng: -122.4194 },
-      'london': { lat: 51.5074, lng: -0.1278 },
-      'mississauga': { lat: 43.5890, lng: -79.6441 },
-      'hamilton': { lat: 43.2557, lng: -79.8711 },
-      'kingston': { lat: 44.2312, lng: -76.4860 },
-      'kelowna': { lat: 49.8880, lng: -119.4960 },
-      'surrey': { lat: 49.1913, lng: -122.8490 },
-      'burnaby': { lat: 49.2488, lng: -122.9805 },
-      'oakville': { lat: 43.4675, lng: -79.6877 },
-      'richmond hill': { lat: 43.8828, lng: -79.4403 },
-      'markham': { lat: 43.8561, lng: -79.3370 },
-      'north vancouver': { lat: 49.3200, lng: -123.0724 },
-      'west vancouver': { lat: 49.3272, lng: -123.1601 }
-    };
+    // KI-12 FIX PART B: City coordinates - MOVED TO handleResults.ts (only consumer)
+    // CITY_COORDS removed from orchestrator — not referenced here
     
     let briefEditCount = context.briefEditCount || 0;
     const MAX_BRIEF_EDITS = 3;
@@ -164,7 +137,7 @@ Deno.serve(async (req) => {
     };
     
     const turnCount = conversationHistory?.filter(m => m.role === 'user').length || 0;
-    const briefEditCount = context.briefEditCount || 0;
+    const currentBriefEditCount = context.briefEditCount || 0;
     const previousSchoolId = context.previousSchoolId || null;
     
     // STEP 4: RESOLVE TRANSITION (deterministic state machine)
@@ -173,7 +146,7 @@ Deno.serve(async (req) => {
       intentSignal,
       profileData,
       turnCount,
-      briefEditCount,
+      briefEditCount: currentBriefEditCount,
       selectedSchoolId,
       previousSchoolId
     });
@@ -225,12 +198,6 @@ Deno.serve(async (req) => {
         userId,
         flags 
       });
-    }
-    
-    // Auto-transition from BRIEF to RESULTS when confirmed
-    if (currentState === STATES.BRIEF && briefStatus === BRIEF_STATUS.CONFIRMED) {
-      currentState = STATES.RESULTS;
-      context.state = currentState;
     }
 
     if (currentState === STATES.RESULTS) {
