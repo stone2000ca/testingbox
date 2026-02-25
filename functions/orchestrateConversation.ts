@@ -1505,21 +1505,21 @@ Parent's message: "${message}"
 
 Generate EXACT structured format:
 
-**Why ${selectedSchool.name} for ${childName}**
-2-3 personalized sentences connecting ${childName}'s interests (${conversationFamilyProfile?.interests?.join(', ') || 'not specified'}), grade ${conversationFamilyProfile?.childGrade !== null ? conversationFamilyProfile.childGrade : 'not specified'}, and needs to THIS school's actual programs. Use ONLY real data from School Profile. If missing data, say: "I don't have detailed program info yet — worth asking on a visit."
+**Why ${selectedSchool.name} for ${childDisplayName}**
+2-3 personalized sentences connecting ${childDisplayName}'s interests (${conversationFamilyProfile?.interests?.join(', ') || 'not specified'}), grade ${conversationFamilyProfile?.childGrade !== null ? conversationFamilyProfile.childGrade : 'not specified'}, and needs to THIS school's actual programs. Use ONLY real data from School Profile. If missing data, say: "I don't have detailed program info yet — worth asking on a visit."
 
 **What to Know**
 3-4 bullet points (use •):
 • What this school does well for THIS family
 • An honest trade-off or limitation
 • What's unknown - "I don't have enough detail on [X] — worth asking on a visit"
-${!conversationFamilyProfile?.genderPreference && selectedSchool.genderPolicy !== 'Co-ed' ? '• This is a ' + selectedSchool.genderPolicy + ' school' : ''}
+${!conversationFamilyProfile?.genderPreference && selectedSchool.genderPolicy && selectedSchool.genderPolicy !== 'Co-ed' ? '• This is a ' + selectedSchool.genderPolicy + ' school' : ''}
 
 **Cost Reality**
-${tuitionDisplay}/year — One sentence comparing to family budget (${budgetDisplay})
+${costRealityText}
 
 ${consultantName === 'Jackie' 
-  ? `Add warm bridge (1 sentence). Example: "The arts program stands out for ${childName}. What jumps out?"` 
+  ? `Add warm bridge (1 sentence). Example: "The arts program stands out for ${childDisplayName}. What jumps out?"` 
   : `Add direct bridge (1 sentence). Example: "Small class sizes stand out. Want me to dig in?"`}
 
 Rules: Start with "**Why ${selectedSchool.name}**", use ** for headers, • for bullets, ONLY real data, say "I don't have [X] data" if missing.`;
