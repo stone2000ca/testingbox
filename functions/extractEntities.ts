@@ -385,10 +385,14 @@ export async function extractEntities(params) {
     }
   }
   
+  // Extract briefDelta from result (will be used in Sprint B)
+  const briefDelta = result?.briefDelta || { additions: [], updates: [], removals: [] };
+  
   return {
     extractedEntities: extractedData,
     updatedFamilyProfile,
     updatedContext,
-    intentSignal
+    intentSignal,
+    briefDelta
   };
 }
