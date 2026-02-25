@@ -934,7 +934,11 @@ Deno.serve(async (req) => {
     }
 
     if (currentState === STATES.RESULTS) {
-      // GUARD: Force DEEP_DIVE if selectedSchoolId present
+      return handleResults({ base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, selectedSchoolId, userLocation, region, conversationId, userId });
+    }
+
+    if (currentState === STATES.RESULTS && false) {
+      // OLD CODE - DO NOT RUN
       if (selectedSchoolId) {
         console.log('[RESULTS GUARD] selectedSchoolId present, forcing DEEP_DIVE state');
         currentState = STATES.DEEP_DIVE;
