@@ -7,7 +7,8 @@ export function resolveTransition(params) {
     turnCount,
     briefEditCount,
     selectedSchoolId,
-    previousSchoolId
+    previousSchoolId,
+    message
   } = params;
 
   const STATES = {
@@ -60,6 +61,40 @@ export function resolveTransition(params) {
     transitionReason = 'school_selected';
     console.log('[R2] Override to DEEP_DIVE (school selected)');
     return { nextState, sufficiency, flags, transitionReason };
+  }
+
+  // R2.5: DETERMINISTIC INTENT ESCAPE - keyword pattern matching on raw message (no LLM dependency)
+  if (message && currentState === STATES.DISCOVERY) {
+    const messageLower = message.toLowerCase();
+    const briefPatterns = [
+      'show me my brief',
+      'show me the brief',
+      'give me the brief',
+      'generate my brief',
+      'put together the brief',
+      'ready for my brief',
+      'show me schools',
+      'just show me schools',
+      'show me results',
+      'i\'ve shared everything',
+      'that\'s all i have',
+      'i\'ve told you everything',
+      'enough questions',
+      'stop asking'
+    ];
+
+    const matchedKeyword = briefPatterns.find(pattern => messageLower.includes(pattern));
+    if (matchedKeyword) {
+      console.log('[R2.5] Deterministic intent escape triggered:', matchedKeyword);
+      console.log('[RESOLVE] Output:', { nextState: STATES.BRIEF, sufficiency, flags: { USER_INTENT_OVERRIDE: true }, transitionReason: 'deterministic_escape', briefStatus: 'generating' });
+      return {
+        nextState: STATES.BRIEF,
+        sufficiency,
+        flags: { ...flags, USER_INTENT_OVERRIDE: true },
+        transitionReason: 'deterministic_escape',
+        briefStatus: 'generating'
+      };
+    }
   }
 
   // R3: ABSOLUTE INTENT ESCAPE - user explicitly asks for brief/results = ALWAYS transition
