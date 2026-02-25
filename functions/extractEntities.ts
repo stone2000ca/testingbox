@@ -256,7 +256,36 @@ export async function extractEntities(params) {
             requestedSchools: { type: ["array", "null"], items: { type: "string" } },
             financialAidInterest: { type: ["boolean", "null"] },
             specialNeeds: { type: ["array", "null"], items: { type: "string" } },
-            intentSignal: { type: ["string"] }
+            intentSignal: { type: ["string"] },
+            briefDelta: {
+              type: ["object", "null"],
+              properties: {
+                additions: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      field: { type: "string" },
+                      value: {},
+                      confidence: { type: "string" }
+                    }
+                  }
+                },
+                updates: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      field: { type: "string" },
+                      old: {},
+                      new: {},
+                      confidence: { type: "string" }
+                    }
+                  }
+                },
+                removals: { type: "array", items: { type: "string" } }
+              }
+            }
           }
         }
       });
