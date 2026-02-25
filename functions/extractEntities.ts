@@ -36,6 +36,18 @@ export async function extractEntities(params) {
 
     const systemPrompt = `Extract ONLY factual data explicitly stated. Return JSON with NULL for anything not mentioned.
 
+    RESPONSE SCHEMA:
+    { 
+      entities: { childName, childGrade, locationArea, ... all extraction fields },
+      intentSignal: 'continue' | 'request-brief' | 'request-results' | 'edit-criteria' | 'ask-about-school' | 'back-to-results' | 'restart' | 'off-topic',
+      briefDelta: { 
+        additions: [{ field, value, confidence }],
+        updates: [{ field, old, new, confidence }],
+        removals: []
+      }
+    }
+    Confidence values: 'explicit' (directly stated) | 'inferred' (clear from context) | 'contextual' (weak signal).
+
     EXTRACTION FIELDS:
     - childName: string or null
     - childAge: number or null (KI-14: extract if user mentions age in years, e.g., "14 years old" → 14)
