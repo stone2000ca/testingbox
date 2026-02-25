@@ -62,20 +62,32 @@ export function resolveTransition(params) {
     return { nextState, sufficiency, flags, transitionReason };
   }
 
-  // R3: EXPLICIT INTENT ESCAPE (highest priority after R1/R2)
-  if ((intentSignal === 'request-brief' || intentSignal === 'request-results') && turnCount >= 3 && currentState === STATES.DISCOVERY) {
+  // R3: RICH DATA IMMEDIATE OVERRIDE (highest priority after R1/R2)
+  // If user has provided rich data AND asks for brief/results, transition immediately regardless of turnCount
+  if ((intentSignal === 'request-brief' || intentSignal === 'request-results') && sufficiency === 'RICH' && currentState === STATES.DISCOVERY) {
+    nextState = STATES.BRIEF;
+    briefStatus = 'generating';
+    flags.USER_INTENT_OVERRIDE = true;
+    transitionReason = 'rich_data_immediate';
+    console.log('[R3] RICH data override: Immediate transition to BRIEF');
+    console.log('[RESOLVE] Output:', { nextState, sufficiency, flags, transitionReason });
+    return { nextState, sufficiency, flags, transitionReason, briefStatus };
+  }
+
+  // R4: EXPLICIT INTENT ESCAPE (turnCount >= 2 for MINIMUM data)
+  if ((intentSignal === 'request-brief' || intentSignal === 'request-results') && turnCount >= 2 && currentState === STATES.DISCOVERY) {
     if (sufficiency === 'MINIMUM' || sufficiency === 'RICH') {
       nextState = STATES.BRIEF;
       briefStatus = 'generating';
       flags.USER_INTENT_OVERRIDE = true;
       transitionReason = 'explicit_demand';
-      console.log('[R3] Escape Rule: Explicit intent at turn', turnCount, 'sufficiency:', sufficiency);
+      console.log('[R4] Escape Rule: Explicit intent at turn', turnCount, 'sufficiency:', sufficiency);
       console.log('[RESOLVE] Output:', { nextState, sufficiency, flags, transitionReason });
       return { nextState, sufficiency, flags, transitionReason, briefStatus };
     } else if (sufficiency === 'THIN') {
       flags.ONE_SHOT_RECOVERY = true;
       transitionReason = 'fast_collect';
-      console.log('[R3] Escape Rule: Explicit intent at turn', turnCount, 'sufficiency:', sufficiency);
+      console.log('[R4] Escape Rule: Explicit intent at turn', turnCount, 'sufficiency:', sufficiency);
       console.log('[RESOLVE] Output:', { nextState: STATES.DISCOVERY, sufficiency, flags, transitionReason });
       return { nextState: STATES.DISCOVERY, sufficiency, flags, transitionReason };
     }
