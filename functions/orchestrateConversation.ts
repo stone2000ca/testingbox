@@ -1360,6 +1360,11 @@ Respond as ${consultantName}. ONE question max.`;
           });
         }
         
+        // TEMPORARY: Skip InvokeLLM due to timeout - use programmatic fallback
+        console.log('[DEEPDIVE] Skipping InvokeLLM, using programmatic fallback');
+        aiMessage = null;
+        
+        /* COMMENTED OUT: InvokeLLM call (timing out)
         // PROGRAMMATIC CARD BUILDER
         const childName = conversationFamilyProfile?.childName || 'your child';
         
@@ -1525,6 +1530,7 @@ Rules: Start with "**Why ${selectedSchool.name}**", use ** for headers, • for 
         console.error('[DEEPDIVE ERROR] Full error object:', JSON.stringify(e, null, 2));
         aiMessage = null;
       }
+      END COMMENTED OUT */
       
       // BUG-DD-002 FIX #4: Fallback if InvokeLLM fails
       if (!aiMessage) {
