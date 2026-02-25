@@ -1406,7 +1406,10 @@ CRITICAL RULES:
           prompt: responsePrompt
         });
 
-        aiMessage = aiResponse?.response || aiResponse || null;
+        const aiContent = aiResponse?.response || aiResponse || null;
+        
+        // COMBINE: Programmatic header + AI content
+        aiMessage = aiContent ? cardHeader + aiContent : null;
       } catch (e) {
         console.error('[ERROR] DEEP_DIVE InvokeLLM failed:', e.message);
         aiMessage = null;
