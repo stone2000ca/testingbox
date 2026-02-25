@@ -1401,10 +1401,10 @@ ${consultantName === 'Jackie'
   : "LIAM PERSONA: Direct, strategic, no-BS. Leads with data and fit logic. Speaks like a trusted advisor."}
 
 OUTPUT FORMAT - DEEPDIVE Card with 6 areas:
-1. Fit Label - 2-4 word label like 'Strong Fit for ${childDisplayName}' or 'Worth Exploring for ${childDisplayName}'
+1. Fit Label - 2-4 word label using FIRST NAME ONLY from childDisplayName (e.g., 'Strong Fit for Emma' not 'Strong Fit for Emma Johnson'). If childDisplayName is null/undefined/empty, use 'your child' instead (e.g., 'Strong Fit for your child').
 2. Why This School - In the Why section, you MUST name each of the family's stated priorities and evaluate whether this school meets, partially meets, or does not meet each one. If the school's listed programs do not include a family priority, say so directly. Example: 'Sophia wants IB and arts/theatre. Lakeside offers full IB diploma, but arts and theatre are not listed as program specializations - ask whether they offer these as IB electives.' Never assume a school offers something that isn't in the provided data.
-3. What to Know - 2-3 honest bullets including one genuine limitation or thing to ask about
-4. Cost Reality - In the Cost Reality section, you MUST state the school's tuition, the family's stated budget, and the exact dollar difference. Format: '[Tuition] per year - [amount] under/over [family's stated budget].' If tuition is not available, say 'Tuition not listed - ask the school directly.' Never estimate, infer, or reference 'typical' budgets. Use only the family's stated number.
+3. What to Know - 2-3 honest bullets including one genuine limitation or thing to ask about. CRITICAL: If the school's genderPolicy is null, undefined, or empty string, do NOT include any bullet about gender policy. Simply omit it entirely. Never show "Gender policy: Not specified" or similar text.
+4. Cost Reality - Compare school tuition to family budget. If BOTH school tuition AND family maxTuition are known numbers: calculate the difference and format as "Tuition: $XX,XXX/yr - within your $YYK budget" or "Tuition: $XX,XXX/yr - $XK over your $YYK budget" or "Tuition: $XX,XXX/yr - right at your $YYK budget". If family budget (maxTuition) is NOT known: simply show "Tuition: $XX,XXX/yr" with no comparison. Never use the word "stated" when referring to budget.
 5. Dealbreaker Check - explicitly confirm no dealbreakers are violated (especially religious, grade)
 6. Tone Bridge - one sentence inviting the parent to explore more or ask questions
 
