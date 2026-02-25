@@ -1268,7 +1268,53 @@ Respond as ${consultantName}. ONE question max.`;
           });
         }
         
-        // Build detailed school data string
+        // PROGRAMMATIC CARD BUILDER
+        const childName = conversationFamilyProfile?.childName || 'your child';
+        
+        // Function to determine fit label
+        const determineFitLabel = (school, brief) => {
+          const dealbreakers = brief?.dealbreakers || [];
+          const priorities = brief?.priorities || [];
+          
+          // Check if any dealbreaker maps to null/unknown
+          let hasMissingDealbreaker = false;
+          for (const db of dealbreakers) {
+            const dbLower = db.toLowerCase();
+            if (dbLower.includes('single-sex') && !school.genderPolicy) hasMissingDealbreaker = true;
+            if (dbLower.includes('religious') && !school.religiousAffiliation) hasMissingDealbreaker = true;
+            if (dbLower.includes('boarding') && school.boardingAvailable === null) hasMissingDealbreaker = true;
+          }
+          
+          if (hasMissingDealbreaker) return 'Worth a Closer Look';
+          
+          // Count priority matches
+          let priorityMatches = 0;
+          for (const priority of priorities) {
+            const pLower = priority.toLowerCase();
+            if (pLower.includes('arts') && school.artsPrograms?.length > 0) priorityMatches++;
+            if (pLower.includes('stem') && school.specializations?.includes('STEM')) priorityMatches++;
+            if (pLower.includes('sports') && school.sportsPrograms?.length > 0) priorityMatches++;
+            if (pLower.includes('language') && school.languages?.length > 1) priorityMatches++;
+          }
+          
+          const priorityMatchRate = priorities.length > 0 ? priorityMatches / priorities.length : 0.5;
+          
+          if (priorityMatchRate >= 0.7) return `Great Fit for ${childName}`;
+          if (priorityMatchRate >= 0.4) return `Solid Option for ${childName}`;
+          return 'Worth a Closer Look';
+        };
+        
+        const fitLabel = determineFitLabel(selectedSchool, conversationFamilyProfile);
+        
+        // Build card header programmatically
+        const gradeRange = `${selectedSchool.lowestGrade}-${selectedSchool.highestGrade}`;
+        const genderType = selectedSchool.genderPolicy || 'Co-ed';
+        const location = `${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country}`;
+        const websiteLine = selectedSchool.website ? `\n${selectedSchool.website}` : '';
+        
+        const cardHeader = `**${selectedSchool.name} — ${fitLabel}**\n${location} | Grades ${gradeRange} | ${genderType}${websiteLine}\n\n`;
+        
+        // Build detailed school data string for AI
         const schoolDataStr = `
 SCHOOL PROFILE (${selectedSchool.name}):
 - Name: ${selectedSchool.name}
@@ -1298,8 +1344,7 @@ SCHOOL PROFILE (${selectedSchool.name}):
 - Entrance Requirements: ${selectedSchool.entranceRequirements || 'Not specified'}
 `;
         
-        // Build family brief data string with child name
-        const childName = conversationFamilyProfile?.childName || 'your child';
+        // Build family brief data string
         const familyDataStr = `
 FAMILY BRIEF:
 - Child: ${childName}
@@ -1315,8 +1360,8 @@ FAMILY BRIEF:
 - Dealbreakers: ${conversationFamilyProfile?.dealbreakers?.join(', ') || 'Not specified'}
 `;
         
-        // DEEPDIVE v3 PROMPT - 6-Area Auto-Card (Areas 1-3)
-        const responsePrompt = `[STATE: DEEP_DIVE] Generate a structured school analysis card using THIS child's specific profile.
+        // SIMPLIFIED AI PROMPT - Only generate narrative content
+        const responsePrompt = `[STATE: DEEP_DIVE] Generate ONLY the narrative content for a school analysis card. DO NOT include the header or fit label (already generated).
 
 ${schoolDataStr}
 ${familyDataStr}
