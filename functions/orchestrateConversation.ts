@@ -188,47 +188,85 @@ Deno.serve(async (req) => {
     context.dataSufficiency = resolveResult.sufficiency;
     context.transitionReason = resolveResult.transitionReason;
 
-    console.log(`[STATE] ${currentState} | briefStatus: ${briefStatus} | dataSufficiency: ${context.dataSufficiency} | transitionReason: ${context.transitionReason}`);
+    console.log(`[STATE] ${currentState} | briefStatus: ${briefStatus} | flags: ${JSON.stringify(flags)} | sufficiency: ${context.dataSufficiency} | reason: ${context.transitionReason}`);
 
-    // STEP 3: STATE-SPECIFIC RESPONSE GENERATION
-    if (currentState === STATES.WELCOME) {
-      // Check if user already provided data - if so, route to DISCOVERY instead
-      const hasData = context.extractedEntities?.locationArea || context.extractedEntities?.childGrade || context.extractedEntities?.maxTuition;
-      if (!hasData) {
-        return Response.json({
-          message: "I'm your NextSchool education consultant. I help families find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you?",
-          state: STATES.WELCOME,
-          briefStatus: null,
-          conversationContext: context,
-          schools: []
-        });
-      }
-      // Fall through to DISCOVERY handler below
-      currentState = STATES.DISCOVERY;
-      context.state = STATES.DISCOVERY;
-    }
-    
+    // STEP 5: STATE-SPECIFIC RESPONSE GENERATION (pass flags to handlers)
     if (currentState === STATES.DISCOVERY) {
-      return handleDiscovery({ base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, conversationId, userId });
+      return handleDiscovery({ 
+        base44, 
+        message, 
+        conversationFamilyProfile, 
+        context, 
+        conversationHistory, 
+        consultantName, 
+        currentState, 
+        briefStatus, 
+        currentSchools, 
+        conversationId, 
+        userId,
+        flags 
+      });
     }
     
     if (currentState === STATES.BRIEF) {
-      return handleBrief({ base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, conversationId, userId });
+      return handleBrief({ 
+        base44, 
+        message, 
+        conversationFamilyProfile, 
+        context, 
+        conversationHistory, 
+        consultantName, 
+        currentState, 
+        briefStatus, 
+        currentSchools, 
+        conversationId, 
+        userId,
+        flags 
+      });
     }
     
-    // STEP 4: School search only in RESULTS/DEEP_DIVE states (auto-transition from BRIEF)
+    // Auto-transition from BRIEF to RESULTS when confirmed
     if (currentState === STATES.BRIEF && briefStatus === BRIEF_STATUS.CONFIRMED) {
-      // Auto-transition to RESULTS when brief is confirmed
       currentState = STATES.RESULTS;
       context.state = currentState;
     }
 
     if (currentState === STATES.RESULTS) {
-      return handleResults({ base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, selectedSchoolId, userLocation, region, conversationId, userId });
+      return handleResults({ 
+        base44, 
+        message, 
+        conversationFamilyProfile, 
+        context, 
+        conversationHistory, 
+        consultantName, 
+        currentState, 
+        briefStatus, 
+        currentSchools, 
+        selectedSchoolId, 
+        userLocation, 
+        region, 
+        conversationId, 
+        userId,
+        flags 
+      });
     }
 
     if (currentState === STATES.DEEP_DIVE) {
-      return handleDeepDive({ base44, selectedSchoolId, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, conversationId, userId });
+      return handleDeepDive({ 
+        base44, 
+        selectedSchoolId, 
+        message, 
+        conversationFamilyProfile, 
+        context, 
+        conversationHistory, 
+        consultantName, 
+        currentState, 
+        briefStatus, 
+        currentSchools, 
+        conversationId, 
+        userId,
+        flags 
+      });
     }
 
       // Fallback
