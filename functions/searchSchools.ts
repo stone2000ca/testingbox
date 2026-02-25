@@ -319,25 +319,29 @@ async function performSearch(req) {
       // Hard filter 3: RELIGIOUS DEALBREAKER - if marked, exclude non-secular schools
       const hasReligiousDealbreaker = familyProfile?.dealbreakers?.some(d => d.toLowerCase().includes('religious'));
       if (hasReligiousDealbreaker) {
+        console.log(`[RELIGIOUS FILTER] Checking ${school.name}, affiliation: ${school.religiousAffiliation}`);
+        
         // Check religiousAffiliation field
         if (school.religiousAffiliation && 
             school.religiousAffiliation !== 'None' && 
             school.religiousAffiliation !== 'none' &&
             school.religiousAffiliation !== 'Non-denominational' && 
             school.religiousAffiliation !== 'Secular') {
-          console.log(`[RELIGIOUS FILTER] Excluded ${school.name}: religious affiliation (${school.religiousAffiliation}) conflicts with family dealbreaker`);
+          console.log(`[RELIGIOUS FILTER] ✗ Excluded ${school.name}: religious affiliation (${school.religiousAffiliation})`);
           return false;
         }
         
-        // Secondary check: religious keywords in school name
-        const religiousKeywords = ['Christian', 'Catholic', 'Islamic', 'Jewish', 'Lutheran', 'Baptist', 'Adventist', 'Anglican'];
+        // Secondary check: religious keywords in school name (case-insensitive)
+        const religiousKeywords = ['christian', 'catholic', 'islamic', 'jewish', 'lutheran', 'baptist', 'adventist', 'anglican', 'saint', 'st.', 'st ', 'holy', 'sacred', 'blessed'];
         const schoolNameLower = school.name?.toLowerCase() || '';
-        const hasReligiousKeyword = religiousKeywords.some(keyword => schoolNameLower.includes(keyword.toLowerCase()));
+        const hasReligiousKeyword = religiousKeywords.some(keyword => schoolNameLower.includes(keyword));
         
         if (hasReligiousKeyword) {
-          console.log(`[RELIGIOUS FILTER] Excluded ${school.name}: school name contains religious keyword, conflicts with family dealbreaker`);
+          console.log(`[RELIGIOUS FILTER] ✗ Excluded ${school.name}: name contains religious keyword`);
           return false;
         }
+        
+        console.log(`[RELIGIOUS FILTER] ✓ Passed ${school.name}`);
       }
       
       // Hard filter 4: GENDER PREFERENCE - school type must match if specified (case-insensitive, multiple variations)
