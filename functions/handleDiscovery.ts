@@ -27,10 +27,17 @@ export async function handleDiscovery(params) {
       hasChildGrade = /grade|kindergarten|preschool|elementary|middle|high school/i.test(allText);
     } catch (e) {}
 
+    // Sprint A: Consume flags for prompt adjustments
+    const briefOfferInstruction = flags?.OFFER_BRIEF 
+      ? '\n\nIMPORTANT: You should offer to generate their Family Brief now. Use a natural transition like: "I think I have a good sense of what you\'re looking for. Would you like me to put together a brief summary of your family\'s needs so we can find the best matches?"'
+      : flags?.SUGGEST_BRIEF
+      ? '\n\nIf it feels natural in the conversation, offer to generate their Family Brief.'
+      : '';
+
     const personaInstructions = consultantName === 'Jackie'
      ? `[STATE: DISCOVERY] You are gathering family info. Ask ONE focused question at a time. Always answer their question first, then ask yours. Do NOT recommend schools or mention school names. Max 150 words.
 
-    CRITICAL: Do NOT generate a brief, summary, or any bullet-point summary of the family's needs. You are ONLY asking questions right now. Keep gathering information.
+    CRITICAL: Do NOT generate a brief, summary, or any bullet-point summary of the family's needs. You are ONLY asking questions right now. Keep gathering information.${briefOfferInstruction}
 
     YOU ARE JACKIE - Warm, empathetic, validating.
    🚫 IF THEY SAID LOCATION → NEVER ask where they live
