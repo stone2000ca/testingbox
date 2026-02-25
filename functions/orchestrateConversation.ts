@@ -1353,13 +1353,12 @@ Respond as ${consultantName}. ONE question max.`;
         
         const fitLabel = determineFitLabel(selectedSchool, conversationFamilyProfile);
         
-        // Build card header programmatically
+        // Build card header programmatically - standalone Fit Label
         const gradeRange = `${selectedSchool.lowestGrade}-${selectedSchool.highestGrade}`;
         const genderType = selectedSchool.genderPolicy || 'Co-ed';
         const location = `${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country}`;
-        const websiteLine = selectedSchool.website ? `\n${selectedSchool.website}` : '';
         
-        const cardHeader = `**${selectedSchool.name} — ${fitLabel}**\n${location} | Grades ${gradeRange} | ${genderType}${websiteLine}\n\n`;
+        const cardHeader = `**${fitLabel}**\n\n`;
         
         // Build detailed school data string for AI
         const schoolDataStr = `
@@ -1421,33 +1420,33 @@ ${familyDataStr}
 
 Parent's message: "${message}"
 
-Generate ONLY the following 4 sections (NO card header, that's already built):
+CRITICAL: Generate the following EXACT structured format. Do NOT write a conversational paragraph. Output ONLY structured sections with headers and bullets.
 
-**Why ${selectedSchool.name} for ${childName}:**
-Write 2-3 personalized sentences connecting ${childName}'s specific interests (${conversationFamilyProfile?.interests?.join(', ') || 'not specified'}), grade (${conversationFamilyProfile?.childGrade !== null ? 'Grade ' + conversationFamilyProfile.childGrade : 'not specified'}), and learning needs (${conversationFamilyProfile?.learning_needs?.join(', ') || 'none'}) to THIS school's actual programs from School Profile. Use child name "${childName}", NOT "your child". Reference ONLY real data from School Profile above.
+**Why ${selectedSchool.name} for ${childName}**
+Write 2-3 personalized sentences connecting ${childName}'s specific interests (${conversationFamilyProfile?.interests?.join(', ') || 'not specified'}), grade (${conversationFamilyProfile?.childGrade !== null ? 'Grade ' + conversationFamilyProfile.childGrade : 'not specified'}), and learning needs (${conversationFamilyProfile?.learning_needs?.join(', ') || 'none'}) to THIS school's actual programs from School Profile. Use child name "${childName}", NOT "your child". Reference ONLY real data from School Profile above. If School Profile is thin/missing data, say: "I don't have detailed program info for ${selectedSchool.name} yet — worth asking about on a visit."
 
-**What to Know:**
-Generate 3-4 bullet points (use • symbol). Cover:
+**What to Know**
+Generate 3-4 honest trade-off bullet points (use • symbol). These are NOT caveats, they are honest tensions:
 • What this school does well for THIS family (based ONLY on School Profile data above)
-• Another strength or match (based ONLY on School Profile data)
-• What's unknown or a gap - use pattern: "I don't have enough detail on [specific thing] to compare -- that's worth asking about on a visit"
+• An honest trade-off or limitation (e.g., "Large class sizes may mean less individual attention" or "No boarding option if that becomes important")
+• What's unknown or a gap - use pattern: "I don't have enough detail on [specific thing] to compare — that's worth asking about on a visit"
 ${!conversationFamilyProfile?.genderPreference && selectedSchool.genderPolicy !== 'Co-ed' ? '• This is a ' + selectedSchool.genderPolicy + ' school — worth considering if that matters to your family' : ''}
 
-**Cost Reality:**
-Tuition: ${tuitionDisplay} | Aid Available: ${aidAvailable}
-Write one honest sentence comparing tuition to family's stated budget (${budgetDisplay}).
+**Cost Reality**
+${tuitionDisplay}/year — Write one factual sentence comparing tuition to family's stated budget (${budgetDisplay}). Examples: "Well within your $30K budget" or "$2K over your stated budget, but still in range" or "No tuition data available yet"
 
 ${consultantName === 'Jackie' 
-  ? `Finally, add a warm conversational bridge. Identify the strongest fit area from School Profile (e.g., arts program, small classes, curriculum) and say: "That's the full picture on ${selectedSchool.name}. The [strongest fit area] really stands out for ${childName}. What jumps out at you?"` 
-  : `Finally, add a direct conversational bridge. Identify the strongest fit area from School Profile (e.g., arts program, small classes, curriculum) and say: "That's the full picture on ${selectedSchool.name}. The [strongest fit area] really stands out for ${childName}. Want me to dig into that, or is there something on the card that concerns you?"`}
+  ? `Finally, add a warm conversational bridge (1 sentence). Example: "The arts program really stands out for ${childName}. What jumps out at you?"` 
+  : `Finally, add a direct conversational bridge (1 sentence). Example: "The small class sizes really stand out for ${childName}. Want me to dig into that?"`}
 
 CRITICAL RULES:
-1. Do NOT include school name header or fit label (already generated)
-2. Start directly with "**Why ${selectedSchool.name} for ${childName}:**"
-3. Use ** for bold section headers
+1. Do NOT include fit label header (already generated)
+2. Start directly with "**Why ${selectedSchool.name} for ${childName}**"
+3. Use ** for bold section headers (no colon after header)
 4. Use • for bullet points in "What to Know"
-5. ONLY reference data from School Profile - NEVER fabricate
-6. Keep sections separate with blank lines`;
+5. Separate sections with blank lines
+6. ONLY reference data from School Profile - NEVER fabricate
+7. If data is missing, explicitly say "I don't have [X] data yet" rather than inventing`;
         
         const aiResponse = await base44.integrations.Core.InvokeLLM({
           prompt: responsePrompt
