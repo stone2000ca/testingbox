@@ -1334,23 +1334,51 @@ Deno.serve(async (req) => {
               return `${s.name} | ${s.city} | Grade ${s.lowestGrade}-${s.highestGrade} | ${s.curriculumType||'Trad'} | Tuition: ${tuitionStr}`;
             }).join('\n');
           
-          const responsePrompt = `[STATE: RESULTS] Explain these school matches. Focus on fit. Do NOT ask intake questions. Max 150 words.
+          const resultsSystemPrompt = `[STATE: RESULTS] Explain these school matches. Focus on fit. Do NOT ask intake questions. Max 150 words.
 
-${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic.' : 'YOU ARE LIAM - Direct, strategic.'}
+          ${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic.' : 'YOU ARE LIAM - Direct, strategic.'}`;
 
-Recent chat:
-${conversationSummary}
-${schoolContext}
+          const resultsUserPrompt = `Recent chat:
+          ${conversationSummary}
+          ${schoolContext}
 
-Parent: "${message}"
+          Parent: "${message}"
 
-Respond as ${consultantName}. ONE question max.`;
-          
-          const aiResponse = await base44.integrations.Core.InvokeLLM({
-            prompt: responsePrompt
-          });
+          Respond as ${consultantName}. ONE question max.`;
 
-          let messageWithLinks = aiResponse?.response || aiResponse || 'Here are the schools I found:';
+          let messageWithLinks = 'Here are the schools I found:';
+          try {
+            const aiResponse = await callOpenRouter({
+              systemPrompt: resultsSystemPrompt,
+              userPrompt: resultsUserPrompt,
+              maxTokens: 800,
+              temperature: 0.7
+            });
+            messageWithLinks = aiResponse || 'Here are the schools I found:';
+            console.log('[OPENROUTER] RESULTS response');
+          } catch (openrouterError) {
+            console.log('[OPENROUTER FALLBACK] RESULTS response falling back to InvokeLLM');
+            try {
+              const responsePrompt = `[STATE: RESULTS] Explain these school matches. Focus on fit. Do NOT ask intake questions. Max 150 words.
+
+          ${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic.' : 'YOU ARE LIAM - Direct, strategic.'}
+
+          Recent chat:
+          ${conversationSummary}
+          ${schoolContext}
+
+          Parent: "${message}"
+
+          Respond as ${consultantName}. ONE question max.`;
+
+              const fallbackResponse = await base44.integrations.Core.InvokeLLM({
+                prompt: responsePrompt
+              });
+              messageWithLinks = fallbackResponse?.response || fallbackResponse || 'Here are the schools I found:';
+            } catch (fallbackError) {
+              console.error('[FALLBACK ERROR] RESULTS response failed:', fallbackError.message);
+            }
+          }
           
           // Replace school names with links
           matchingSchools.forEach(school => {
