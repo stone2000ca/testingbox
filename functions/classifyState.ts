@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
 
     const context = conversationContext || {};
     const msgLower = message?.toLowerCase() || '';
-    const currentState = context.state || 'WELCOME';
+    let currentState = context.state || 'WELCOME';
     const briefStatus = context.briefStatus || null;
     const extractedEntities = context.extractedEntities || {};
     const editCount = context.briefEditCount || 0;
@@ -32,6 +32,13 @@ Deno.serve(async (req) => {
         dataSufficiency: 'thin',
         transitionReason: 'reset'
       });
+    }
+
+    // RULE 1b: Force DISCOVERY if currently WELCOME but we have conversation history
+    if (currentState === 'WELCOME' && histLen > 1) {
+      console.log('[CLASSIFY] Rule 1b: WELCOME->DISCOVERY (conversation has started)');
+      // Don't return yet - fall through to check other rules with currentState as DISCOVERY
+      currentState = 'DISCOVERY';
     }
 
     // RULE 2: DEEP_DIVE OVERRIDE
