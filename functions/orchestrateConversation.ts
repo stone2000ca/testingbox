@@ -1668,35 +1668,29 @@ ${JSON.stringify(compressedSchoolData, null, 2)}
 
 Generate the 6-area DEEPDIVE card for this family-school match.`;
 
-        // STEP 3 & 4: TRY AI GENERATION WITH 12-SECOND TIMEOUT
-        console.log('[DEEPDIVE] Attempting AI-generated card with 12s timeout');
-        let aiGeneratedCard = null;
-        
-        try {
-          const llmPromise = base44.integrations.Core.InvokeLLM({
-            prompt: `${systemPrompt}\n\n${userPrompt}`,
-            add_context_from_internet: false
-          });
-          
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('LLM_TIMEOUT')), 12000)
-          );
-          
-          const aiResponse = await Promise.race([llmPromise, timeoutPromise]);
-          aiGeneratedCard = typeof aiResponse === 'string' ? aiResponse : (aiResponse?.response || null);
-          
-          if (aiGeneratedCard) {
-            console.log('[DEEPDIVE] AI card generated successfully, length:', aiGeneratedCard.length);
-            aiMessage = aiGeneratedCard;
-          }
-        } catch (llmError) {
-          if (llmError.message === 'LLM_TIMEOUT') {
-            console.log('[DEEPDIVE] LLM timeout at 12s - falling back to programmatic card');
-          } else {
-            console.error('[DEEPDIVE] LLM failed:', llmError.message);
-          }
-          aiGeneratedCard = null;
-        }
+        // STEP 3 & 4: TRY AI GENERATION
+         console.log('[DEEPDIVE] Attempting AI-generated card');
+         let aiGeneratedCard = null;
+
+         try {
+           const aiResponse = await callOpenRouter({
+             systemPrompt: systemPrompt,
+             userPrompt: userPrompt,
+             maxTokens: 2000,
+             temperature: 0.6
+           });
+           aiGeneratedCard = aiResponse || null;
+
+           if (aiGeneratedCard) {
+             console.log('[OPENROUTER] DEEPDIVE card generation');
+             console.log('[DEEPDIVE] AI card generated successfully, length:', aiGeneratedCard.length);
+             aiMessage = aiGeneratedCard;
+           }
+         } catch (llmError) {
+           console.log('[OPENROUTER FALLBACK] DEEPDIVE falling back to programmatic card');
+           console.error('[DEEPDIVE] OpenRouter failed:', llmError.message);
+           aiGeneratedCard = null;
+         }
         
         // PROGRAMMATIC FALLBACK - Only if AI generation failed
         if (!aiGeneratedCard) {
