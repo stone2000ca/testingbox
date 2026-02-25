@@ -1504,43 +1504,10 @@ Respond as ${consultantName}. ONE question max.`;
         
         // Combine all sections
         aiMessage = `**${fitLabel}**\n\n${whySection}${whatToKnowSection}${costSection}${bridge}`;
-        
-
+        console.log('[DEEPDIVE] Structured card built successfully');
       } catch (e) {
-        console.error('[DEEPDIVE ERROR] InvokeLLM failed:', e.message, 'Stack:', e.stack);
-        console.error('[DEEPDIVE ERROR] Full error object:', JSON.stringify(e, null, 2));
-        aiMessage = null;
-      }
-      
-      // BUG-DD-002 FIX #4: Fallback if InvokeLLM fails
-      if (!aiMessage) {
-        console.log('[BUG-DD-002 FIX #4] InvokeLLM failed, generating structured fallback');
-        
-        if (selectedSchool) {
-          const tuitionStr = selectedSchool.tuition || selectedSchool.dayTuition 
-            ? `$${(selectedSchool.tuition || selectedSchool.dayTuition).toLocaleString()}/year` 
-            : 'Not specified';
-          const gradesStr = `Grades ${selectedSchool.lowestGrade}-${selectedSchool.highestGrade}`;
-          const locationStr = `${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country}`;
-          const curriculumStr = selectedSchool.curriculumType || 'Traditional';
-          
-          aiMessage = `Let me pull up the details on ${selectedSchool.name}... Here's what I know:
-
-**${selectedSchool.name}**
-${locationStr} | ${gradesStr} | ${curriculumStr}
-
-**Quick Facts:**
-• Tuition: ${tuitionStr}
-• Enrollment: ${selectedSchool.enrollment || 'Not specified'}
-• Class Size: ${selectedSchool.avgClassSize ? 'Average ' + selectedSchool.avgClassSize + ' students' : 'Not specified'}
-• Curriculum: ${selectedSchool.curriculum?.join(', ') || curriculumStr}
-
-${selectedSchool.description ? '**About:** ' + selectedSchool.description : ''}
-
-What would you like to know more about?`;
-        } else {
-          aiMessage = "I'm having trouble loading that school's details right now. Could you try selecting it again?";
-        }
+        console.error('[DEEPDIVE ERROR] Card builder failed:', e.message, 'Stack:', e.stack);
+        aiMessage = "I'm having trouble loading that school's details right now. Could you try selecting it again?";
       }
       
       // BUG-DD-002 FIX #2: Return ONLY selectedSchool in schools array
