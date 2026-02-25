@@ -193,23 +193,6 @@ Deno.serve(async (req) => {
       return handleResults({ base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, selectedSchoolId, userLocation, region, conversationId, userId });
     }
 
-    if (currentState === STATES.RESULTS && false) {
-      // OLD CODE - DO NOT RUN
-      if (selectedSchoolId) {
-        console.log('[RESULTS GUARD] selectedSchoolId present, forcing DEEP_DIVE state');
-        currentState = STATES.DEEP_DIVE;
-        context.state = STATES.DEEP_DIVE;
-      }
-      
-      // BLOCKER 2 FIX: If selectedSchoolId present, skip RESULTS handler and fall through to DEEP_DIVE
-      if (selectedSchoolId) {
-        console.log('[RESULTS SKIP] selectedSchoolId present, falling through to DEEP_DIVE handler');
-        // Don't process RESULTS - let execution continue to DEEP_DIVE handler below
-      } else {
-
-
-
-    
     if (currentState === STATES.DEEP_DIVE) {
       return handleDeepDive({ base44, selectedSchoolId, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, conversationId, userId });
     }
