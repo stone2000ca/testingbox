@@ -1361,72 +1361,46 @@ FAMILY BRIEF:
 `;
         
         // SIMPLIFIED AI PROMPT - Only generate narrative content
-        const responsePrompt = `[STATE: DEEP_DIVE] Generate ONLY the narrative content for a school analysis card. DO NOT include the header or fit label (already generated).
-
-${schoolDataStr}
+        const tuitionDisplay = selectedSchool.tuition || selectedSchool.dayTuition 
+          ? `$${(selectedSchool.tuition || selectedSchool.dayTuition).toLocaleString()}/yr` 
+          : 'Not specified';
+        const aidAvailable = selectedSchool.financialAidAvailable ? 'Yes' : 'Unknown';
+        const budgetDisplay = conversationFamilyProfile?.maxTuition 
+          ? `$${conversationFamilyProfile.maxTuition.toLocaleString()}` 
+          : 'not specified';
+        
+        const responsePrompt = `${schoolDataStr}
 ${familyDataStr}
 
 Parent's message: "${message}"
 
-CRITICAL: Your response MUST follow this exact format with bold headers, bullet points, and sections. Do NOT combine into a single paragraph. Do NOT skip sections. Use the EXACT markdown structure shown below.
-
----EXAMPLE OUTPUT (FOLLOW THIS EXACT STRUCTURE)---
-**Lakeside IB Academy — Strong Match**
-Toronto, Ontario | Grades 6-12 | Co-Ed
-
-**Why Lakeside IB for Sophia:**
-With Sophia's passion for drama and visual arts, Lakeside's dedicated arts program and IB curriculum give her the creative depth she's looking for within a rigorous academic framework. The school's small class sizes mean she'll get the individualized attention that strong students like her thrive with.
-
-**What to Know:**
-• Their IB program is well-established with strong university placement outcomes
-• Arts program includes drama and visual arts — direct match for Sophia's interests
-• I don't have enough detail on their music program to compare — that's worth asking about on a visit
-• Small class sizes align with your preference for personalized attention
-
-**Cost Reality:**
-Tuition: $18,500/yr | Aid Available: Unknown
-Well within your $30,000 budget — leaves room for additional fees or extracurriculars.
-
-That's the picture for Lakeside IB. What do you want to explore further?
----END EXAMPLE---
-
-NOW GENERATE YOUR RESPONSE FOR ${selectedSchool.name}:
-
-**${selectedSchool.name} — REPLACE WITH: Fit Label (Strong Match, Good Match, or Worth Exploring)**
-${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country} | Grades ${selectedSchool.lowestGrade}-${selectedSchool.highestGrade} | ${selectedSchool.genderPolicy || 'Co-ed'}
-${selectedSchool.website ? selectedSchool.website : '(Website not available)'}
+Generate ONLY the following 4 sections (NO card header, that's already built):
 
 **Why ${selectedSchool.name} for ${childName}:**
-REPLACE WITH: 2-3 personalized sentences connecting ${childName}'s specific interests (${conversationFamilyProfile?.interests?.join(', ') || 'not specified'}), grade (${conversationFamilyProfile?.childGrade !== null ? 'Grade ' + conversationFamilyProfile.childGrade : 'not specified'}), and learning needs (${conversationFamilyProfile?.learning_needs?.join(', ') || 'none mentioned'}) to THIS school's actual programs from School Profile. Use child name "${childName}", NOT "your child". Reference ONLY real data from School Profile.
+Write 2-3 personalized sentences connecting ${childName}'s specific interests (${conversationFamilyProfile?.interests?.join(', ') || 'not specified'}), grade (${conversationFamilyProfile?.childGrade !== null ? 'Grade ' + conversationFamilyProfile.childGrade : 'not specified'}), and learning needs (${conversationFamilyProfile?.learning_needs?.join(', ') || 'none'}) to THIS school's actual programs from School Profile. Use child name "${childName}", NOT "your child". Reference ONLY real data from School Profile above.
 
 **What to Know:**
-REPLACE WITH: Bullet points (use • symbol) covering:
-• REPLACE WITH: What this school does well for THIS family based ONLY on School Profile data
-• REPLACE WITH: Another strength or match based ONLY on School Profile data
-• REPLACE WITH: What's unknown or a gap - use pattern: "I don't have enough detail on [specific thing] to compare -- that's worth asking about on a visit."
+Generate 3-4 bullet points (use • symbol). Cover:
+• What this school does well for THIS family (based ONLY on School Profile data above)
+• Another strength or match (based ONLY on School Profile data)
+• What's unknown or a gap - use pattern: "I don't have enough detail on [specific thing] to compare -- that's worth asking about on a visit"
 ${!conversationFamilyProfile?.genderPreference && selectedSchool.genderPolicy !== 'Co-ed' ? '• This is a ' + selectedSchool.genderPolicy + ' school — worth considering if that matters to your family' : ''}
 
 **Cost Reality:**
-Tuition: ${selectedSchool.tuition || selectedSchool.dayTuition ? '$' + (selectedSchool.tuition || selectedSchool.dayTuition).toLocaleString() + '/yr' : 'Not specified'} | Aid Available: ${selectedSchool.financialAidAvailable ? 'Yes' : 'Unknown'}
-REPLACE WITH: One honest sentence comparing tuition to family's stated budget (${conversationFamilyProfile?.maxTuition ? '$' + conversationFamilyProfile.maxTuition.toLocaleString() : 'not specified'}).
+Tuition: ${tuitionDisplay} | Aid Available: ${aidAvailable}
+Write one honest sentence comparing tuition to family's stated budget (${budgetDisplay}).
 
-REPLACE WITH: ${consultantName === 'Jackie' 
-  ? `Warm conversational bridge. Example: "Those are my initial thoughts on ${selectedSchool.name}. What jumps out at you?"` 
-  : `Direct conversational bridge. Example: "That's the picture for ${selectedSchool.name}. What do you want to explore further?"`}
+${consultantName === 'Jackie' 
+  ? `Finally, add a warm conversational bridge. Identify the strongest fit area from School Profile (e.g., arts program, small classes, curriculum) and say: "That's the full picture on ${selectedSchool.name}. The [strongest fit area] really stands out for ${childName}. What jumps out at you?"` 
+  : `Finally, add a direct conversational bridge. Identify the strongest fit area from School Profile (e.g., arts program, small classes, curriculum) and say: "That's the full picture on ${selectedSchool.name}. The [strongest fit area] really stands out for ${childName}. Want me to dig into that, or is there something on the card that concerns you?"`}
 
-FIT LABEL LOGIC - Determine fit label for the header:
-- **Strong Match**: School meets majority of family priorities (${conversationFamilyProfile?.priorities?.join(', ') || 'not specified'}) AND all dealbreakers (${conversationFamilyProfile?.dealbreakers?.join(', ') || 'none stated'}) are confirmed
-- **Good Match**: School meets most priorities but minor gaps exist
-- **Worth Exploring**: Notable gaps OR any dealbreaker maps to null/unknown data
-- OVERRIDE: If ANY family dealbreaker maps to null/unknown school field, max label is "Worth Exploring"
-
-MANDATORY FORMATTING RULES:
-1. Use ** for bold headers (e.g., **Why Lakeside IB for Sophia:**)
-2. Use • for bullet points in "What to Know" section
-3. Keep sections separate with blank lines between them
-4. Do NOT combine sections into a single paragraph
-5. Follow the exact order: Header → Why section → What to Know → Cost Reality → Bridge
-6. Your response MUST match the EXAMPLE OUTPUT structure above`;
+CRITICAL RULES:
+1. Do NOT include school name header or fit label (already generated)
+2. Start directly with "**Why ${selectedSchool.name} for ${childName}:**"
+3. Use ** for bold section headers
+4. Use • for bullet points in "What to Know"
+5. ONLY reference data from School Profile - NEVER fabricate
+6. Keep sections separate with blank lines`;
         
         const aiResponse = await base44.integrations.Core.InvokeLLM({
           prompt: responsePrompt
