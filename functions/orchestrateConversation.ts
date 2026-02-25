@@ -1360,9 +1360,6 @@ Respond as ${consultantName}. ONE question max.`;
           });
         }
         
-        // PROGRAMMATIC CARD BUILDER - Build structured card without AI call
-        console.log('[DEEPDIVE] Building programmatic structured card');
-        
         // FIX 1: Smart child name resolution with proper fallback chain
         let childDisplayName = 'your child';
         
@@ -1379,6 +1376,113 @@ Respond as ${consultantName}. ONE question max.`;
             childDisplayName = 'your daughter';
           }
         }
+        
+        // STEP 1: COMPRESS SCHOOL DATA PAYLOAD
+        const compressedSchoolData = {
+          name: selectedSchool.name,
+          gradesOffered: `${selectedSchool.lowestGrade}-${selectedSchool.highestGrade}`,
+          tuitionFee: selectedSchool.tuition || selectedSchool.dayTuition || 'Not specified',
+          programTags: [
+            ...(selectedSchool.curriculum || []),
+            ...(selectedSchool.specializations || []),
+            selectedSchool.curriculumType
+          ].filter(Boolean),
+          location: `${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country}`,
+          genderPolicy: selectedSchool.genderPolicy || 'Co-ed',
+          religiousAffiliation: selectedSchool.religiousAffiliation || 'Non-denominational',
+          description: selectedSchool.description ? selectedSchool.description.substring(0, 150) : 'No description available'
+        };
+        
+        // STEP 2: BUILD SPLIT PROMPT STRUCTURE
+        const systemPrompt = `You are ${consultantName}, an education consultant helping Canadian families find the right private school.
+
+${consultantName === 'Jackie' 
+  ? "JACKIE PERSONA: Warm, empathetic, supportive. Uses phrases like 'I love that...', 'What a great fit...'. Speaks like a knowledgeable friend." 
+  : "LIAM PERSONA: Direct, strategic, no-BS. Leads with data and fit logic. Speaks like a trusted advisor."}
+
+OUTPUT FORMAT - DEEPDIVE Card with 6 areas:
+1. Fit Label - 2-4 word label like 'Strong Fit for ${childDisplayName}' or 'Worth Exploring for ${childDisplayName}'
+2. Why This School - 2-3 sentences synthesizing family priorities against school strengths
+3. What to Know - 2-3 honest bullets including one genuine limitation or thing to ask about
+4. Cost Reality - compare tuition to family budget with specific dollar math
+5. Dealbreaker Check - explicitly confirm no dealbreakers are violated (especially religious, grade)
+6. Tone Bridge - one sentence inviting the parent to explore more or ask questions
+
+HONESTY PATTERN: Always include at least one genuine tradeoff or limitation. Never write marketing copy. If data is missing, say so.
+
+DEALBREAKER ELEVATION: If the family has dealbreakers (religious, grade, budget), explicitly state that this school does NOT violate them.
+
+PERSONA TONE BRIDGE EXAMPLES:
+${consultantName === 'Jackie'
+  ? "- Jackie: 'I'd love to tell you more about their [strongest fit area] — want me to dig in?'"
+  : "- Liam: 'The [strongest fit area] stands out here. Want the details?'"}
+
+EXACT FORMAT TO USE:
+**[Fit Label]**
+
+**Why ${compressedSchoolData.name} for ${childDisplayName}**
+[2-3 sentences]
+
+**What to Know**
+• [Positive point]
+• [Honest limitation or unknown]
+• [Another consideration]
+
+**Cost Reality**
+[Dollar comparison with actual math]
+
+**Dealbreaker Check**
+[Explicitly confirm no violations]
+
+[Tone bridge question]`;
+
+        const userPrompt = `FAMILY BRIEF:
+- Child: ${childDisplayName}
+- Grade: ${conversationFamilyProfile?.childGrade !== null && conversationFamilyProfile?.childGrade !== undefined ? conversationFamilyProfile.childGrade : 'Not specified'}
+- Location: ${conversationFamilyProfile?.locationArea || 'Not specified'}
+- Budget: ${conversationFamilyProfile?.maxTuition ? '$' + conversationFamilyProfile.maxTuition : 'Not specified'}
+- Interests: ${conversationFamilyProfile?.interests?.join(', ') || 'Not specified'}
+- Priorities: ${conversationFamilyProfile?.priorities?.join(', ') || 'Not specified'}
+- Dealbreakers: ${conversationFamilyProfile?.dealbreakers?.join(', ') || 'None specified'}
+
+SCHOOL DATA:
+${JSON.stringify(compressedSchoolData, null, 2)}
+
+Generate the 6-area DEEPDIVE card for this family-school match.`;
+
+        // STEP 3 & 4: TRY AI GENERATION WITH 12-SECOND TIMEOUT
+        console.log('[DEEPDIVE] Attempting AI-generated card with 12s timeout');
+        let aiGeneratedCard = null;
+        
+        try {
+          const llmPromise = base44.integrations.Core.InvokeLLM({
+            prompt: `${systemPrompt}\n\n${userPrompt}`,
+            add_context_from_internet: false
+          });
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('LLM_TIMEOUT')), 12000)
+          );
+          
+          const aiResponse = await Promise.race([llmPromise, timeoutPromise]);
+          aiGeneratedCard = typeof aiResponse === 'string' ? aiResponse : (aiResponse?.response || null);
+          
+          if (aiGeneratedCard) {
+            console.log('[DEEPDIVE] AI card generated successfully, length:', aiGeneratedCard.length);
+            aiMessage = aiGeneratedCard;
+          }
+        } catch (llmError) {
+          if (llmError.message === 'LLM_TIMEOUT') {
+            console.log('[DEEPDIVE] LLM timeout at 12s - falling back to programmatic card');
+          } else {
+            console.error('[DEEPDIVE] LLM failed:', llmError.message);
+          }
+          aiGeneratedCard = null;
+        }
+        
+        // PROGRAMMATIC FALLBACK - Only if AI generation failed
+        if (!aiGeneratedCard) {
+          console.log('[DEEPDIVE] Building programmatic fallback card');
         
         // Function to determine fit label
         const determineFitLabel = (school, brief) => {
