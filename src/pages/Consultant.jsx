@@ -573,7 +573,7 @@ export default function Consultant() {
     }
   };
 
-  const handleSendMessage = async (messageText) => {
+  const handleSendMessage = async (messageText, explicitSchoolId = null) => {
     // Track message sent
     base44.functions.invoke('trackSessionEvent', {
       eventType: 'message_sent',
@@ -656,7 +656,7 @@ export default function Consultant() {
           lng: userLocation.lng,
           address: userLocation.address
         } : null,
-        selectedSchoolId: selectedSchool?.id || null
+        selectedSchoolId: explicitSchoolId || selectedSchool?.id || null
       });
 
       // CRITICAL: Update briefStatus from response immediately
@@ -897,8 +897,8 @@ Return empty array if user didn't provide any of these facts.`;
       setSelectedSchool(school);
       setCurrentView('detail');
       
-      // Auto-send message to trigger DEEP_DIVE analysis
-      await handleSendMessage(`Tell me about ${school.name}`);
+      // Auto-send message to trigger DEEP_DIVE analysis - pass school.id directly to avoid async state issue
+      await handleSendMessage(`Tell me about ${school.name}`, school.id);
     }
   };
 
