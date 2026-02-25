@@ -102,13 +102,18 @@ export async function extractEntities(params) {
         systemPrompt,
         userPrompt,
         responseSchema: {
-          name: 'entity_extraction',
+          name: 'entity_extraction_with_intent',
           schema: {
             type: 'object',
             properties: {
               childName: { type: ['string', 'null'] },
+              childAge: { type: ['number', 'null'] },
               childGrade: { type: ['number', 'null'] },
+              childGender: { type: ['string', 'null'] },
               locationArea: { type: ['string', 'null'] },
+              budgetMin: { type: ['number', 'null'] },
+              budgetMax: { type: ['number', 'null'] },
+              budgetSingle: { type: ['number', 'null'] },
               maxTuition: { type: ['number', 'null'] },
               priorities: { type: 'array', items: { type: 'string' } },
               interests: { type: 'array', items: { type: 'string' } },
@@ -120,9 +125,40 @@ export async function extractEntities(params) {
               genderPreference: { type: ['string', 'null'] },
               boardingPreference: { type: ['boolean', 'null'] },
               religiousPreference: { type: ['string', 'null'] },
-              intentSignal: { type: 'string', enum: ['continue', 'request-brief', 'request-results', 'edit-criteria', 'ask-about-school', 'back-to-results', 'restart', 'off-topic'] }
+              intentSignal: { type: 'string', enum: ['continue', 'request-brief', 'request-results', 'edit-criteria', 'ask-about-school', 'back-to-results', 'restart', 'off-topic'] },
+              briefDelta: {
+                type: 'object',
+                properties: {
+                  additions: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        field: { type: 'string' },
+                        value: {},
+                        confidence: { type: 'string', enum: ['explicit', 'inferred', 'contextual'] }
+                      },
+                      required: ['field', 'value', 'confidence']
+                    }
+                  },
+                  updates: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        field: { type: 'string' },
+                        old: {},
+                        new: {},
+                        confidence: { type: 'string', enum: ['explicit', 'inferred', 'contextual'] }
+                      },
+                      required: ['field', 'old', 'new', 'confidence']
+                    }
+                  },
+                  removals: { type: 'array', items: { type: 'string' } }
+                }
+              }
             },
-            required: ['intentSignal'],
+            required: ['intentSignal', 'briefDelta'],
             additionalProperties: false
           }
         },
