@@ -553,8 +553,7 @@ Deno.serve(async (req) => {
     }
 
     if (currentState === STATES.RESULTS) {
-      return handleResults({ 
-        base44, 
+      const resultsResponse = await base44.functions.invoke('handleResults', { 
         message, 
         conversationFamilyProfile, 
         context, 
@@ -570,11 +569,11 @@ Deno.serve(async (req) => {
         userId,
         flags 
       });
+      return Response.json(resultsResponse.data);
     }
 
     if (currentState === STATES.DEEP_DIVE) {
-      return handleDeepDive({ 
-        base44, 
+      const deepDiveResponse = await base44.functions.invoke('handleDeepDive', { 
         selectedSchoolId, 
         message, 
         conversationFamilyProfile, 
@@ -588,6 +587,7 @@ Deno.serve(async (req) => {
         userId,
         flags 
       });
+      return Response.json(deepDiveResponse.data);
     }
 
       // Fallback
