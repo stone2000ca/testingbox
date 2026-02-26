@@ -75,6 +75,7 @@ async function extractEntities(params) {
 
   let extractedData = {};
   let intentSignal = 'continue';
+  let result;
 
   try {
     const t1 = Date.now();
@@ -166,7 +167,6 @@ async function extractEntities(params) {
 
     Extract all factual data from the parent's message. Return ONLY valid JSON. Do NOT explain.`;
 
-    let result;
     try {
       result = await callOpenRouter({
         systemPrompt,
