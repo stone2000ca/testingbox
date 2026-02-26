@@ -109,7 +109,7 @@ export default function Home() {
       <Navbar />
 
       {/* HERO SECTION */}
-      <section className="relative overflow-hidden py-12 sm:py-20 lg:py-28">
+      <section className="relative overflow-hidden py-12 sm:py-24 lg:py-[33.6px]">
         {/* Video Background */}
         <video
           autoPlay
