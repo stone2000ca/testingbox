@@ -1,8 +1,8 @@
-import { callOpenRouter } from './callOpenRouter.ts';
-
 export async function handleBrief(params) {
-  console.log('HANDLEBRIEF V2 DEPLOYED - childDisplayName scope fix applied');
+  console.log('HANDLEBRIEF V3 DEPLOYED - callOpenRouter removed, childDisplayName declared');
   const { base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, conversationId, userId } = params;
+  
+  let childDisplayName = 'your child';
 
   const STATES = {
     WELCOME: 'WELCOME',
