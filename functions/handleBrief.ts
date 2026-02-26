@@ -1,6 +1,7 @@
 import { callOpenRouter } from './callOpenRouter.ts';
 
 export async function handleBrief(params) {
+  console.log('HANDLEBRIEF V2 DEPLOYED - childDisplayName scope fix applied');
   const { base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, conversationId, userId } = params;
 
   const STATES = {
