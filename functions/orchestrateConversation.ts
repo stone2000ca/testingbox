@@ -441,8 +441,7 @@ Deno.serve(async (req) => {
 
     // STEP 5: STATE-SPECIFIC RESPONSE GENERATION (pass flags to handlers)
     if (currentState === STATES.DISCOVERY) {
-      return handleDiscovery({ 
-        base44, 
+      const discoveryResponse = await base44.functions.invoke('handleDiscovery', { 
         message, 
         conversationFamilyProfile, 
         context, 
@@ -455,6 +454,7 @@ Deno.serve(async (req) => {
         userId,
         flags 
       });
+      return Response.json(discoveryResponse.data);
     }
     
     if (currentState === STATES.BRIEF) {
