@@ -149,13 +149,12 @@ Deno.serve(async (req) => {
   );
 
   const processRequest = async () => {
-    var classificationResult;
     var currentState;
     var briefStatus;
     
     try {
       const base44 = createClientFromRequest(req);
-      const { message, conversationHistory, conversationContext, region, userId, consultantName, currentSchools, userNotes, shortlistedSchools, userLocation, selectedSchoolId } = await req.json();
+      const { message, conversationHistory, conversationContext, region, userId, consultantName, currentSchools, userLocation, selectedSchoolId } = await req.json();
 
     console.log('ORCH START', { 
       messageLength: message?.length, 
@@ -168,7 +167,6 @@ Deno.serve(async (req) => {
     });
 
     const context = conversationContext || {};
-    const msgLower = message.toLowerCase();
     
     // STATE MACHINE: 5 states (strictly deterministic)
     const STATES = {
@@ -178,19 +176,8 @@ Deno.serve(async (req) => {
       RESULTS: 'RESULTS',
       DEEP_DIVE: 'DEEP_DIVE'
     };
-
-    const BRIEF_STATUS = {
-      GENERATING: 'generating',
-      PENDING_REVIEW: 'pending_review',
-      EDITING: 'editing',
-      CONFIRMED: 'confirmed'
-    };
-    
-    // KI-12 FIX PART B: City coordinates - MOVED TO handleResults.ts (only consumer)
-    // CITY_COORDS removed from orchestrator — not referenced here
     
     let briefEditCount = context.briefEditCount || 0;
-    const MAX_BRIEF_EDITS = 3;
     
     const conversationId = context.conversationId;
     
@@ -254,7 +241,7 @@ Deno.serve(async (req) => {
       context,
       conversationHistory
     });
-    const extractionResult = extractionResponse.data;
+    extractionResult = extractionResponse.data;
     const { extractedEntities, updatedFamilyProfile, updatedContext } = extractionResult;
     intentSignal = extractionResult.intentSignal || 'continue';
     briefDelta = extractionResult.briefDelta;
@@ -273,7 +260,7 @@ Deno.serve(async (req) => {
       schoolType: conversationFamilyProfile?.schoolType || null
     };
     
-    const turnCount = conversationHistory?.filter(m => m.role === 'user').length || 0;
+    const turnCount = (conversationHistory?.filter(m => m.role === 'user').length || 0) + 1;
     const currentBriefEditCount = context.briefEditCount || 0;
     const previousSchoolId = context.previousSchoolId || null;
     
