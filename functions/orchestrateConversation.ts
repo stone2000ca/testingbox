@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
     }
     
     if (currentState === STATES.BRIEF) {
-      return handleBrief({ 
+      const briefResponse = await handleBrief({ 
         base44, 
         message, 
         conversationFamilyProfile, 
@@ -214,6 +214,80 @@ Deno.serve(async (req) => {
         userId,
         flags 
       });
+
+      // BRIEF CONTENT SAFETY NET: If handleBrief returned generic/thin content
+      // (Base44 version may be stale), rebuild programmatically from extracted entities.
+      try {
+        const briefData = await briefResponse.json();
+        const briefMsg = briefData.message || '';
+        const hasStructuredContent = briefMsg.includes('Grade') || briefMsg.includes('grade') || 
+          briefMsg.includes('Location') || briefMsg.includes('Budget') || briefMsg.includes('Student:');
+        const isGenericBrief = briefMsg.length < 150 || !hasStructuredContent;
+
+        if (isGenericBrief && (context.extractedEntities || conversationFamilyProfile)) {
+          console.log('[ORCH BRIEF SAFETY NET] Generic brief detected, length:', briefMsg.length, 'rebuilding programmatically');
+          const bullets = [];
+          if (conversationFamilyProfile?.childName) bullets.push('Student: ' + conversationFamilyProfile.childName);
+          const grade = conversationFamilyProfile?.childGrade ?? context.extractedEntities?.childGrade;
+          if (grade !== null && grade !== undefined) {
+            bullets.push('Grade: ' + (grade === -1 ? 'JK' : grade === 0 ? 'SK' : 'Grade ' + grade));
+          }
+          const loc = conversationFamilyProfile?.locationArea || context.extractedEntities?.locationArea;
+          if (loc) bullets.push('Location: ' + loc);
+          const budget = conversationFamilyProfile?.maxTuition || context.extractedEntities?.budgetSingle;
+          if (budget) bullets.push('Budget: $' + Number(budget).toLocaleString());
+          if (conversationFamilyProfile?.genderPreference || context.extractedEntities?.genderPreference) {
+            bullets.push('Gender preference: ' + (conversationFamilyProfile?.genderPreference || context.extractedEntities?.genderPreference));
+          }
+          if (conversationFamilyProfile?.curriculumPreference?.length) {
+            bullets.push('Curriculum: ' + conversationFamilyProfile.curriculumPreference.join(', '));
+          }
+          if (conversationFamilyProfile?.programPreferences?.length) {
+            bullets.push('Program preferences: ' + conversationFamilyProfile.programPreferences.join(', '));
+          }
+          if (conversationFamilyProfile?.priorities?.length) {
+            bullets.push('Top priorities: ' + conversationFamilyProfile.priorities.join(', '));
+          }
+          const learningNeeds = conversationFamilyProfile?.learning_needs || conversationFamilyProfile?.specialNeeds || [];
+          if (learningNeeds.length) bullets.push('Learning needs: ' + learningNeeds.join(', '));
+          if (conversationFamilyProfile?.wellbeing_needs?.length) {
+            bullets.push('Wellbeing needs: ' + conversationFamilyProfile.wellbeing_needs.join(', '));
+          }
+          if (conversationFamilyProfile?.interests?.length) {
+            bullets.push('Interests: ' + conversationFamilyProfile.interests.join(', '));
+          }
+          if (conversationFamilyProfile?.dealbreakers?.length) {
+            bullets.push('Dealbreakers: ' + conversationFamilyProfile.dealbreakers.join(', '));
+          }
+          if (context.extractedEntities?.boardingPreference) bullets.push('Boarding: Yes');
+          if (context.extractedEntities?.religiousPreference) {
+            bullets.push('Religious preference: ' + context.extractedEntities.religiousPreference);
+          }
+
+          if (bullets.length > 0) {
+            const intro = consultantName === 'Jackie'
+              ? "Let me make sure I've got this right:\n\n"
+              : "Here's what I'm hearing:\n\n";
+            briefData.message = intro + bullets.map(b => '\u2022 ' + b).join('\n') + "\n\nDoes that capture everything? Anything you'd like to adjust?";
+            console.log('[ORCH BRIEF SAFETY NET] Rebuilt brief with', bullets.length, 'bullets');
+          }
+        }
+        return new Response(JSON.stringify(briefData), { 
+          status: 200, 
+          headers: { 'Content-Type': 'application/json' } 
+        });
+      } catch (safetyNetError) {
+        console.error('[ORCH BRIEF SAFETY NET] Error:', safetyNetError.message, '- returning original response');
+        // Can't re-read the response body (already consumed), so rebuild a minimal response
+        return Response.json({
+          message: "Here's what I've captured so far. Does that look right? Feel free to adjust anything.",
+          state: STATES.BRIEF,
+          briefStatus: briefStatus,
+          familyProfile: conversationFamilyProfile,
+          conversationContext: context,
+          schools: []
+        });
+      }
     }
 
     if (currentState === STATES.RESULTS) {
