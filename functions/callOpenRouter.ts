@@ -1,4 +1,3 @@
-// Shared OpenRouter API caller
 export async function callOpenRouter(options) {
   const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7 } = options;
   

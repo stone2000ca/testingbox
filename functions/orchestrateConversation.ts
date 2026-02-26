@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { callOpenRouter } from './callOpenRouter.ts';
 import { handleDeepDive } from './handleDeepDive.ts';
 import { handleResults } from './handleResults.ts';
 import { handleBrief } from './handleBrief.ts';
@@ -7,7 +8,7 @@ import { extractEntities } from './extractEntities.ts';
 import { resolveTransition } from './resolveTransition.ts';
 // Sprint A: extractEntities + resolveTransition integration
 // BUG-DD-002 fix: selectedSchoolId destructured
-// deploy-trigger-v8
+// deploy-trigger-v7
 
 Deno.serve(async (req) => {
   const TIMEOUT_MS = 25000;
