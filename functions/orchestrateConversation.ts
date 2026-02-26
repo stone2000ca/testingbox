@@ -858,7 +858,9 @@ Deno.serve(async (req) => {
 
       // FIX: Force RESULTS state on brief confirmation signal
       let context = conversationContext || {};
+      let processMessage = message; // Sanitize sentinel before downstream use
       if (message === '__CONFIRM_BRIEF__') {
+        processMessage = 'show me schools'; // Replace sentinel with safe text
         context.state = 'RESULTS';
         context.briefStatus = 'confirmed';
       }
@@ -918,7 +920,7 @@ Deno.serve(async (req) => {
       // STEP 2: ENTITY EXTRACTION (inlined, no function invoke)
       try {
         console.log('[ORCH] Running extractEntities inline');
-        extractionResult = await extractEntitiesLogic(base44, message, conversationFamilyProfile, context, conversationHistory);
+        extractionResult = await extractEntitiesLogic(base44, processMessage, conversationFamilyProfile, context, conversationHistory);
         intentSignal = extractionResult.intentSignal || 'continue';
         briefDelta = extractionResult.briefDelta;
       } catch (extractError) {
@@ -961,7 +963,7 @@ Deno.serve(async (req) => {
         briefEditCount: currentBriefEditCount,
         selectedSchoolId,
         previousSchoolId,
-        userMessage: message
+        userMessage: processMessage
       });
       
       currentState = resolveResult.nextState;
@@ -981,22 +983,22 @@ Deno.serve(async (req) => {
       let responseData;
 
       if (currentState === STATES.DISCOVERY) {
-        responseData = await handleDiscovery(base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentSchools, flags);
+        responseData = await handleDiscovery(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentSchools, flags);
         return Response.json(responseData);
       }
-      
+
       if (currentState === STATES.BRIEF) {
-        responseData = await handleBrief(base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, flags);
+        responseData = await handleBrief(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, flags);
         return Response.json(responseData);
       }
 
       if (currentState === STATES.RESULTS) {
-        responseData = await handleResults(base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, selectedSchoolId, conversationId, userId);
+        responseData = await handleResults(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, selectedSchoolId, conversationId, userId);
         return Response.json(responseData);
       }
 
       if (currentState === STATES.DEEP_DIVE) {
-        responseData = await handleDeepDive(base44, selectedSchoolId, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools);
+        responseData = await handleDeepDive(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools);
         return Response.json(responseData);
       }
 
