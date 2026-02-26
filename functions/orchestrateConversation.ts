@@ -327,7 +327,7 @@ async function extractEntities(params) {
     }
   }
   
-  const briefDelta = result?.briefDelta || { additions: [], updates: [], removals: [] };
+  const briefDelta = extractedData?.briefDelta || { additions: [], updates: [], removals: [] };
   intentSignal = intentSignal || 'continue';
   
   return {
