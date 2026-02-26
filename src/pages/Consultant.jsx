@@ -644,7 +644,7 @@ export default function Consultant() {
       const response = await base44.functions.invoke('orchestrateConversation', {
         message: messageText,
         conversationHistory: messages,
-        conversationContext: currentConversation?.conversationContext || {},
+        conversationContext: contextOverride || currentConversation?.conversationContext || {},
         region: user?.profileRegion || 'Canada',
         userId: user?.id,
         consultantName: selectedConsultant,
