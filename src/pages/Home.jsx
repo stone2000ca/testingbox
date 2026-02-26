@@ -126,7 +126,7 @@ export default function Home() {
         
         <div id="main-content" className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" style={{ zIndex: 2 }}>
           <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-            You Know Your Child. We Know the Schools.
+            You Know Your Child.<br /> We Know the Schools.
           </h1>
           <p className="text-lg sm:text-xl lg:text-2xl text-slate-200 mb-8 sm:mb-10 max-w-3xl mx-auto font-light">
             Tell us what matters to your family, and we'll narrow hundreds of options down to the few that actually fit.
