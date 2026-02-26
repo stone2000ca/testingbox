@@ -890,20 +890,26 @@ Return empty array if user didn't provide any of these facts.`;
   const handleViewSchoolDetail = async (schoolId) => {
     const school = schools.find(s => s.id === schoolId) || shortlistData.find(s => s.id === schoolId);
     if (school) {
-      // Track school clicked
       base44.functions.invoke('trackSessionEvent', {
         eventType: 'school_clicked',
         consultantName: selectedConsultant,
         sessionId,
         metadata: { schoolName: school.name }
       }).catch(err => console.error('Failed to track:', err));
-
       setSelectedSchool(school);
       setCurrentView('detail');
-      
-      // Auto-send message to trigger DEEP_DIVE analysis - pass school.id directly to avoid async state issue
-      await handleSendMessage(`Tell me about ${school.name}`, school.id);
+      setConfirmingSchool(school);
     }
+  };
+
+  const handleConfirmDeepDive = async (school) => {
+    setConfirmingSchool(null);
+    await handleSendMessage(`Tell me about ${school.name}`, school.id);
+  };
+
+  const handleCancelDeepDive = () => {
+    setConfirmingSchool(null);
+    handleBackToResults();
   };
 
   const handleToggleShortlist = async (schoolId) => {
