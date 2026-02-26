@@ -272,6 +272,8 @@ Deno.serve(async (req) => {
             console.log('[ORCH BRIEF SAFETY NET] Rebuilt brief with', bullets.length, 'bullets');
           }
         }
+        // FIX 1: Force briefStatus to pending-review when safety net fires
+        briefData.briefStatus = 'pending-review';
         return new Response(JSON.stringify(briefData), { 
           status: 200, 
           headers: { 'Content-Type': 'application/json' } 
@@ -279,10 +281,11 @@ Deno.serve(async (req) => {
       } catch (safetyNetError) {
         console.error('[ORCH BRIEF SAFETY NET] Error:', safetyNetError.message, '- returning original response');
         // Can't re-read the response body (already consumed), so rebuild a minimal response
+        // FIX 1: Force briefStatus to pending-review when safety net fires
         return Response.json({
           message: "Here's what I've captured so far. Does that look right? Feel free to adjust anything.",
           state: STATES.BRIEF,
-          briefStatus: briefStatus,
+          briefStatus: 'pending-review',
           familyProfile: conversationFamilyProfile,
           conversationContext: context,
           schools: []
