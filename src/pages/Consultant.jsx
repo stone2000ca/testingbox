@@ -502,8 +502,8 @@ export default function Consultant() {
     const greeting = {
       role: 'assistant',
       content: consultantName === 'Jackie'
-        ? "Hi, I'm Jackie! I help families find the right private school for their child. I'll ask a few questions about your family, and then I'll show you schools that actually fit — not just a generic list. What's bringing you here today?"
-        : "Hi, I'm Liam. I help families find the right private school by matching what matters most to you with real school data. I'll ask a few focused questions, then show you your strongest options. What's bringing you here today?",
+        ? "Hey there — I'm Jackie. I've worked with hundreds of families going through exactly this. Tell me a bit about your child and what's prompting the search."
+        : "Hi, I'm Liam. I'll help you cut through the noise and find schools that actually fit. What's driving the search?",
       timestamp: new Date().toISOString()
     };
     setMessages([greeting]);
