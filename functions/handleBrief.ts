@@ -22,6 +22,16 @@ export async function handleBrief(params) {
   let updatedBriefStatus = briefStatus;
   let briefMessage;
   
+  // KI-16: Smart child name display with gender (used in BRIEF state)
+  // NOTE: Declare at top scope to prevent ReferenceError in catch blocks
+  let briefChildDisplayName = conversationFamilyProfile.childName ? conversationFamilyProfile.childName : 'your child';
+  if (!conversationFamilyProfile.childName && conversationFamilyProfile.childGender === 'male') {
+    briefChildDisplayName = 'your son';
+  } else if (!conversationFamilyProfile.childName && conversationFamilyProfile.childGender === 'female') {
+    briefChildDisplayName = 'your daughter';
+  }
+  const childDisplayName = briefChildDisplayName;
+  
   // BUG FIX: Handle adjust flow properly
   const isInitialAdjustRequest = /\b(change|adjust|edit|actually|wait|hold on|no|not right|different|let me|redo)\b/i.test(msgLower) && 
                                   !/budget|grade|location|school|curriculum|priority/i.test(msgLower);
@@ -116,17 +126,6 @@ export async function handleBrief(params) {
     } else if (maxTuition && typeof maxTuition === 'number') {
       budgetDisplay = `$${maxTuition.toLocaleString()}/year`;
     }
-
-    // KI-16: Smart child name display with gender (used in BRIEF state)
-    // NOTE: Declare both briefChildDisplayName AND childDisplayName to prevent
-    // ReferenceError if Base44 live code references either variable name.
-    let briefChildDisplayName = childName ? childName : 'your child';
-    if (!childName && childGender === 'male') {
-      briefChildDisplayName = 'your son';
-    } else if (!childName && childGender === 'female') {
-      briefChildDisplayName = 'your daughter';
-    }
-    const childDisplayName = briefChildDisplayName;
 
     // KI-10: MULTI-CHILD DETECTION at code level
     const conversationText = conversationHistory?.map(m => m.content).join(' ') || '';
