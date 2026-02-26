@@ -235,20 +235,46 @@ Deno.serve(async (req) => {
     }
 
     // STEP 2: ENTITY EXTRACTION (all other messages)
-    const extractionResponse = await base44.asServiceRole.functions.invoke('extractEntities', {
-      message,
-      conversationFamilyProfile,
-      context,
-      conversationHistory
-    });
-    extractionResult = extractionResponse.data;
-    const { extractedEntities, updatedFamilyProfile, updatedContext } = extractionResult;
-    intentSignal = extractionResult.intentSignal || 'continue';
-    briefDelta = extractionResult.briefDelta;
+    try {
+      console.log('[ORCH] Invoking extractEntities with:', {
+        messageLength: message?.length,
+        hasFamilyProfile: !!conversationFamilyProfile,
+        hasContext: !!context,
+        historyLength: conversationHistory?.length
+      });
+      const extractionResponse = await base44.asServiceRole.functions.invoke('extractEntities', {
+        message,
+        conversationFamilyProfile,
+        context,
+        conversationHistory
+      });
+      extractionResult = extractionResponse.data;
+      const { extractedEntities, updatedFamilyProfile, updatedContext } = extractionResult;
+      intentSignal = extractionResult.intentSignal || 'continue';
+      briefDelta = extractionResult.briefDelta;
+    } catch (extractError) {
+      console.error('[ORCH] extractEntities FAILED:', extractError?.message || extractError);
+      console.error('[ORCH] extractEntities error details:', JSON.stringify({
+        status: extractError?.response?.status,
+        data: extractError?.response?.data,
+        code: extractError?.code
+      }));
+      // Graceful fallback: continue with no extraction rather than crashing
+      extractionResult = {
+        extractedEntities: {},
+        updatedFamilyProfile: conversationFamilyProfile,
+        updatedContext: context,
+        intentSignal: 'continue',
+        briefDelta: { additions: [], updates: [], removals: [] }
+      };
+      intentSignal = 'continue';
+      briefDelta = { additions: [], updates: [], removals: [] };
+      console.warn('[ORCH] Using fallback extraction - chat will continue without entity extraction');
+    }
     
     // Apply results
-    Object.assign(conversationFamilyProfile, updatedFamilyProfile);
-    Object.assign(context, updatedContext);
+    Object.assign(conversationFamilyProfile, extractionResult.updatedFamilyProfile);
+    Object.assign(context, extractionResult.updatedContext);
     
     // STEP 3: BUILD PROFILE DATA FOR TRANSITION RESOLUTION
     const profileData = {

@@ -249,9 +249,27 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
 }
 
 Deno.serve(async (req) => {
+  console.log('[extractEntities] Function invoked, method:', req.method);
   try {
     const base44 = createClientFromRequest(req);
-    const { message, conversationFamilyProfile, context, conversationHistory } = await req.json();
+    console.log('[extractEntities] base44 client created');
+    
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('[extractEntities] req.json() FAILED:', parseError.message);
+      return Response.json({ error: 'Failed to parse request body: ' + parseError.message }, { status: 500 });
+    }
+    
+    const { message, conversationFamilyProfile, context, conversationHistory } = body;
+    console.log('[extractEntities] Parsed body:', {
+      messageLength: message?.length,
+      messagePreview: message?.substring(0, 50),
+      hasFamilyProfile: !!conversationFamilyProfile,
+      hasContext: !!context,
+      historyLength: conversationHistory?.length
+    });
     
     const result = await extractEntitiesLogic({
       base44,
@@ -261,8 +279,10 @@ Deno.serve(async (req) => {
       conversationHistory
     });
     
+    console.log('[extractEntities] Returning result with intentSignal:', result?.intentSignal);
     return Response.json(result);
   } catch (error) {
+    console.error('[extractEntities] UNCAUGHT ERROR:', error.message, error.stack);
     return Response.json({ error: error.message || String(error) }, { status: 500 });
   }
 });
