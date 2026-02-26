@@ -791,7 +791,7 @@ ${consultantName === 'Jackie'
   ? "JACKIE PERSONA: Warm, empathetic, supportive." 
   : "LIAM PERSONA: Direct, strategic, no-BS."}
 
-Write naturally in conversational prose about why this school fits the family. Cover the student-school alignment, any trade-offs or concerns, and the cost reality. Speak like a consultant would—no headers, labels, or formatting markers. Just natural, helpful conversation.`;
+Write naturally in conversational prose about why this school fits the family. Cover the student-school alignment, any trade-offs or concerns, and the cost reality. Speak like a consultant would—no headers, labels, or formatting markers. Just natural, helpful conversation. End your response with a brief, clear sentence summarizing whether this school is a strong fit for this family and the primary reason why or why not, based on what they shared in their brief.`;
 
   const deepDiveUserPrompt = `FAMILY BRIEF:
 - Child: ${childDisplayName}
