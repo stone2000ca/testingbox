@@ -49,28 +49,17 @@ export async function handleBrief(params) {
 
     let adjustMessage = "What would you like to adjust?";
     try {
-      const adjustResponse = await callOpenRouter({
-        systemPrompt: adjustSystemPrompt,
-        userPrompt: adjustUserPrompt,
-        maxTokens: 300,
-        temperature: 0.5
-      });
-      adjustMessage = adjustResponse || "What would you like to adjust?";
-      console.log('[OPENROUTER] BRIEF adjustment');
-    } catch (openrouterError) {
-      console.log('[OPENROUTER FALLBACK] BRIEF adjustment falling back to InvokeLLM');
-      try {
-        const adjustPrompt = consultantName === 'Jackie'
-          ? `The parent wants to adjust something in their brief. Ask them a warm, open-ended question about what they'd like to change. Max 50 words. Be encouraging.`
-          : `The parent wants to adjust their brief. Ask them directly what needs to change. Max 50 words.`;
+      const adjustPrompt = consultantName === 'Jackie'
+        ? `You are Jackie, a warm and encouraging education consultant. The parent wants to adjust something in their brief. Ask them a warm, open-ended question about what they'd like to change. Max 50 words. Be encouraging. Parent said: "${message}"`
+        : `You are Liam, a direct and strategic education consultant. The parent wants to adjust their brief. Ask them directly what needs to change. Max 50 words. Parent said: "${message}"`;
 
-        const fallbackResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: adjustPrompt
-        });
-        adjustMessage = fallbackResponse?.response || fallbackResponse || "What would you like to adjust?";
-      } catch (fallbackError) {
-        console.error('[FALLBACK ERROR] BRIEF adjustment failed:', fallbackError.message);
-      }
+      const llmResponse = await base44.integrations.Core.InvokeLLM({
+        prompt: adjustPrompt
+      });
+      adjustMessage = llmResponse?.response || llmResponse || "What would you like to adjust?";
+      console.log('[LLM] BRIEF adjustment generated');
+    } catch (error) {
+      console.error('[LLM ERROR] BRIEF adjustment failed:', error.message);
     }
     
     return Response.json({
