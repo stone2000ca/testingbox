@@ -68,10 +68,6 @@
   body {
     @apply bg-background text-foreground;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
-    font-weight: 500;
-  }
   
   /* TASK E: Focus indicator styles */
   *:focus-visible {
@@ -85,6 +81,11 @@
   select:focus-visible {
     @apply ring-teal-600;
   }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
 }
 
 @keyframes fadeIn {
