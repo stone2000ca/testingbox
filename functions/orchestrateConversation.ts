@@ -1,11 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { handleDeepDive } from './handleDeepDive.ts';
-import { handleResults } from './handleResults.ts';
-import { handleDiscovery } from './handleDiscovery.ts';
-import { extractEntities } from './extractEntities.ts';
 // Sprint A: extractEntities + resolveTransition integration
 // BUG-DD-002 fix: selectedSchoolId destructured
-// deploy-trigger-v8 - NO LOCAL IMPORTS (resolveTransition, handleBrief, callOpenRouter inlined)
+// deploy-trigger-v9 - ALL imports removed, using base44.functions.invoke() instead
 
 // INLINED: resolveTransition function (no imports allowed in Deno functions)
 function resolveTransition(params) {
