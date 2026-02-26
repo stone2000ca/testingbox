@@ -94,6 +94,7 @@ function resolveTransition(params) {
   let transitionReason = 'natural';
 
   console.log('[RESOLVE] Input:', { currentState, intentSignal, sufficiency, turnCount, briefEditCount, selectedSchoolId });
+  console.log('[DEBUG-BRIEF] briefStatus:', params.briefStatus, 'userMessage:', userMessage);
 
   if (currentState === STATES.WELCOME && turnCount > 0) {
     return { nextState: STATES.DISCOVERY, sufficiency, flags, transitionReason: 'auto_welcome_exit' };
@@ -105,9 +106,9 @@ function resolveTransition(params) {
   // DETERMINISTIC BRIEF CONFIRMATION CHECK - overrides LLM intent classification
   const confirmPhrases = ['that looks right', 'show me schools', 'looks good', 'looks right', 'confirmed', 'yes'];
   const msgLower = (userMessage || '').toLowerCase();
-  if (currentState === STATES.BRIEF && briefStatus === 'pending_review' && confirmPhrases.some(p => msgLower.includes(p))) {
+  if (currentState === STATES.BRIEF && confirmPhrases.some(p => msgLower.includes(p))) {
     flags.USER_INTENT_OVERRIDE = true;
-    console.log('[DETERMINISTIC] Brief confirmed by string match:', userMessage);
+    console.log('[DETERMINISTIC] Brief confirmed by string match:', userMessage, 'briefStatus was:', params.briefStatus);
     return { nextState: STATES.RESULTS, sufficiency, flags, transitionReason: 'brief_confirmed_deterministic', briefStatus: 'confirmed' };
   }
   
