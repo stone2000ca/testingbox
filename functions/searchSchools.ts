@@ -1,0 +1,428 @@
+// Function: searchSchools
+// Purpose: Search and rank schools based on family profile and location filters
+// Entities: School, SearchLog
+// Last Modified: 2026-02-26
+// Dependencies: OpenRouter API (via orchestrateConversation)
+
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+const TIMEOUT_MS = 25000;
+
+Deno.serve(async (req) => {
+  try {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Search request timeout')), TIMEOUT_MS)
+    );
+    
+    const searchPromise = performSearch(req);
+    
+    return await Promise.race([searchPromise, timeoutPromise]);
+  } catch (error) {
+    console.error('Search error:', error.message);
+    return Response.json({ 
+      error: error.message === 'Search request timeout' ? 'Search timed out - try being more specific' : error.message, 
+      status: 500 
+    }, { status: 500 });
+  }
+});
+
+function toTitleCase(str) {
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+async function performSearch(req) {
+  const base44 = createClientFromRequest(req);
+  const payload = await req.json();
+  
+  console.log('[SEARCH RECEIVED] Complete payload:', JSON.stringify(payload, null, 2));
+  
+  const { 
+    region, 
+    country,
+    city,
+    provinceState,
+    minGrade, 
+    maxGrade, 
+    minTuition, 
+    maxTuition, 
+    curriculumType,
+    specializations,
+    schoolType,
+    userLat,
+    userLng,
+    maxDistanceKm,
+    commuteToleranceMinutes,
+    limit = 20,
+    familyProfile = null,
+    conversationId = null,
+    userId = null,
+    searchQuery = ''
+  } = payload;
+
+  const provinceAbbreviations = {
+    'BC': 'British Columbia', 'AB': 'Alberta', 'SK': 'Saskatchewan', 'MB': 'Manitoba',
+    'ON': 'Ontario', 'QC': 'Quebec', 'NB': 'New Brunswick', 'NS': 'Nova Scotia',
+    'PE': 'Prince Edward Island', 'PEI': 'Prince Edward Island', 'NL': 'Newfoundland and Labrador',
+    'YT': 'Yukon', 'NT': 'Northwest Territories', 'NU': 'Nunavut'
+  };
+
+  const stateAbbreviations = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+    'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+    'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+    'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+    'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+    'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+    'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+    'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+    'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+    'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+    'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
+  };
+
+  const neighbourhoodMap = {
+    'midtown': { lat: 43.7, lng: -79.39 }, 'yorkville': { lat: 43.67, lng: -79.39 },
+    'leaside': { lat: 43.71, lng: -79.36 }, 'forest hill': { lat: 43.69, lng: -79.41 },
+    'rosedale': { lat: 43.68, lng: -79.38 }, 'the annex': { lat: 43.67, lng: -79.41 },
+    'annex': { lat: 43.67, lng: -79.41 }, 'lawrence park': { lat: 43.73, lng: -79.40 },
+    'north york': { lat: 43.77, lng: -79.41 }, 'scarborough': { lat: 43.77, lng: -79.26 },
+    'etobicoke': { lat: 43.65, lng: -79.51 }, 'mississauga': { lat: 43.59, lng: -79.64 },
+    'oakville': { lat: 43.45, lng: -79.68 }, 'richmond hill': { lat: 43.87, lng: -79.44 },
+    'markham': { lat: 43.86, lng: -79.34 }
+  };
+
+  const regionAliases = {
+    'gta': { cities: ['Toronto', 'Mississauga', 'Brampton', 'Oakville', 'Markham', 'Vaughan', 'Richmond Hill'] },
+    'greater toronto area': { cities: ['Toronto', 'Mississauga', 'Brampton', 'Oakville', 'Markham', 'Vaughan', 'Richmond Hill'] },
+    'lower mainland': { cities: ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam'] },
+    'metro vancouver': { cities: ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam'] },
+    'greater vancouver': { cities: ['Vancouver', 'Burnaby', 'Surrey', 'Richmond', 'Coquitlam'] },
+    'montreal': { cities: ['Montreal', 'Laval', 'Longueuil'] },
+    'greater montreal': { cities: ['Montreal', 'Laval', 'Longueuil'] }
+  };
+
+  let resolvedLat = userLat;
+  let resolvedLng = userLng;
+  if (city && !userLat && !userLng) {
+    const neighbourhood = neighbourhoodMap[city.toLowerCase().trim()];
+    if (neighbourhood) {
+      resolvedLat = neighbourhood.lat;
+      resolvedLng = neighbourhood.lng;
+      console.log(`Resolved neighbourhood "${city}" to coordinates:`, neighbourhood);
+    }
+  }
+
+  let schools = await base44.entities.School.filter({}, '-created_date', 1000);
+  schools = schools.filter(s => s.status === 'active');
+
+  let locationFiltered = schools;
+
+  let aliasedCities = [];
+  let aliasedProvinces = [];
+  if (region) {
+    const regionLower = region.toLowerCase().trim();
+    const alias = regionAliases[regionLower];
+    if (alias) {
+      if (alias.cities) aliasedCities = alias.cities;
+      if (alias.provinces) aliasedProvinces = alias.provinces;
+    }
+  }
+
+  if (aliasedCities.length > 0) {
+    locationFiltered = locationFiltered.filter(s => 
+      aliasedCities.some(c => s.city?.toLowerCase() === c.toLowerCase())
+    );
+  } else if (aliasedProvinces.length > 0) {
+    locationFiltered = locationFiltered.filter(s => {
+      if (!s.provinceState) return false;
+      const schoolPS = s.provinceState.toLowerCase();
+      return aliasedProvinces.some(p => schoolPS === p.toLowerCase());
+    });
+  }
+
+  if (city && aliasedCities.length === 0) {
+    const cityLower = city.trim().toLowerCase();
+    let cityMatches = locationFiltered.filter(s => 
+      s.city && s.city.toLowerCase() === cityLower
+    );
+    if (cityMatches.length === 0) {
+      cityMatches = locationFiltered.filter(s => 
+        s.city && s.city.toLowerCase().includes(cityLower)
+      );
+    }
+    locationFiltered = cityMatches;
+    console.log(`[CITY FILTER] city="${city}" → ${locationFiltered.length} schools`);
+  }
+
+  if (provinceState && aliasedProvinces.length === 0) {
+    const psUpper = provinceState.toUpperCase().trim();
+    const fullProvinceName = provinceAbbreviations[psUpper] || stateAbbreviations[psUpper];
+    const normalizedProvince = fullProvinceName || toTitleCase(provinceState.trim());
+    const provinceRegex = new RegExp(`^${normalizedProvince}$`, 'i');
+    locationFiltered = locationFiltered.filter(s => {
+      if (!s.provinceState) return false;
+      return provinceRegex.test(s.provinceState);
+    });
+  }
+
+  if (region && !aliasedCities.length && !aliasedProvinces.length && !city) {
+    locationFiltered = locationFiltered.filter(s => s.region === region);
+  }
+  if (country) {
+    locationFiltered = locationFiltered.filter(s => s.country === country);
+  }
+
+  let hardFiltered = locationFiltered.filter(school => {
+    const parsedMinGrade = minGrade !== undefined && minGrade !== null ? parseInt(minGrade) : null;
+    if (parsedMinGrade !== null) {
+      let sLow = parseInt(school.lowestGrade);
+      let sHigh = parseInt(school.highestGrade);
+      if (isNaN(sLow) || isNaN(sHigh)) {
+        console.log(`[GRADE FILTER] Filtered out ${school.name}: Missing grade info`);
+        return false;
+      }
+      if (!(sLow <= parsedMinGrade && sHigh >= parsedMinGrade)) {
+        console.log(`[GRADE FILTER] Excluded ${school.name}: grades ${sLow}-${sHigh}, need ${parsedMinGrade}`);
+        return false;
+      }
+    }
+    
+    const schoolTuition = school.tuition || school.dayTuition || school.tuitionMin || null;
+    if (maxTuition && maxTuition !== 'unlimited') {
+      if (schoolTuition && schoolTuition > maxTuition) {
+        console.log(`[BUDGET FILTER] Filtered out ${school.name}: tuition $${schoolTuition} exceeds budget $${maxTuition}`);
+        return false;
+      }
+    }
+    
+    const dealbreakers = payload.dealbreakers || familyProfile?.dealbreakers || [];
+    const hasReligiousDealbreaker = Array.isArray(dealbreakers) && dealbreakers.some(d => 
+      typeof d === 'string' && (
+        d.toLowerCase().includes('religious') || 
+        d.toLowerCase().includes('religion') ||
+        d.toLowerCase().includes('no religious') ||
+        d.toLowerCase().includes('secular only') ||
+        d.toLowerCase().includes('non-religious')
+      )
+    );
+    if (hasReligiousDealbreaker) {
+      if (school.religiousAffiliation && 
+          school.religiousAffiliation !== 'None' && 
+          school.religiousAffiliation !== 'none' &&
+          school.religiousAffiliation !== 'Non-denominational' && 
+          school.religiousAffiliation !== 'Secular') {
+        console.log(`[RELIGIOUS FILTER] ✗ Excluded ${school.name}: religious affiliation (${school.religiousAffiliation})`);
+        return false;
+      }
+      
+      const religiousKeywords = ['christian', 'catholic', 'islamic', 'jewish', 'lutheran', 'baptist', 'adventist', 'anglican', 'saint', 'st.', 'st ', 'holy', 'sacred', 'blessed'];
+      const schoolNameLower = school.name?.toLowerCase() || '';
+      const hasReligiousKeyword = religiousKeywords.some(keyword => schoolNameLower.includes(keyword));
+      
+      if (hasReligiousKeyword) {
+        console.log(`[RELIGIOUS FILTER] ✗ Excluded ${school.name}: name contains religious keyword`);
+        return false;
+      }
+    }
+    
+    if (familyProfile?.genderPreference) {
+      const genderPref = familyProfile.genderPreference.toLowerCase();
+      const schoolGender = (school.genderPolicy || school.schoolType || '').toLowerCase();
+      
+      if (genderPref === 'all boys' || genderPref === 'boys') {
+        const isBoys = /\b(all[\s-]?boys?|boys?[\s-]?only|male)\b/i.test(schoolGender);
+        if (!isBoys) return false;
+      } else if (genderPref === 'all girls' || genderPref === 'girls') {
+        const isGirls = /\b(all[\s-]?girls?|girls?[\s-]?only|female)\b/i.test(schoolGender);
+        if (!isGirls) return false;
+      } else if (genderPref === 'co-ed' || genderPref === 'coed') {
+        const isCoed = /\b(co[\s-]?ed|coeducational|mixed)\b/i.test(schoolGender);
+        const isSingleGender = /\b(all[\s-]?boys?|all[\s-]?girls?|boys?[\s-]?only|girls?[\s-]?only|male|female)\b/i.test(schoolGender);
+        if (!isCoed && isSingleGender) return false;
+      }
+    }
+    
+    if (familyProfile?.commuteToleranceMinutes && school.distanceKm) {
+      const estimatedCommute = school.distanceKm * 2;
+      if (estimatedCommute > familyProfile.commuteToleranceMinutes) {
+        console.log(`Hard-filtered ${school.name}: commute ${estimatedCommute}min exceeds tolerance ${familyProfile.commuteToleranceMinutes}min`);
+        return false;
+      }
+    }
+    
+    return true;
+  });
+  
+  console.log(`Hard filters: ${locationFiltered.length} → ${hardFiltered.length} schools`);
+  
+  if (hardFiltered.length === 0) {
+    return Response.json({ 
+      schools: [], 
+      total: 0,
+      returned: 0,
+      edgeCaseMessage: "No schools matched your criteria. Try expanding your location, budget, or grade range.",
+      relaxedFilters: false
+    });
+  }
+
+  const scored = hardFiltered.map(school => {
+    let score = 0;
+    
+    if (minGrade !== undefined) {
+      const targetGrade = minGrade !== undefined ? minGrade : maxGrade;
+      if (school.lowestGrade <= targetGrade && school.highestGrade >= targetGrade) {
+        score += 2;
+      }
+    }
+    
+    if (maxTuition !== undefined && school.tuition) {
+      if (school.tuition <= maxTuition) {
+        score += 2;
+      }
+    }
+    
+    if (curriculumType && school.curriculumType === curriculumType) {
+      score += 3;
+    }
+    
+    if (schoolType && school.schoolType === schoolType) {
+      score += 2;
+    }
+    
+    if (specializations && specializations.length > 0) {
+      if (school.specializations) {
+        const matches = specializations.filter(spec => school.specializations.includes(spec)).length;
+        score += matches;
+      }
+    }
+    
+    return { school, score };
+  });
+
+  schools = scored.sort((a, b) => b.score - a.score).map(s => s.school);
+
+  if (resolvedLat && resolvedLng) {
+    schools = schools.map(school => {
+      if (school.lat && school.lng) {
+        const distance = calculateDistance(resolvedLat, resolvedLng, school.lat, school.lng);
+        return { ...school, distanceKm: distance };
+      }
+      return school;
+    });
+
+    if (maxDistanceKm) {
+      schools = schools.filter(s => s.distanceKm && s.distanceKm <= maxDistanceKm);
+    }
+
+    schools.sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
+  }
+
+  if (familyProfile) {
+    schools = schools.filter(school => {
+      if (familyProfile.commuteToleranceMinutes && school.distanceKm) {
+        const estimatedCommute = school.distanceKm * 2;
+        const tolerance = familyProfile.commuteToleranceMinutes;
+        if (estimatedCommute > tolerance + 50) {
+          console.log(`Filtered out ${school.name}: commute ${estimatedCommute}min exceeds tolerance ${tolerance}min by 50+min`);
+          return false;
+        }
+      }
+
+      if (familyProfile.maxTuition && school.tuition) {
+        if (school.tuition > familyProfile.maxTuition * 2) {
+          console.log(`Filtered out ${school.name}: tuition $${school.tuition} is 2x+ budget $${familyProfile.maxTuition}`);
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  const originalFilteredCount = schools.length;
+  let edgeCaseMessage = null;
+  
+  if (schools.length === 0) {
+    edgeCaseMessage = "No schools matched your criteria. Try expanding your location, budget, or grade range.";
+    console.log('[EDGE CASE] All schools filtered out - returning empty array');
+  } else if (schools.length > 15) {
+    edgeCaseMessage = "I found quite a few options! Would you like to narrow it down by adding more preferences (budget, curriculum, specializations)?";
+  }
+  
+  const maxResults = Math.min(schools.length, 20);
+  const condensedSchools = schools.slice(0, maxResults).map(s => ({
+    id: s.id,
+    name: s.name,
+    slug: s.slug,
+    city: s.city,
+    provinceState: s.provinceState,
+    gradesServed: `${s.lowestGrade}-${s.highestGrade}`,
+    lowestGrade: s.lowestGrade,
+    highestGrade: s.highestGrade,
+    tuition: s.tuition,
+    currency: s.currency,
+    curriculumType: s.curriculumType,
+    region: s.region,
+    specializations: s.specializations,
+    distanceKm: s.distanceKm,
+    schoolType: s.schoolType
+  }));
+
+  try {
+    const topResultsForLog = condensedSchools.slice(0, 10).map((s, idx) => ({
+      schoolName: s.name,
+      score: scored.find(sc => sc.school.id === s.id)?.score || 0,
+      reasons: [
+        s.distanceKm ? `${s.distanceKm.toFixed(1)}km away` : null,
+        s.tuition && maxTuition && s.tuition <= maxTuition ? 'Within budget' : null,
+        s.curriculumType === curriculumType ? `${curriculumType} curriculum` : null,
+        s.specializations?.some(spec => specializations?.includes(spec)) ? 'Matches specializations' : null
+      ].filter(Boolean)
+    }));
+
+    await base44.asServiceRole.entities.SearchLog.create({
+      query: searchQuery || `Search for grade ${minGrade} in ${city || region || 'unspecified'}`,
+      inputFilters: {
+        city,
+        provinceState,
+        region,
+        minGrade,
+        maxGrade,
+        maxTuition,
+        curriculumType,
+        specializations,
+        schoolType,
+        maxDistanceKm,
+        dealbreakers: payload.dealbreakers || familyProfile?.dealbreakers || []
+      },
+      totalSchoolsPassingFilters: originalFilteredCount,
+      topResults: topResultsForLog,
+      conversationId,
+      userId
+    });
+  } catch (logError) {
+    console.error('Failed to create SearchLog:', logError);
+  }
+
+  return Response.json({ 
+    schools: condensedSchools, 
+    total: schools.length,
+    returned: condensedSchools.length,
+    edgeCaseMessage,
+    relaxedFilters: false
+  });
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
