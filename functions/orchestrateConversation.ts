@@ -1,13 +1,145 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { handleDeepDive } from './handleDeepDive.ts';
-import { handleResults } from './handleResults.ts';
-import { handleBrief } from './handleBrief.ts';
-import { handleDiscovery } from './handleDiscovery.ts';
-import { extractEntities } from './extractEntities.ts';
-import { resolveTransition } from './resolveTransition.ts';
-// Sprint A: extractEntities + resolveTransition integration
-// BUG-DD-002 fix: selectedSchoolId destructured
-// deploy-trigger-v8
+
+// Inline resolveTransition - pure function, no async/SDK calls needed
+function resolveTransition(params) {
+  const {
+    currentState,
+    intentSignal,
+    profileData,
+    turnCount,
+    briefEditCount,
+    selectedSchoolId,
+    previousSchoolId
+  } = params;
+
+  const STATES = {
+    WELCOME: 'WELCOME',
+    DISCOVERY: 'DISCOVERY',
+    BRIEF: 'BRIEF',
+    RESULTS: 'RESULTS',
+    DEEP_DIVE: 'DEEP_DIVE'
+  };
+
+  const hasLocation = !!(profileData?.location);
+  const hasGrade = profileData?.gradeLevel !== null && profileData?.gradeLevel !== undefined;
+  const prioritiesCount = profileData?.priorities?.length || 0;
+  
+  let sufficiency = 'THIN';
+  if (hasLocation && hasGrade) {
+    if (prioritiesCount >= 2) {
+      sufficiency = 'RICH';
+    } else {
+      sufficiency = 'MINIMUM';
+    }
+  }
+
+  const flags = {
+    SUGGEST_BRIEF: false,
+    OFFER_BRIEF: false,
+    FORCED_TRANSITION: false,
+    USER_INTENT_OVERRIDE: false
+  };
+
+  let nextState = currentState;
+  let briefStatus = null;
+  let transitionReason = 'natural';
+
+  console.log('[RESOLVE] Input:', { currentState, intentSignal, sufficiency, turnCount, briefEditCount, selectedSchoolId });
+
+  if (currentState === STATES.WELCOME && turnCount > 0) {
+    nextState = STATES.DISCOVERY;
+    transitionReason = 'auto_welcome_exit';
+    return { nextState, sufficiency, flags, transitionReason };
+  }
+
+  if (selectedSchoolId && selectedSchoolId !== previousSchoolId) {
+    nextState = STATES.DEEP_DIVE;
+    transitionReason = 'school_selected';
+    return { nextState, sufficiency, flags, transitionReason };
+  }
+
+  if ((intentSignal === 'request-brief' || intentSignal === 'request-results') && turnCount >= 3 && currentState === STATES.DISCOVERY) {
+    if (sufficiency === 'MINIMUM' || sufficiency === 'RICH') {
+      nextState = STATES.BRIEF;
+      briefStatus = 'generating';
+      flags.USER_INTENT_OVERRIDE = true;
+      transitionReason = 'explicit_demand';
+      return { nextState, sufficiency, flags, transitionReason, briefStatus };
+    }
+  }
+
+  if (turnCount >= 7 && currentState === STATES.DISCOVERY) {
+    nextState = STATES.BRIEF;
+    briefStatus = 'generating';
+    flags.FORCED_TRANSITION = true;
+    transitionReason = 'hard_cap';
+    return { nextState, sufficiency, flags, transitionReason, briefStatus };
+  }
+
+  if (turnCount >= 5 && currentState === STATES.DISCOVERY && (sufficiency === 'MINIMUM' || sufficiency === 'RICH')) {
+    flags.SUGGEST_BRIEF = true;
+    transitionReason = 'soft_nudge';
+    return { nextState: STATES.DISCOVERY, sufficiency, flags, transitionReason };
+  }
+
+  if (intentSignal === 'request-brief' && turnCount < 3 && (sufficiency === 'MINIMUM' || sufficiency === 'RICH')) {
+    nextState = STATES.BRIEF;
+    briefStatus = 'generating';
+    flags.USER_INTENT_OVERRIDE = true;
+    transitionReason = 'explicit_intent';
+    return { nextState, sufficiency, flags, transitionReason, briefStatus };
+  }
+
+  if (intentSignal === 'request-results' && turnCount < 3 && (sufficiency === 'MINIMUM' || sufficiency === 'RICH')) {
+    nextState = STATES.RESULTS;
+    flags.USER_INTENT_OVERRIDE = true;
+    transitionReason = 'explicit_intent';
+    return { nextState, sufficiency, flags, transitionReason };
+  }
+
+  if (intentSignal === 'edit-criteria') {
+    nextState = STATES.BRIEF;
+    briefStatus = 'editing';
+    flags.USER_INTENT_OVERRIDE = true;
+    transitionReason = 'explicit_intent';
+    return { nextState, sufficiency, flags, transitionReason, briefStatus };
+  }
+
+  if (intentSignal === 'back-to-results') {
+    nextState = STATES.RESULTS;
+    flags.USER_INTENT_OVERRIDE = true;
+    transitionReason = 'explicit_intent';
+    return { nextState, sufficiency, flags, transitionReason };
+  }
+
+  if (intentSignal === 'restart') {
+    nextState = STATES.DISCOVERY;
+    flags.USER_INTENT_OVERRIDE = true;
+    transitionReason = 'explicit_intent';
+    return { nextState, sufficiency, flags, transitionReason };
+  }
+
+  if (currentState === STATES.DISCOVERY && intentSignal === 'continue') {
+    return { nextState: STATES.DISCOVERY, sufficiency, flags, transitionReason };
+  }
+
+  if (intentSignal === 'off-topic') {
+    return { nextState: currentState, sufficiency, flags, transitionReason };
+  }
+
+  if (currentState === STATES.BRIEF && briefEditCount >= 3) {
+    nextState = STATES.RESULTS;
+    briefStatus = 'confirmed';
+    flags.FORCED_TRANSITION = true;
+    transitionReason = 'edit_cap_reached';
+    return { nextState, sufficiency, flags, transitionReason, briefStatus };
+  }
+
+  console.log('[DEFAULT] Maintain current state:', currentState);
+  return { nextState: currentState, sufficiency, flags, transitionReason };
+}
+
+// deploy-trigger-v11
 
 Deno.serve(async (req) => {
   const TIMEOUT_MS = 25000;
@@ -116,7 +248,13 @@ Deno.serve(async (req) => {
     }
 
     // STEP 2: ENTITY EXTRACTION (all other messages)
-    extractionResult = await extractEntities({ base44, message, conversationFamilyProfile, context, conversationHistory });
+    const extractionResponse = await base44.asServiceRole.functions.invoke('extractEntities', {
+      message,
+      conversationFamilyProfile,
+      context,
+      conversationHistory
+    });
+    const extractionResult = extractionResponse.data;
     const { extractedEntities, updatedFamilyProfile, updatedContext } = extractionResult;
     intentSignal = extractionResult.intentSignal || 'continue';
     briefDelta = extractionResult.briefDelta;
@@ -164,10 +302,9 @@ Deno.serve(async (req) => {
 
     console.log(`[STATE] ${currentState} | briefStatus: ${briefStatus} | flags: ${JSON.stringify(flags)} | sufficiency: ${context.dataSufficiency} | reason: ${context.transitionReason}`);
 
-    // STEP 5: STATE-SPECIFIC RESPONSE GENERATION (pass flags to handlers)
+    // STEP 5: STATE-SPECIFIC RESPONSE GENERATION (invoke handlers)
     if (currentState === STATES.DISCOVERY) {
-      return handleDiscovery({ 
-        base44, 
+      const discoveryResponse = await base44.asServiceRole.functions.invoke('handleDiscovery', { 
         message, 
         conversationFamilyProfile, 
         context, 
@@ -180,11 +317,11 @@ Deno.serve(async (req) => {
         userId,
         flags 
       });
+      return Response.json(discoveryResponse.data);
     }
     
     if (currentState === STATES.BRIEF) {
-      return handleBrief({ 
-        base44, 
+      const briefResponse = await base44.asServiceRole.functions.invoke('handleBrief', { 
         message, 
         conversationFamilyProfile, 
         context, 
@@ -197,11 +334,11 @@ Deno.serve(async (req) => {
         userId,
         flags 
       });
+      return Response.json(briefResponse.data);
     }
 
     if (currentState === STATES.RESULTS) {
-      return handleResults({ 
-        base44, 
+      const resultsResponse = await base44.asServiceRole.functions.invoke('handleResults', { 
         message, 
         conversationFamilyProfile, 
         context, 
@@ -217,11 +354,11 @@ Deno.serve(async (req) => {
         userId,
         flags 
       });
+      return Response.json(resultsResponse.data);
     }
 
     if (currentState === STATES.DEEP_DIVE) {
-      return handleDeepDive({ 
-        base44, 
+      const deepDiveResponse = await base44.asServiceRole.functions.invoke('handleDeepDive', { 
         selectedSchoolId, 
         message, 
         conversationFamilyProfile, 
@@ -235,6 +372,7 @@ Deno.serve(async (req) => {
         userId,
         flags 
       });
+      return Response.json(deepDiveResponse.data);
     }
 
       // Fallback
