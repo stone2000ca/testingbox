@@ -33,6 +33,13 @@ const CITY_COORDS = {
 export async function handleResults(params) {
   const { base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, selectedSchoolId, userLocation, region, conversationId, userId } = params;
 
+  // FIX 2: Log what handleResults receives for budget
+  console.log('[HANDLE RESULTS ENTRY]', {
+    'conversationFamilyProfile.maxTuition': conversationFamilyProfile?.maxTuition,
+    'context.extractedEntities.budgetSingle': context.extractedEntities?.budgetSingle,
+    'context.extractedEntities.budgetMax': context.extractedEntities?.budgetMax
+  });
+
   const STATES = {
     WELCOME: 'WELCOME',
     DISCOVERY: 'DISCOVERY',
@@ -202,7 +209,14 @@ export async function handleResults(params) {
     }
   }
   
-  console.log('[BUDGET FINAL] parsedTuition:', parsedTuition);
+  // FIX 2: Log final parsedTuition and source
+  let budgetSource = 'none';
+  if (conversationFamilyProfile?.maxTuition) budgetSource = 'conversationFamilyProfile.maxTuition';
+  else if (context.extractedEntities?.budgetSingle) budgetSource = 'context.extractedEntities.budgetSingle';
+  else if (context.extractedEntities?.budgetMax) budgetSource = 'context.extractedEntities.budgetMax';
+  else if (parsedTuition) budgetSource = 'Brief text parsing';
+  
+  console.log('[BUDGET FINAL]', { parsedTuition, budgetSource });
   
   // AGGRESSIVE FALLBACK: Extract dealbreakers from multiple sources (KI-17 pattern)
   let parsedDealbreakers = null;

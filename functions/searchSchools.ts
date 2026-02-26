@@ -315,7 +315,9 @@ async function performSearch(req) {
       
       // Hard filter 2: BUDGET - tuition must be within hard limits (skip if 'unlimited')
       const schoolTuition = school.tuition || school.dayTuition || school.tuitionMin || null;
+      // FIX 2: Log maxTuition filter being applied
       if (maxTuition && maxTuition !== 'unlimited') {
+        console.log(`[BUDGET FILTER CHECK] Applying maxTuition filter: ${maxTuition}`);
         if (schoolTuition && schoolTuition > maxTuition) {
           console.log(`[BUDGET FILTER] Filtered out ${school.name}: tuition $${schoolTuition} exceeds budget $${maxTuition}`);
           return false;
