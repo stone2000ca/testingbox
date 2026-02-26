@@ -139,8 +139,34 @@ export async function handleBrief(params) {
     const learningNeedsStr = learningNeeds.length > 0 ? learningNeeds.join(', ') : '';
     const curriculumStr = conversationFamilyProfile.curriculumPreference?.length > 0 ? conversationFamilyProfile.curriculumPreference.join(', ') : '';
 
-    // KI-10: Build FAMILY DATA section - use structured childrenJson if available
-    let familyDataSection;
+    // familyDataSection removed — was dead code after LLM prompt removal
+
+    // NOTE: LLM brief prompt removed (KI-52 fix). Programmatic builder below is the sole brief generation path.
+
+    // KI-52 FIX: Programmatic brief generation — NO LLM call.
+    // This is the SOLE code path for generating brief text.
+    console.log('[BRIEF] Using programmatic brief generation (no LLM call)');
+    console.log('[BRIEF] Data available:', {
+      childName: childName || null,
+      childGrade: childGrade ?? context.extractedEntities?.childGrade ?? null,
+      location: locationArea || context.extractedEntities?.locationArea || null,
+      budget: budgetDisplay,
+      prioritiesCount: priorities?.length || 0,
+      interestsCount: interests?.length || 0,
+      isMultiChild
+    });
+
+    // Resolve grade from profile OR extractedEntities (whichever has data)
+    const resolvedGrade = childGrade ?? context.extractedEntities?.childGrade;
+    const gradeStr = resolvedGrade !== null && resolvedGrade !== undefined
+      ? (resolvedGrade === -1 ? 'JK' : resolvedGrade === 0 ? 'SK' : 'Grade ' + resolvedGrade)
+      : null;
+
+    // Resolve location from profile OR extractedEntities
+    const resolvedLocation = locationArea || context.extractedEntities?.locationArea;
+
+    // KI-10: Multi-child brief builder
+    let briefContent;
     if (isMultiChild) {
       let parsedChildren = null;
       try {
@@ -152,191 +178,81 @@ export async function handleBrief(params) {
       }
 
       if (parsedChildren && Array.isArray(parsedChildren) && parsedChildren.length >= 2) {
-        // Structured multi-child data available
-        let childSections = '';
-        parsedChildren.forEach((child, idx) => {
-          const childNum = idx + 1;
-          const childName = child.name || `Child ${childNum}`;
-          const gradeDisplay = child.grade !== null && child.grade !== undefined 
-            ? (child.grade === -1 ? 'JK' : child.grade === 0 ? 'SK' : `Grade ${child.grade}`) 
+        const childBullets = parsedChildren.map((child, idx) => {
+          const num = idx + 1;
+          const name = child.name || 'Child ' + num;
+          const grade = child.grade !== null && child.grade !== undefined
+            ? (child.grade === -1 ? 'JK' : child.grade === 0 ? 'SK' : 'Grade ' + child.grade)
             : '(not specified)';
-          const genderDisplay = child.gender || '(not specified)';
-          const interestsDisplay = child.interests?.length > 0 ? child.interests.join(', ') : '(not specified)';
-          const prioritiesDisplay = child.priorities?.length > 0 ? child.priorities.join(', ') : '(not specified)';
-          const learningNeedsDisplay = child.learningNeeds?.length > 0 ? child.learningNeeds.join(', ') : '(not specified)';
+          let section = 'Child ' + num + ': ' + name + '\n';
+          section += '  • Grade: ' + grade;
+          if (child.interests?.length) section += '\n  • Interests: ' + child.interests.join(', ');
+          if (child.priorities?.length) section += '\n  • Priorities: ' + child.priorities.join(', ');
+          if (child.learningNeeds?.length) section += '\n  • Learning needs: ' + child.learningNeeds.join(', ');
+          return section;
+        }).join('\n\n');
 
-          childSections += `\nCHILD ${childNum}: ${childName}
-    - GRADE: ${gradeDisplay}
-    - GENDER: ${genderDisplay}
-    - INTERESTS: ${interestsDisplay}
-    - PRIORITIES: ${prioritiesDisplay}
-    - LEARNING NEEDS: ${learningNeedsDisplay}\n`;
-        });
+        const sharedBullets = [];
+        if (resolvedLocation) sharedBullets.push('• Location: ' + resolvedLocation);
+        if (budgetDisplay && budgetDisplay !== '(not specified)') sharedBullets.push('• Budget: ' + budgetDisplay);
+        if (curriculumStr) sharedBullets.push('• Curriculum: ' + curriculumStr);
+        if (dealbreakersStr) sharedBullets.push('• Dealbreakers: ' + dealbreakersStr);
 
-        familyDataSection = `MULTI-CHILD FAMILY DATA:${childSections}
-    SHARED FAMILY FIELDS:
-    - LOCATION: ${locationArea || '(not specified)'}
-    - BUDGET: ${budgetDisplay}
-    - CURRICULUM: ${curriculumStr || '(not specified)'}
-    - DEALBREAKERS: ${dealbreakersStr || '(not specified)'}`;
+        briefContent = childBullets;
+        if (sharedBullets.length > 0) {
+          briefContent += '\n\nShared family preferences:\n' + sharedBullets.join('\n');
+        }
       } else {
-        // Fallback: tell AI to parse conversation
-        familyDataSection = `MULTI-CHILD DETECTED: The parent has mentioned MULTIPLE children in the conversation. Do NOT use any single-child data fields. Instead, read the conversation carefully and create SEPARATE profile sections for EACH child mentioned. Each child must have their own: name/description, Grade, Location, Budget, Gender preference, Class size, Top priorities, Learning needs, Wellbeing needs, Program preferences, Interests, and Extracurriculars. Label them as Child 1 and Child 2.`;
+        // Multi-child detected but no structured data — fall through to single-child
+        briefContent = null;
       }
-    } else {
-      familyDataSection = `FAMILY DATA:
-    - CHILD: ${briefChildDisplayName}
-    - GRADE: ${childGrade !== null && childGrade !== undefined ? (childGrade === -1 ? 'JK' : childGrade === 0 ? 'SK' : 'Grade ' + childGrade) : '(not specified)'}
-    - LOCATION: ${locationArea || '(not specified)'}
-    - BUDGET: ${budgetDisplay}
-    - GENDER PREFERENCE: ${genderPreference || '(not specified)'}
-    - CLASS SIZE: ${classSize || '(not specified)'}
-    - CURRICULUM: ${curriculumStr || '(not specified)'}
-    - PROGRAM PREFERENCES: ${programPreferencesStr || '(not specified)'}
-    - LEARNING NEEDS: ${learningNeedsStr || '(not specified)'}
-    - WELLBEING NEEDS: ${wellbeingNeedsStr || '(not specified)'}
-    - INTERESTS: ${interestsStr || '(not specified)'}
-    - PRIORITIES: ${prioritiesStr || '(not specified)'}
-    - DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
-
-    MULTI-CHILD CHECK: Review the conversation history. If the parent mentioned MORE THAN ONE child, you MUST create separate sections. Do NOT use the FAMILY DATA fields below (they only contain one child). Instead, extract each child's details directly from the conversation and present them as:
-
-    Child 1: [name or description], [grade]
-    - Location: [from conversation]
-    - Budget: [from conversation]
-    ... (all applicable fields)
-
-    Child 2: [name or description], [grade]
-    - Location: [from conversation]
-    - Budget: [from conversation]
-    ... (all applicable fields)
-
-    ONLY use the FAMILY DATA fields below if there is exactly ONE child mentioned in the conversation.`;
     }
 
-    const briefPrompt = consultantName === 'Jackie'
-      ? `[STATE: BRIEF] Generate a factual brief summary using the structured format below. Use ONLY what was explicitly stated by the parent.
+    // Single-child brief builder (also used as fallback for multi-child without structured data)
+    if (!briefContent) {
+      const bullets = [];
+      // Student line: combine name + grade
+      if (childName && gradeStr) {
+        bullets.push('Student: ' + childDisplayName + ', ' + gradeStr);
+      } else if (childName) {
+        bullets.push('Student: ' + childDisplayName);
+      } else if (gradeStr) {
+        bullets.push('Grade: ' + gradeStr);
+      }
+      if (resolvedLocation) bullets.push('Location: ' + resolvedLocation);
+      if (budgetDisplay && budgetDisplay !== '(not specified)') bullets.push('Budget: ' + budgetDisplay);
+      if (genderPreference) bullets.push('Gender preference: ' + genderPreference);
+      if (classSize || context.extractedEntities?.classSize) bullets.push('Class size: ' + (classSize || context.extractedEntities.classSize));
+      if (curriculumStr) bullets.push('Curriculum: ' + curriculumStr);
+      if (programPreferencesStr) bullets.push('Program preferences: ' + programPreferencesStr);
+      if (prioritiesStr) bullets.push('Top priorities: ' + prioritiesStr);
+      if (learningNeedsStr) bullets.push('Learning needs: ' + learningNeedsStr);
+      if (wellbeingNeedsStr) bullets.push('Wellbeing needs: ' + wellbeingNeedsStr);
+      if (interestsStr) bullets.push('Interests: ' + interestsStr);
+      if (strengthsStr) bullets.push('Academic strengths: ' + strengthsStr);
+      if (dealbreakersStr) bullets.push('Dealbreakers: ' + dealbreakersStr);
+      if (context.extractedEntities?.boardingPreference) bullets.push('Boarding: Yes');
+      if (context.extractedEntities?.religiousPreference) bullets.push('Religious preference: ' + context.extractedEntities.religiousPreference);
+      if (currentSituation) bullets.push('Current situation: ' + currentSituation);
 
-    NEVER USE THESE PHRASES (HARD BAN): "That's wonderful", "How exciting", "It sounds like you're looking for", "I understand you're eager", "I'd love to help you explore", "That's great", "I appreciate you sharing". If you catch yourself starting with any of these, DELETE IT and start over.
-
-    CRITICAL RULES - DO NOT VIOLATE (FIX 11):
-    - Do NOT invent personality traits, motivations, or character descriptions that were not explicitly stated by the parent.
-    - If the parent said the child is struggling or has ADHD/learning differences, acknowledge that plainly and respectfully. Do NOT romanticize it.
-    - If no personality was described, skip that section entirely.
-    - Never use phrases like "bright and curious", "eager to explore the world", "joyful inquisitiveness" unless the parent used those exact words.
-    - Never call any budget "generous", "modest", "tight", or "comfortable". Use neutral factual language. (FIX 15)
-    - If parent mentions ADHD, ASD, ESL, or learning differences, name them explicitly in the Brief. Do NOT euphemize as "unique learning style".
-
-    MULTI-CHILD SUPPORT (KI-10 P0):
-    - If parent mentioned MULTIPLE children with different grades/needs, you MUST present SEPARATE profiles for each child.
-    - Example: "Child 1: Emma, Grade 9 - STEM focus, robotics, AP courses" followed by "Child 2: Noah, Grade 3 - dyslexia support, small classes, Montessori"
-    - Do NOT merge multiple children into one profile. Each child gets their own bullet section with their specific grade, needs, and priorities.
-    - If only one child was mentioned, use the standard single-child format.
-
-    ${familyDataSection}
-
-    UNIFIED FORMAT (FIX 14) - Use this exact structure:
-   [REQUIRED warm, conversational intro - Jackie tone. Sound like you're reflecting back what you heard, NOT generating a report. Examples: "If I'm understanding correctly...", "Let me make sure I've got this right...", "Based on everything you've shared...". Be genuine and empathetic.]
-
-   **YOU MUST include a bullet-point summary. Your response MUST contain these bullet points with actual data from the conversation:**
-   • Student: [name if known], [grade]
-   • Location: [city/area]
-   • Budget: [amount]
-   • Key priorities: [list what parent said]
-   • Interests: [list what parent shared]
-
-   Do NOT skip the bullet points. Do NOT just say you will summarize - actually include the summary.
-
-   **IF MULTIPLE CHILDREN DETECTED IN CONVERSATION: Repeat the bullet list below for EACH child with their own header (e.g., "Child 1:" and "Child 2:") and their specific details.**
-
-   • Student: ${briefChildDisplayName}, ${childGrade !== null && childGrade !== undefined ? (childGrade === -1 ? 'JK' : childGrade === 0 ? 'SK' : 'Grade ' + childGrade) : '(not specified)'}
-   • Location: ${locationArea || '(not specified)'}
-   • Budget: ${budgetDisplay}
-   ${genderPreference ? '• Gender preference: ' + genderPreference + '\n' : ''}${classSize ? '• Class size: ' + classSize + '\n' : ''}${prioritiesStr ? '• Top priorities: ' + prioritiesStr + '\n' : ''}${learningNeedsStr ? '• Learning needs: ' + learningNeedsStr + '\n' : ''}${wellbeingNeedsStr ? '• Wellbeing needs: ' + wellbeingNeedsStr + '\n' : ''}${programPreferencesStr ? '• Program preferences: ' + programPreferencesStr + '\n' : ''}${dealbreakersStr ? '• Dealbreakers: ' + dealbreakersStr + '\n' : ''}${curriculumStr ? '• Curriculum: ' + curriculumStr + '\n' : ''}${interestsStr ? '• Interests: ' + interestsStr + '\n' : ''}
-   
-   Does that capture everything? Anything you would like to adjust?
-
-   YOU ARE JACKIE - Warm intro, structured data.`
-      : `[STATE: BRIEF] Generate a factual brief summary using the structured format below. Use ONLY what was explicitly stated by the parent.
-
-      NEVER USE THESE PHRASES (HARD BAN): "That's wonderful", "How exciting", "It sounds like you're looking for", "I understand you're eager", "I'd love to help you explore", "That's great", "I appreciate you sharing". If you catch yourself starting with any of these, DELETE IT and start over.
-
-      CRITICAL RULES - DO NOT VIOLATE (FIX 11):
-   - Do NOT invent personality traits, motivations, or character descriptions that were not explicitly stated by the parent.
-   - If the parent said the child is struggling or has ADHD/learning differences, acknowledge that plainly and respectfully. Do NOT romanticize it.
-   - If no personality was described, skip that section entirely.
-   - Never use phrases like "bright and curious", "eager to explore the world", "joyful inquisitiveness" unless the parent used those exact words.
-   - Never call any budget "generous", "modest", "tight", or "comfortable". Use neutral factual language. (FIX 15)
-   - If parent mentions ADHD, ASD, ESL, or learning differences, name them explicitly in the Brief. Do NOT euphemize as "unique learning style".
-   
-   MULTI-CHILD SUPPORT (KI-10 P0):
-   - If parent mentioned MULTIPLE children with different grades/needs, you MUST present SEPARATE profiles for each child.
-   - Example: "Child 1: Emma, Grade 9 - STEM focus, robotics, AP courses" followed by "Child 2: Noah, Grade 3 - dyslexia support, small classes, Montessori"
-   - Do NOT merge multiple children into one profile. Each child gets their own bullet section with their specific grade, needs, and priorities.
-   - If only one child was mentioned, use the standard single-child format.
-
-   ${familyDataSection}
-
-   UNIFIED FORMAT (FIX 14) - Use this exact structure:
-   [REQUIRED direct, conversational intro - Liam tone. Sound like you're confirming what you heard, NOT generating a report. Examples: "Let me make sure I've got this right...", "Based on what you've told me...", "Here's what I'm hearing...". Be natural and straightforward.]
-   
-   **YOU MUST include a bullet-point summary. Your response MUST contain these bullet points with actual data from the conversation:**
-   • Student: [name if known], [grade]
-   • Location: [city/area]
-   • Budget: [amount]
-   • Key priorities: [list what parent said]
-   • Interests: [list what parent shared]
-
-   Do NOT skip the bullet points. Do NOT just say you will summarize - actually include the summary.
-
-   **IF MULTIPLE CHILDREN DETECTED IN CONVERSATION: Repeat the bullet list below for EACH child with their own header (e.g., "Child 1:" and "Child 2:") and their specific details.**
-   
-   • Student: ${briefChildDisplayName}, Grade ${childGrade || '(not specified)'}
-   • Location: ${locationArea || '(not specified)'}
-   • Budget: ${budgetDisplay}
-   ${genderPreference ? '• Gender preference: ' + genderPreference + '\n' : ''}${classSize ? '• Class size: ' + classSize + '\n' : ''}${prioritiesStr ? '• Top priorities: ' + prioritiesStr + '\n' : ''}${learningNeedsStr ? '• Learning needs: ' + learningNeedsStr + '\n' : ''}${curriculumStr ? '• Curriculum: ' + curriculumStr + '\n' : ''}${interestsStr ? '• Interests: ' + interestsStr + '\n' : ''}
-   
-   Does that capture everything? Anything you would like to adjust?
-
-   YOU ARE LIAM - Direct intro, structured data.`;
-
-    // KI-52 FIX: Skip LLM entirely, use programmatic brief generation as PRIMARY method
-    console.log('[BRIEF] Using programmatic brief generation (no LLM call)');
-    
-    const fallbackBrief = [];
-    if (conversationFamilyProfile.childName) fallbackBrief.push('Student: ' + conversationFamilyProfile.childName);
-    if (context.extractedEntities?.childGrade !== null && context.extractedEntities?.childGrade !== undefined) {
-      const gradeDisplay = context.extractedEntities.childGrade === -1 ? 'JK' : context.extractedEntities.childGrade === 0 ? 'SK' : 'Grade ' + context.extractedEntities.childGrade;
-      fallbackBrief.push('Grade: ' + gradeDisplay);
+      briefContent = bullets.length > 0
+        ? bullets.map(b => '• ' + b).join('\n')
+        : 'I captured your preferences but could not format them.';
     }
-    if (context.extractedEntities?.locationArea) fallbackBrief.push('Location: ' + context.extractedEntities.locationArea);
-    if (conversationFamilyProfile.maxTuition) fallbackBrief.push('Budget: $' + conversationFamilyProfile.maxTuition.toLocaleString());
-    if (conversationFamilyProfile.priorities?.length) fallbackBrief.push('Priorities: ' + conversationFamilyProfile.priorities.join(', '));
-    if (conversationFamilyProfile.interests?.length) fallbackBrief.push('Interests: ' + conversationFamilyProfile.interests.join(', '));
-    if (conversationFamilyProfile.learning_needs?.length) fallbackBrief.push('Learning needs: ' + conversationFamilyProfile.learning_needs.join(', '));
-    if (context.extractedEntities?.genderPreference) fallbackBrief.push('Gender preference: ' + context.extractedEntities.genderPreference);
-    if (context.extractedEntities?.classSize) fallbackBrief.push('Class size: ' + context.extractedEntities.classSize);
-    if (context.extractedEntities?.boardingPreference) fallbackBrief.push('Boarding: Yes');
-    if (context.extractedEntities?.religiousPreference) fallbackBrief.push('Religious preference: ' + context.extractedEntities.religiousPreference);
-    if (conversationFamilyProfile.curriculumPreference?.length) fallbackBrief.push('Curriculum: ' + conversationFamilyProfile.curriculumPreference.join(', '));
-    if (conversationFamilyProfile.dealbreakers?.length) fallbackBrief.push('Dealbreakers: ' + conversationFamilyProfile.dealbreakers.join(', '));
-    
-    const briefContent = fallbackBrief.length > 0
-      ? fallbackBrief.map(b => '• ' + b).join('\n')
-      : 'I captured your preferences but could not format them.';
     
     // Consultant-specific intro
     const intro = consultantName === 'Jackie' 
       ? "Let me make sure I've got this right:\n\n"
       : "Here's what I'm hearing:\n\n";
     
-    const briefMessageText = intro + briefContent + '\n\nDoes that capture everything? Anything you'd like to adjust?';
+    let briefMessageText = intro + briefContent + "\n\nDoes that capture everything? Anything you'd like to adjust?";
 
     // Post-processing safety net: replace any remaining [Child] or [child] placeholders
     briefMessageText = briefMessageText.replace(/\[Child\]/gi, briefChildDisplayName);
     briefMessageText = briefMessageText.replace(/\[child's name\]/gi, briefChildDisplayName);
     briefMessageText = briefMessageText.replace(/\[child\]/gi, briefChildDisplayName);
     briefMessage = briefMessageText;
+    console.log('[BRIEF] Programmatic brief generated, length:', briefMessage?.length, 'preview:', briefMessage?.substring(0, 120));
   } catch (e) {
     console.error('[ERROR] All BRIEF generation failed:', e.message);
     
