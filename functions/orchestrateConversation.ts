@@ -200,146 +200,98 @@ Deno.serve(async (req) => {
     }
     
     if (currentState === STATES.BRIEF) {
-      // CRITICAL FIX: handleBrief has permanent deployment error (deploymentNotFound)
-      // Build brief programmatically here instead of calling the broken function
-      try {
-        console.log('[ORCH BRIEF BYPASS] Building brief programmatically (handleBrief deployment broken)');
-        const bullets = [];
-        
-        // Child name and grade
-        const childName = conversationFamilyProfile?.childName;
-        const grade = conversationFamilyProfile?.childGrade ?? context.extractedEntities?.childGrade;
-        const gradeStr = grade !== null && grade !== undefined
-          ? (grade === -1 ? 'JK' : grade === 0 ? 'SK' : 'Grade ' + grade)
-          : null;
-        
-        if (childName && gradeStr) {
-          bullets.push('Student: ' + childName + ', ' + gradeStr);
-        } else if (childName) {
-          bullets.push('Student: ' + childName);
-        } else if (gradeStr) {
-          bullets.push('Grade: ' + gradeStr);
-        }
-        
-        // Location
-        const loc = conversationFamilyProfile?.locationArea || context.extractedEntities?.locationArea;
-        if (loc) bullets.push('Location: ' + loc);
-        
-        // Budget
-        const budgetMin = conversationFamilyProfile?.budgetMin;
-        const budgetMax = conversationFamilyProfile?.budgetMax;
-        const maxTuition = conversationFamilyProfile?.maxTuition;
-        let budgetDisplay = null;
-        if (maxTuition === 'unlimited') {
-          budgetDisplay = 'Budget is flexible';
-        } else if (budgetMin && budgetMax && budgetMin !== budgetMax) {
-          budgetDisplay = '$' + budgetMin.toLocaleString() + '-$' + budgetMax.toLocaleString() + '/year';
-        } else if (budgetMin && budgetMax && budgetMin === budgetMax) {
-          budgetDisplay = '$' + budgetMin.toLocaleString() + '/year';
-        } else if (budgetMax) {
-          budgetDisplay = 'Up to $' + budgetMax.toLocaleString() + '/year';
-        } else if (maxTuition && typeof maxTuition === 'number') {
-          budgetDisplay = '$' + maxTuition.toLocaleString() + '/year';
-        } else if (context.extractedEntities?.budgetSingle) {
-          budgetDisplay = '$' + Number(context.extractedEntities.budgetSingle).toLocaleString() + '/year';
-        }
-        if (budgetDisplay) bullets.push('Budget: ' + budgetDisplay);
-        
-        // Gender preference
-        if (conversationFamilyProfile?.genderPreference || context.extractedEntities?.genderPreference) {
-          bullets.push('Gender preference: ' + (conversationFamilyProfile?.genderPreference || context.extractedEntities?.genderPreference));
-        }
-        
-        // Class size
-        if (conversationFamilyProfile?.classSize || context.extractedEntities?.classSize) {
-          bullets.push('Class size: ' + (conversationFamilyProfile?.classSize || context.extractedEntities?.classSize));
-        }
-        
-        // Curriculum
-        if (conversationFamilyProfile?.curriculumPreference?.length) {
-          bullets.push('Curriculum: ' + conversationFamilyProfile.curriculumPreference.join(', '));
-        }
-        
-        // Program preferences
-        if (conversationFamilyProfile?.programPreferences?.length) {
-          bullets.push('Program preferences: ' + conversationFamilyProfile.programPreferences.join(', '));
-        }
-        
-        // Priorities
-        if (conversationFamilyProfile?.priorities?.length) {
-          bullets.push('Top priorities: ' + conversationFamilyProfile.priorities.join(', '));
-        }
-        
-        // Learning needs
-        const learningNeeds = conversationFamilyProfile?.learning_needs || conversationFamilyProfile?.specialNeeds || [];
-        if (learningNeeds.length) bullets.push('Learning needs: ' + learningNeeds.join(', '));
-        
-        // Wellbeing needs
-        if (conversationFamilyProfile?.wellbeing_needs?.length) {
-          bullets.push('Wellbeing needs: ' + conversationFamilyProfile.wellbeing_needs.join(', '));
-        }
-        
-        // Interests
-        if (conversationFamilyProfile?.interests?.length) {
-          bullets.push('Interests: ' + conversationFamilyProfile.interests.join(', '));
-        }
-        
-        // Academic strengths
-        if (conversationFamilyProfile?.academicStrengths?.length) {
-          bullets.push('Academic strengths: ' + conversationFamilyProfile.academicStrengths.join(', '));
-        }
-        
-        // Dealbreakers
-        if (conversationFamilyProfile?.dealbreakers?.length) {
-          bullets.push('Dealbreakers: ' + conversationFamilyProfile.dealbreakers.join(', '));
-        }
-        
-        // Boarding
-        if (context.extractedEntities?.boardingPreference) bullets.push('Boarding: Yes');
-        
-        // Religious preference
-        if (context.extractedEntities?.religiousPreference) {
-          bullets.push('Religious preference: ' + context.extractedEntities.religiousPreference);
-        }
-        
-        // Current situation
-        if (conversationFamilyProfile?.currentSituation) {
-          bullets.push('Current situation: ' + conversationFamilyProfile.currentSituation);
-        }
-        
-        // Build final message
-        const intro = consultantName === 'Jackie'
-          ? "Let me make sure I've got this right:\n\n"
-          : "Here's what I'm hearing:\n\n";
-        
-        const briefContent = bullets.length > 0
-          ? bullets.map(b => '\u2022 ' + b).join('\n')
-          : 'I captured your preferences but could not format them.';
-        
-        const briefMessage = intro + briefContent + "\n\nDoes that capture everything? Anything you'd like to adjust?";
-        
-        console.log('[ORCH BRIEF BYPASS] Generated brief with', bullets.length, 'bullets');
-        
-        return Response.json({
-          message: briefMessage,
-          state: STATES.BRIEF,
-          briefStatus: briefStatus || 'pending_review',
-          familyProfile: conversationFamilyProfile,
-          conversationContext: context,
-          schools: []
-        });
-        
-      } catch (briefBuildError) {
-        console.error('[ORCH BRIEF BYPASS ERROR]:', briefBuildError.message);
-        return Response.json({
-          message: "Here's what I've captured so far. Does that look right? Feel free to adjust anything.",
-          state: STATES.BRIEF,
-          briefStatus: briefStatus || 'pending_review',
-          familyProfile: conversationFamilyProfile,
-          conversationContext: context,
-          schools: []
-        });
+      // DIRECT BRIEF GENERATION - handleBrief.ts has permanent deployment error
+      console.log('[ORCH BRIEF] Building brief directly in orchestrator (handleBrief bypassed)');
+      
+      const bullets = [];
+      
+      // 1. Child name
+      const childName = conversationFamilyProfile?.childName || 'your child';
+      
+      // 2. Grade
+      const grade = context.extractedEntities?.childGrade;
+      let gradeDisplay = null;
+      if (grade === -1) {
+        gradeDisplay = 'JK';
+      } else if (grade === 0) {
+        gradeDisplay = 'SK';
+      } else if (grade !== null && grade !== undefined) {
+        gradeDisplay = 'Grade ' + grade;
       }
+      
+      if (childName !== 'your child' && gradeDisplay) {
+        bullets.push('Student: ' + childName + ', ' + gradeDisplay);
+      } else if (childName !== 'your child') {
+        bullets.push('Student: ' + childName);
+      } else if (gradeDisplay) {
+        bullets.push('Grade: ' + gradeDisplay);
+      }
+      
+      // 3. Location
+      const location = context.extractedEntities?.locationArea;
+      if (location) bullets.push('Location: ' + location);
+      
+      // 4. Budget
+      const maxTuition = conversationFamilyProfile?.maxTuition;
+      if (maxTuition && typeof maxTuition === 'number') {
+        bullets.push('Budget: $' + maxTuition.toLocaleString());
+      }
+      
+      // 5. Priorities
+      const priorities = conversationFamilyProfile?.priorities;
+      if (priorities && priorities.length > 0) {
+        bullets.push('Top priorities: ' + priorities.join(', '));
+      }
+      
+      // 6. Interests
+      const interests = conversationFamilyProfile?.interests;
+      if (interests && interests.length > 0) {
+        bullets.push('Interests: ' + interests.join(', '));
+      }
+      
+      // 7. Learning needs
+      const learningNeeds = conversationFamilyProfile?.learning_needs;
+      if (learningNeeds && learningNeeds.length > 0) {
+        bullets.push('Learning needs: ' + learningNeeds.join(', '));
+      }
+      
+      // 8. Gender preference
+      const genderPreference = context.extractedEntities?.genderPreference;
+      if (genderPreference) bullets.push('Gender preference: ' + genderPreference);
+      
+      // 9. Curriculum
+      const curriculum = conversationFamilyProfile?.curriculumPreference;
+      if (curriculum && curriculum.length > 0) {
+        bullets.push('Curriculum: ' + curriculum.join(', '));
+      }
+      
+      // 10. Dealbreakers
+      const dealbreakers = conversationFamilyProfile?.dealbreakers;
+      if (dealbreakers && dealbreakers.length > 0) {
+        bullets.push('Dealbreakers: ' + dealbreakers.join(', '));
+      }
+      
+      // Build message
+      const intro = consultantName === 'Jackie'
+        ? "Let me make sure I've got this right:\n\n"
+        : "Here's what I'm hearing:\n\n";
+      
+      const briefContent = bullets.length > 0
+        ? bullets.map(b => '\u2022 ' + b).join('\n')
+        : '\u2022 I captured your preferences but need more details.';
+      
+      const briefMessage = intro + briefContent + "\n\nDoes that capture everything? Anything you'd like to adjust?";
+      
+      console.log('[ORCH BRIEF] Generated brief with', bullets.length, 'bullets');
+      
+      return Response.json({
+        message: briefMessage,
+        state: STATES.BRIEF,
+        briefStatus: 'pending_review',
+        familyProfile: conversationFamilyProfile,
+        conversationContext: context,
+        schools: []
+      });
     }
 
     if (currentState === STATES.RESULTS) {
