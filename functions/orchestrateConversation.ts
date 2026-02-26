@@ -75,7 +75,7 @@ async function extractEntities(params) {
 
   let extractedData = {};
   let intentSignal = 'continue';
-  let result;
+  let result = { intentSignal: 'continue', briefDelta: { additions: [], updates: [], removals: [] } };
 
   try {
     const t1 = Date.now();
@@ -248,8 +248,8 @@ async function extractEntities(params) {
     }
 
     let finalResult = result;
-    if (extractedGrade !== null && !result.childGrade) {
-     finalResult = { ...result, childGrade: extractedGrade };
+    if (extractedGrade !== null && result && !result.childGrade) {
+     finalResult = { ...(result || {}), childGrade: extractedGrade };
     }
     
     if (finalResult.childAge && !finalResult.childGrade) {
