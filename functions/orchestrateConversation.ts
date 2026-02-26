@@ -239,112 +239,12 @@ async function extractEntities(params) {
       console.log('[INTENT SIGNAL]', intentSignal);
       console.log('[EXTRACT] OpenRouter returned intentSignal:', intentSignal);
     } catch (openrouterError) {
-      console.log('[OPENROUTER FALLBACK] Entity extraction falling back to InvokeLLM');
-      const extractionPrompt = `Extract ONLY factual data explicitly stated. Return JSON with NULL for anything not mentioned.
-
-    CURRENT KNOWN DATA:
-    ${JSON.stringify(knownData, null, 2)}
-
-    PARENT'S MESSAGE:
-    "${message}"
-
-    Extract ONLY:
-    - childName: string or null
-    - childAge: number or null (KI-14: extract if user mentions age in years, e.g., "14 years old" → 14)
-    - childGrade: number or null (e.g., 3 for Grade 3, -1 for JK, 0 for SK)
-    - childGender: "male" OR "female" OR null (KI-16: "son", "boy", "he/him" → "male"; "daughter", "girl", "she/her" → "female")
-    - locationArea: string (city name)
-    - budgetMin: number or null (minimum budget in dollars)
-    - budgetMax: number or null (maximum budget in dollars)
-    - budgetSingle: number or null (KI-15: Set if user states a budget amount, INCLUDING approximate or hedged amounts like "around", "about", "roughly", "up to", "no more than", "hoping to stay under". Extract the numeric value. Convert shorthand: $25K=25000, $30K=30000, 30k=30000. If user gives a range, use budgetMin/budgetMax instead.)
-    - maxTuition: "unlimited" OR number OR null (for backward compatibility)
-    - interests: array of strings or null
-    - priorities: array of strings or null (FIX 4: When user says "arts", "music", "theater", "drama" → priorities: ["Arts"]. When "STEM", "science", "math" → priorities: ["STEM"]. When "sports" → priorities: ["Sports"]. When "languages", "French", "Spanish" → priorities: ["Languages"])
-    - concerns: array or null
-    - dealbreakers: array or null
-    - learning_needs: array or null (e.g., "ADHD", "ASD", "dyslexia", "ESL", "gifted", "learning disability")
-    - wellbeing_needs: array or null (KI-13: "anxiety", "behavioral issues", "acting out", "feeling unsafe", "divorce impact", "depression", "social struggles", "confidence issues")
-    - childrenJson: string or null (KI-10: If the parent mentions MORE THAN ONE child, return a JSON array string of child objects. Each object should have: name (string or null), age (number or null), grade (number or null), gender ("male"/"female"/null), interests (array of strings), priorities (array of strings), learningNeeds (array of strings). Example: '[{"name":"Emma","grade":9,"gender":"female","interests":["STEM","robotics"],"priorities":["AP courses"],"learningNeeds":[]},{"name":"Noah","grade":3,"gender":"male","interests":[],"priorities":["small classes"],"learningNeeds":["dyslexia"]}]'. If only ONE child mentioned, return null.)
-    - curriculumPreference: array or null (e.g., "French immersion", "IB", "AP", "Montessori", "progressive", "traditional")
-    - programPreferences: array or null (e.g., "outdoor education", "French immersion", "arts focus", "STEM", "athletics", "music program")
-    - religiousPreference: string or null
-    - boardingPreference: string or null
-    - genderPreference: "Co-Ed" OR "All Boys" OR "All Girls" OR null
-    - classSize: string or null (e.g., "small", "standard", "15 students", "intimate")
-    - requestedSchools: array of school names or null
-    - financialAidInterest: boolean or null (triggered by "financial aid", "scholarship", "afford", "budget tight")
-    - specialNeeds: array or null (e.g., "ADHD", "ASD", "dyslexia", "ESL support")
-
-    Return ONLY valid JSON. Do NOT explain.`;
-
-      result = await base44.integrations.Core.InvokeLLM({
-        prompt: extractionPrompt,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            childName: { type: ["string", "null"] },
-            childAge: { type: ["number", "null"] },
-            childGrade: { type: ["number", "null"] },
-            childGender: { type: ["string", "null"] },
-            locationArea: { type: ["string", "null"] },
-            budgetMin: { type: ["number", "null"] },
-            budgetMax: { type: ["number", "null"] },
-            budgetSingle: { type: ["number", "null"] },
-            maxTuition: { type: ["number", "string", "null"] },
-            interests: { type: ["array", "null"], items: { type: "string" } },
-            priorities: { type: ["array", "null"], items: { type: "string" } },
-            concerns: { type: ["array", "null"], items: { type: "string" } },
-            dealbreakers: { type: ["array", "null"], items: { type: "string" } },
-            learning_needs: { type: ["array", "null"], items: { type: "string" } },
-            wellbeing_needs: { type: ["array", "null"], items: { type: "string" } },
-            childrenJson: { type: ["string", "null"] },
-            curriculumPreference: { type: ["array", "null"], items: { type: "string" } },
-            programPreferences: { type: ["array", "null"], items: { type: "string" } },
-            religiousPreference: { type: ["string", "null"] },
-            boardingPreference: { type: ["string", "null"] },
-            genderPreference: { type: ["string", "null"] },
-            classSize: { type: ["string", "null"] },
-            requestedSchools: { type: ["array", "null"], items: { type: "string" } },
-            financialAidInterest: { type: ["boolean", "null"] },
-            specialNeeds: { type: ["array", "null"], items: { type: "string" } },
-            intentSignal: { type: ["string"] },
-            briefDelta: {
-              type: ["object", "null"],
-              properties: {
-                additions: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      field: { type: "string" },
-                      value: {},
-                      confidence: { type: "string" }
-                    }
-                  }
-                },
-                updates: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      field: { type: "string" },
-                      old: {},
-                      new: {},
-                      confidence: { type: "string" }
-                    }
-                  }
-                },
-                removals: { type: "array", items: { type: "string" } }
-              }
-            }
-          }
-        }
-      });
-      if (result?.intentSignal) {
-        intentSignal = result.intentSignal;
-      }
-      console.log('[EXTRACT] InvokeLLM returned intentSignal:', intentSignal);
-      console.log('[OPENROUTER FALLBACK] Entity extraction failed, using InvokeLLM result');
+      console.error('[EXTRACT ERROR] OpenRouter failed:', openrouterError.message);
+      result = {
+        intentSignal: 'continue',
+        briefDelta: { additions: [], updates: [], removals: [] }
+      };
+      intentSignal = 'continue';
     }
 
     let finalResult = result;
@@ -802,29 +702,8 @@ async function handleDiscovery(params) {
       discoveryMessageRaw = aiResponse || 'Tell me more about your child.';
       console.log('[OPENROUTER] DISCOVERY response');
     } catch (openrouterError) {
-      console.log('[OPENROUTER FALLBACK] DISCOVERY response falling back to InvokeLLM');
-      try {
-        const responsePrompt = `${personaInstructions}
-
-    ENTITY EXTRACTION:
-    - LOCATION: ${hasLocation ? 'YES' : 'NO'}
-    - BUDGET: ${hasBudget ? 'YES' : 'NO'}
-    - GRADE: ${hasChildGrade ? 'YES' : 'NO'}
-
-    Recent chat:
-    ${conversationSummary}
-
-    Parent: "${message}"
-
-    Respond as ${consultantName}. ONE question max. No filler.`;
-
-        const fallbackResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: responsePrompt
-        });
-        discoveryMessageRaw = fallbackResponse?.response || fallbackResponse || 'Tell me more about your child.';
-      } catch (fallbackError) {
-        console.error('[FALLBACK ERROR] DISCOVERY response failed:', fallbackError.message);
-      }
+      console.error('[DISCOVERY ERROR] OpenRouter failed:', openrouterError.message);
+      discoveryMessageRaw = 'Tell me more about your child.';
     }
     
     if (currentSchools && currentSchools.length > 0) {
@@ -905,19 +784,8 @@ async function handleBrief(params) {
       adjustMessage = adjustResponse || "What would you like to adjust?";
       console.log('[OPENROUTER] BRIEF adjustment');
     } catch (openrouterError) {
-      console.log('[OPENROUTER FALLBACK] BRIEF adjustment falling back to InvokeLLM');
-      try {
-        const adjustPrompt = consultantName === 'Jackie'
-          ? `The parent wants to adjust something in their brief. Ask them a warm, open-ended question about what they'd like to change. Max 50 words. Be encouraging.`
-          : `The parent wants to adjust their brief. Ask them directly what needs to change. Max 50 words.`;
-
-        const fallbackResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: adjustPrompt
-        });
-        adjustMessage = fallbackResponse?.response || fallbackResponse || "What would you like to adjust?";
-      } catch (fallbackError) {
-        console.error('[FALLBACK ERROR] BRIEF adjustment failed:', fallbackError.message);
-      }
+      console.error('[BRIEF ERROR] OpenRouter failed:', openrouterError.message);
+      adjustMessage = "What would you like to adjust?";
     }
     
     return Response.json({
@@ -1511,43 +1379,8 @@ async function handleResults(params) {
         messageWithLinks = aiResponse || 'Here are the schools I found:';
         console.log('[OPENROUTER] RESULTS response');
       } catch (openrouterError) {
-        console.log('[OPENROUTER FALLBACK] RESULTS response falling back to InvokeLLM');
-        try {
-          const responsePrompt = consultantName === 'Jackie'
-            ? `[STATE: RESULTS] Explain these school matches. Focus on fit. Do NOT ask intake questions. Max 150 words.
-
-      NEVER USE THESE PHRASES (HARD BAN): "That's wonderful", "How exciting", "It sounds like you're looking for", "I understand you're eager", "I'd love to help you explore", "That's great", "I appreciate you sharing". If you catch yourself starting with any of these, DELETE IT and start over.
-
-      YOU ARE JACKIE - Senior education consultant, 10+ years placing families in private schools. You're warm but efficient - you respect the parent's time. You have real opinions and share them. You sound like a knowledgeable friend, not a customer service bot.
-
-      Recent chat:
-      ${conversationSummary}
-      ${schoolContext}
-
-      Parent: "${message}"
-
-      Respond as Jackie. ONE question max.`
-            : `[STATE: RESULTS] Explain these school matches. Focus on fit. Do NOT ask intake questions. Max 150 words.
-
-      NEVER USE THESE PHRASES (HARD BAN): "That's wonderful", "How exciting", "It sounds like you're looking for", "I understand you're eager", "I'd love to help you explore", "That's great", "I appreciate you sharing". If you catch yourself starting with any of these, DELETE IT and start over.
-
-      YOU ARE LIAM - Senior education strategist, 10+ years in private school placement. You're direct and data-driven - you cut to what matters. You give straight answers and move fast. You sound like a sharp advisor, not a chatbot.
-
-      Recent chat:
-      ${conversationSummary}
-      ${schoolContext}
-
-      Parent: "${message}"
-
-      Respond as Liam. ONE question max.`;
-
-          const fallbackResponse = await base44.integrations.Core.InvokeLLM({
-            prompt: responsePrompt
-          });
-          messageWithLinks = fallbackResponse?.response || fallbackResponse || 'Here are the schools I found:';
-        } catch (fallbackError) {
-          console.error('[FALLBACK ERROR] RESULTS response failed:', fallbackError.message);
-        }
+        console.error('[RESULTS ERROR] OpenRouter failed:', openrouterError.message);
+        messageWithLinks = 'Here are the schools I found:';
       }
       
       matchingSchools.forEach(school => {
