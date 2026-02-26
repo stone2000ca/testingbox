@@ -92,6 +92,9 @@ export default function Consultant() {
   const [lastTypingTime, setLastTypingTime] = useState(Date.now());
   const [familyProfile, setFamilyProfile] = useState(null);
   
+  // DEEPDIVE confirmation state
+  const [confirmingSchool, setConfirmingSchool] = useState(null);
+  
   // Progressive loading states
   const [loadingStage, setLoadingStage] = useState(0);
   const loadingStages = [
