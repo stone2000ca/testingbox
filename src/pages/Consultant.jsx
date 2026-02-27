@@ -1404,7 +1404,7 @@ Return empty array if user didn't provide any of these facts.`;
             onConfirmDeepDive={handleConfirmDeepDive}
             onCancelDeepDive={handleCancelDeepDive}
           />
-          </aside>
+        </aside>
         </div>
       )}
 
