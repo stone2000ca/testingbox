@@ -728,19 +728,39 @@ async function handleResults(base44, message, conversationFamilyProfile, context
     parsedTuition = typeof conversationFamilyProfile.maxTuition === 'number' ? conversationFamilyProfile.maxTuition : parseInt(conversationFamilyProfile.maxTuition);
   }
 
+  // T045: Resolve lat/lng from stated locationArea first, fall back to browser geolocation
+  const locationCoords = resolveLocationCoords(conversationFamilyProfile?.locationArea);
+  const resolvedLat = locationCoords?.lat ?? userLocation?.lat ?? null;
+  const resolvedLng = locationCoords?.lng ?? userLocation?.lng ?? null;
+  if (locationCoords) {
+    console.log(`[T045] Resolved "${conversationFamilyProfile?.locationArea}" to coords:`, locationCoords);
+  }
+
   const searchParams: any = {
     limit: 50,
     familyProfile: conversationFamilyProfile
   };
 
   if (conversationFamilyProfile?.locationArea) {
-    const locationParts = conversationFamilyProfile.locationArea.split(',').map(s => s.trim());
-    if (locationParts.length >= 2) {
-      searchParams.city = locationParts[0];
-      searchParams.provinceState = locationParts[1];
-    } else if (locationParts.length === 1) {
-      searchParams.city = locationParts[0];
+    const locationAreaLower = conversationFamilyProfile.locationArea.toLowerCase().trim();
+    // Handle regional aliases (GTA, Lower Mainland) — pass as region, not city
+    const regionAliases = ['gta', 'greater toronto area', 'lower mainland', 'metro vancouver', 'greater vancouver'];
+    if (regionAliases.includes(locationAreaLower)) {
+      searchParams.region = conversationFamilyProfile.locationArea;
+    } else {
+      const locationParts = conversationFamilyProfile.locationArea.split(',').map(s => s.trim());
+      if (locationParts.length >= 2) {
+        searchParams.city = locationParts[0];
+        searchParams.provinceState = locationParts[1];
+      } else if (locationParts.length === 1) {
+        searchParams.city = locationParts[0];
+      }
     }
+  }
+
+  if (resolvedLat && resolvedLng) {
+    searchParams.resolvedLat = resolvedLat;
+    searchParams.resolvedLng = resolvedLng;
   }
 
   if (parsedGrade !== null) {
