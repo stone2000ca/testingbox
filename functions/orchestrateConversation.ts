@@ -656,12 +656,17 @@ async function handleBrief(base44, message, conversationFamilyProfile, context, 
 
     let briefChildDisplayName = childName ? childName : 'your child';
 
-    const briefPrompt = consultantName === 'Jackie'
-      ? `[STATE: BRIEF] Generate a factual brief summary using the structured format below. Use ONLY what was explicitly stated by the parent.
+    const jackieBriefSystemPrompt = `[STATE: BRIEF] You are Jackie, a warm and experienced education consultant. Generate a brief summary of what the family has shared. Use ONLY what was explicitly stated by the parent.
 
 CRITICAL RULES:
+- Start with a warm, natural conversational sentence (1-2 sentences) acknowledging the family's situation before the numbered summary.
 - Do NOT invent personality traits, motivations, or character descriptions that were not explicitly stated by the parent.
 - If no personality was described, skip that section entirely.
+- End with: "Does that capture it? Anything to adjust?"
+
+YOU ARE JACKIE — warm, empathetic, experienced.`;
+
+    const jackieBriefUserPrompt = `Generate the family brief summary.
 
 FAMILY DATA:
 - CHILD: ${briefChildDisplayName}
@@ -672,27 +677,33 @@ FAMILY DATA:
 - INTERESTS: ${interestsStr || '(not specified)'}
 - DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
 
-UNIFIED FORMAT:
-[REQUIRED warm, conversational intro - Jackie tone]
+Format:
+- Open with a warm 1-2 sentence intro
+- Then a numbered list:
+  1. Student: ${briefChildDisplayName}
+  2. Location: ${locationArea || '(not specified)'}
+  3. Budget: ${budgetDisplay}
+  ${prioritiesStr ? '4. Top priorities: ' + prioritiesStr : ''}
+  ${interestsStr ? '5. Interests: ' + interestsStr : ''}
+  ${dealbreakersStr ? '6. Dealbreakers: ' + dealbreakersStr : ''}
+- End with: "Does that capture it? Anything to adjust?"`;
 
-1. Student: ${briefChildDisplayName}
-2. Location: ${locationArea || '(not specified)'}
-3. Budget: ${budgetDisplay}
-${prioritiesStr ? '4. Top priorities: ' + prioritiesStr + '\n' : ''}${interestsStr ? '5. Interests: ' + interestsStr + '\n' : ''}${dealbreakersStr ? '6. Dealbreakers: ' + dealbreakersStr + '\n' : ''}
-Does that capture it? Anything to adjust?
+    const liamBriefSystemPrompt = `[STATE: BRIEF] You are Liam, a direct and strategic education consultant. Generate a brief summary of what the family has shared. Use ONLY what was explicitly stated by the parent. Format as a numbered list. End with "Does that look right? Anything to change?"
 
-YOU ARE JACKIE.`
-      : `[STATE: BRIEF] Generate a factual brief summary. Use ONLY what was explicitly stated by the parent.
+YOU ARE LIAM — direct, strategic.`;
+
+    const liamBriefUserPrompt = `Generate the family brief summary.
 
 FAMILY DATA:
 - CHILD: ${briefChildDisplayName}
-- GRADE: ${childGrade || '(not specified)'}
+- GRADE: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}
 - LOCATION: ${locationArea || '(not specified)'}
 - BUDGET: ${budgetDisplay}
+- PRIORITIES: ${prioritiesStr || '(not specified)'}
+- INTERESTS: ${interestsStr || '(not specified)'}
+- DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
 
-Format as a numbered/ordered list (1. Student: ... 2. Location: ... 3. Budget: ... etc.). Be direct.
-
-YOU ARE LIAM.`;
+Format as a numbered list (1. Student: ... 2. Location: ... 3. Budget: ... etc.). Be direct.`;
 
     let briefMessageText = "Let me summarize what you've shared.";
     try {
