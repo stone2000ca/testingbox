@@ -1252,6 +1252,7 @@ Return empty array if user didn't provide any of these facts.`;
               </div>
               <div className="flex-1 overflow-auto p-3 sm:p-4">
                 <SchoolGrid
+                  key={schoolsAnimKey}
                   schools={filteredSchools}
                   onViewDetails={handleViewSchoolDetail}
                   onToggleShortlist={handleToggleShortlist}
