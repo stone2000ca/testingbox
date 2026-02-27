@@ -40,7 +40,13 @@ export default function SchoolGrid({ schools, onViewDetails, onToggleShortlist, 
   const visibleSchools = schools.slice(0, displayedCount);
 
   return (
-    <div ref={scrollContainerRef}>
+    <div
+      ref={scrollContainerRef}
+      style={{
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 350ms ease',
+      }}
+    >
       <div className="mb-4 text-sm text-slate-600">
         Showing {visibleSchools.length} of {schools.length} schools
       </div>
