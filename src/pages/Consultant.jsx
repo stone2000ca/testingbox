@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { STATES, BRIEF_STATUS } from './stateMachineConfig';
 import { Button } from "@/components/ui/button";
-import { Plus, Heart, FileText, Sparkles, Trash2, Star, ClipboardList, RefreshCw, X } from "lucide-react";
+import { Plus, Heart, FileText, Sparkles, Trash2, Star, ClipboardList } from "lucide-react";
 import IconRail from '@/components/navigation/IconRail';
 import FamilyBrief from '@/components/chat/FamilyBrief';
 import WelcomeState from '@/components/schools/WelcomeState';
