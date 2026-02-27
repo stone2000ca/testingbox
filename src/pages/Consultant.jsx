@@ -87,6 +87,11 @@ export default function Consultant() {
   
   // DEEPDIVE confirmation state
   const [confirmingSchool, setConfirmingSchool] = useState(null);
+
+  // T044: Results stale banner
+  const [resultsStale, setResultsStale] = useState(false);
+  const [staleBannerDismissed, setStaleBannerDismissed] = useState(false);
+  const [isRefreshingMatches, setIsRefreshingMatches] = useState(false);
   
   // Progressive loading states
   const [loadingStage, setLoadingStage] = useState(0);
