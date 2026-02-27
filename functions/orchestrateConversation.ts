@@ -748,6 +748,12 @@ async function handleResults(base44, message, conversationFamilyProfile, context
       
       const resultsSystemPrompt = `[STATE: RESULTS] Explain these school matches. Focus on fit. Do NOT ask intake questions. Max 150 words.
 
+CRITICAL STEERING RULE: You are in RESULTS state. If the parent mentions a change to grade, location, budget, or gender (e.g. "actually Grade 9", "we moved to Vancouver", "our budget is $30k"), you MUST:
+1. Briefly acknowledge the update in one sentence (e.g. "Got it — I've noted the grade change.")
+2. Stay in results mode — do NOT generate a new brief, do NOT ask discovery questions, do NOT restart onboarding
+3. Inform them that their matches will be refreshed (the system handles this automatically)
+4. Keep your response focused on the current schools or the update acknowledgement only
+
 ${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic.' : 'YOU ARE LIAM - Direct, strategic.'}`;
 
       const resultsUserPrompt = `Recent chat:\n${conversationSummary}\n${schoolContext}\n\nParent: "${message}"\n\nRespond as ${consultantName}. ONE question max.`;
