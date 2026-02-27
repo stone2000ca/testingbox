@@ -1268,15 +1268,11 @@ Return empty array if user didn't provide any of these facts.`;
           </button>
         </div>
 
-        {/* T046: Icon Rail */}
-        <IconRail
-          currentState={currentState}
-          showFamilyBrief={showFamilyBrief}
-          onToggleBrief={() => setShowFamilyBrief(v => !v)}
-        />
-
         {/* CENTER CONTENT AREA */}
-        <main className="flex-1 overflow-hidden bg-white transition-opacity duration-200" style={{ animationDelay: '100ms' }}>
+        <main
+          className="overflow-hidden bg-white transition-all duration-200 ease-out"
+          style={{ flex: 1, minWidth: 0 }}
+        >
           {/* T044: Results stale banner */}
           {resultsStale && !staleBannerDismissed && [STATES.RESULTS, STATES.DEEP_DIVE].includes(currentState) && (
             <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-[#1E1E2E] border-b border-white/10">
