@@ -856,20 +856,29 @@ async function handleResults(base44, message, conversationFamilyProfile, context
           return `${s.name} | ${s.city} | Grade ${s.lowestGrade}-${s.highestGrade} | Tuition: ${tuitionStr}`;
         }).join('\n');
       
+      const autoRefreshEntitiesStr = Object.keys(extractedEntities).filter(k =>
+        !['intentSignal', 'briefDelta', 'remove_priorities', 'remove_interests', 'remove_dealbreakers', 'gender'].includes(k)
+      ).join(', ');
+
       const resultsSystemPrompt = `[STATE: RESULTS] You are currently showing school results to the parent.
 
 CRITICAL STATE RULE — READ THIS FIRST:
-You are in RESULTS state. The parent is viewing their school matches. If the parent updates any preference (e.g. "actually grade 6", "our budget changed", "we want boarding", "looking in Vancouver now"), you MUST:
-1. Acknowledge it in ONE short sentence only. Example: "Got it, noted grade 6." or "Updated — I've noted the new budget."
-2. Tell them they can refresh their matches: "You can hit Refresh Matches whenever you're ready."
-3. STOP. Do not write anything else.
+You are in RESULTS state. The parent is viewing their school matches.
+
+${autoRefresh && autoRefreshEntitiesStr ? `AUTO-REFRESH MODE: New information was just extracted (${autoRefreshEntitiesStr}). The matches have ALREADY been silently updated. You MUST:
+1. In ONE natural sentence, tell the parent you've updated their matches based on the new info. E.g. "I've refreshed your matches based on the STEM interest — here's what changed." or "Updated your matches now that I know the budget is $30K."
+2. Then briefly describe the top results shown, as usual. Max 150 words total.
+3. Do NOT ask "Does that look right?" or any confirmation question.` : `If the parent updates any preference (e.g. "actually grade 6", "our budget changed", "we want boarding", "looking in Vancouver now"), you MUST:
+1. Acknowledge it in ONE short sentence only. Example: "Got it, noted grade 6 — I've updated your matches."
+2. STOP. Do not write anything else.`}
 
 ABSOLUTE PROHIBITIONS in RESULTS state when a preference update is detected:
 - Do NOT generate a numbered list of their preferences (Student, Location, Budget, etc.)
 - Do NOT produce a brief summary or profile recap
 - Do NOT ask "Does that look right?" or any confirmation question
 - Do NOT re-list what you know about their family
-- Do NOT produce more than 2 sentences total for a preference update
+- Do NOT produce more than 2 sentences total for a preference update (unless AUTO-REFRESH MODE)
+- NEVER mention a "Refresh Matches" button — it does not exist
 
 If the parent is asking about the schools (not updating preferences), explain the matches. Focus on fit. Max 150 words.
 
