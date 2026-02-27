@@ -1615,14 +1615,7 @@ Return empty array if user didn't provide any of these facts.`;
         />
       )}
 
-      {/* Family Brief overlay panel */}
-      {showFamilyBrief && isBriefState && (
-        <FamilyBrief
-          familyProfile={familyProfile}
-          consultantName={selectedConsultant}
-          onClose={() => setShowFamilyBrief(false)}
-        />
-      )}
+      {/* T046: Panel rendered inline in layout, no overlay needed */}
     </div>
   );
 }
