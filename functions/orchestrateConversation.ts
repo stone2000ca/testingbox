@@ -1164,8 +1164,7 @@ Deno.serve(async (req) => {
       Object.assign(conversationFamilyProfile, extractionResult.updatedFamilyProfile);
       Object.assign(context, extractionResult.updatedContext);
 
-      // T040b: Compare Tier 1 fields after merge and set resultsStale flag
-      // A field "changed" = (old was null AND new is non-null) OR (old was non-null AND new is non-null AND different)
+      // T047: Compare extracted entities to detect any new data — triggers silent match refresh
       const tier1After = {
         childGrade: conversationFamilyProfile?.childGrade ?? null,
         locationArea: conversationFamilyProfile?.locationArea ?? null,
@@ -1175,13 +1174,24 @@ Deno.serve(async (req) => {
       const tier1Changed = Object.keys(tier1Before).some(k => {
         const oldVal = tier1Before[k];
         const newVal = tier1After[k];
-        if (newVal === null || newVal === undefined) return false; // new null never triggers stale
-        if (oldVal === null || oldVal === undefined) return true;  // null → real value = changed
-        return oldVal !== newVal;                                   // both non-null, different = changed
+        if (newVal === null || newVal === undefined) return false;
+        if (oldVal === null || oldVal === undefined) return true;
+        return oldVal !== newVal;
       });
+      // Also detect non-tier1 entity changes (interests, priorities, dealbreakers)
+      const extractedKeys = Object.keys(extractionResult?.extractedEntities || {}).filter(k =>
+        !['intentSignal', 'briefDelta', 'remove_priorities', 'remove_interests', 'remove_dealbreakers'].includes(k)
+      );
+      const anyEntityExtracted = extractedKeys.length > 0;
       const inResultsOrDeepDive = context.state === STATES.RESULTS || context.state === STATES.DEEP_DIVE;
-      context.resultsStale = tier1Changed && inResultsOrDeepDive;
-      if (tier1Changed) console.log('[T040b] Tier 1 changed:', tier1Before, '->', tier1After, '| resultsStale:', context.resultsStale);
+      // T047: auto-refresh flag — set when ANY entity changes in RESULTS/DEEPDIVE
+      const shouldAutoRefresh = (tier1Changed || anyEntityExtracted) && inResultsOrDeepDive;
+      context.resultsStale = false; // No longer used for UI banner
+      context.autoRefreshed = shouldAutoRefresh;
+      if (shouldAutoRefresh) {
+        console.log('[T047] Entity change detected in RESULTS/DEEPDIVE — will auto-refresh matches');
+        console.log('[T047] Changed entities:', extractedKeys, '| Tier1 changed:', tier1Changed);
+      }
 
       // STEP 2: WELCOME HANDLER — now runs after extraction so conversationFamilyProfile
       // already contains any entities from the first message.
