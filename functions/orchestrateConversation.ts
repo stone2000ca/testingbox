@@ -385,6 +385,13 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     if (extractedGrade !== null && !finalResult.childGrade) {
       finalResult = { ...finalResult, childGrade: extractedGrade };
     }
+    // BUG-ENT-004: Apply regex-pre-passed gender/budget only if LLM didn't extract them
+    if (extractedGender !== null && !finalResult.gender) {
+      finalResult = { ...finalResult, gender: extractedGender };
+    }
+    if (extractedBudget !== null && !finalResult.maxTuition) {
+      finalResult = { ...finalResult, maxTuition: extractedBudget };
+    }
 
     const cleaned: any = {};
     for (const [key, value] of Object.entries(finalResult)) {
