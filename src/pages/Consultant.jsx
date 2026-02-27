@@ -85,6 +85,8 @@ export default function Consultant() {
   const [lastTypingTime, setLastTypingTime] = useState(Date.now());
   const [familyProfile, setFamilyProfile] = useState(null);
   const [showFamilyBrief, setShowFamilyBrief] = useState(false);
+  // T046: Right-side rail panel state
+  const [activePanel, setActivePanel] = useState(null); // 'brief' | 'shortlist' | null
   
   // DEEPDIVE confirmation state
   const [confirmingSchool, setConfirmingSchool] = useState(null);
