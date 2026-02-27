@@ -155,6 +155,20 @@ function resolveTransition(params) {
   console.log('[RESOLVE] Input:', { currentState, intentSignal, sufficiency, turnCount, briefEditCount, selectedSchoolId });
   console.log('[DEBUG-BRIEF] briefStatus:', params.briefStatus, 'userMessage:', userMessage);
 
+  // BUG-FLOW-001 HARD GUARD: RESULTS and DEEPDIVE can NEVER regress to BRIEF or DISCOVERY.
+  // This is a code-level override — no intentSignal or LLM output can bypass it.
+  // The only valid transitions out of RESULTS/DEEPDIVE are: DEEP_DIVE (school selected) or staying put.
+  const inResultsOrDeepDive = currentState === STATES.RESULTS || currentState === STATES.DEEP_DIVE;
+  if (inResultsOrDeepDive) {
+    // Allow school selection to enter DEEP_DIVE
+    if (selectedSchoolId && selectedSchoolId !== previousSchoolId) {
+      return { nextState: STATES.DEEP_DIVE, sufficiency, flags, transitionReason: 'school_selected' };
+    }
+    // Everything else: stay put. Never go to BRIEF or DISCOVERY.
+    console.log('[HARD GUARD] Blocked regression from', currentState, '— intentSignal was:', intentSignal);
+    return { nextState: currentState, sufficiency, flags, transitionReason: 'hard_guard_results_deepdive' };
+  }
+
   if (currentState === STATES.WELCOME && turnCount > 0) {
     return { nextState: STATES.DISCOVERY, sufficiency, flags, transitionReason: 'auto_welcome_exit' };
   }
