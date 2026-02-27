@@ -366,16 +366,30 @@ async function handleDiscovery(base44, message, conversationFamilyProfile, conte
     ? '\n\nIf it feels natural in the conversation, offer to generate their Family Brief.'
     : '';
 
+  // T038: Tier 1 guided collection — check which core data points are missing
+  const hasGrade = conversationFamilyProfile?.childGrade !== null && conversationFamilyProfile?.childGrade !== undefined;
+  const hasLocation = !!conversationFamilyProfile?.locationArea;
+  const hasBudget = !!conversationFamilyProfile?.maxTuition;
+
+  let tier1Guidance = '';
+  if (!hasGrade) {
+    tier1Guidance = "TIER 1 PRIORITY: Grade/age has not been collected yet. If the conversation allows, naturally steer toward asking about the child's grade or age.";
+  } else if (!hasLocation) {
+    tier1Guidance = "TIER 1 PRIORITY: Location has not been collected yet. If the conversation allows, naturally steer toward asking about the city or region they're looking in.";
+  } else if (!hasBudget) {
+    tier1Guidance = "TIER 1 PRIORITY: Budget has not been collected yet. If the conversation allows, naturally steer toward asking about their tuition budget or range.";
+  }
+
   const personaInstructions = consultantName === 'Jackie'
-    ? `[STATE: DISCOVERY] You are gathering family info. Ask ONE focused question at a time. Always answer their question first, then ask yours. Do NOT recommend schools or mention school names. Max 150 words.
-
-CRITICAL: Do NOT generate a brief, summary, or any bullet-point summary of the family's needs. You are ONLY asking questions right now. Keep gathering information.${briefOfferInstruction}
-
+    ? `[STATE: DISCOVERY] You are gathering family info to find the right school. Your primary goal is to collect Tier 1 data: child's grade/age, preferred location, and budget — in that priority order.
+${tier1Guidance}
+Ask ONE focused question at a time. Always answer their question first, then ask yours. Do NOT recommend schools or mention school names. Max 150 words.
+CRITICAL: Do NOT generate a brief, summary, or any bullet-point summary of the family's needs. You are ONLY asking questions right now. Do NOT interrupt emotional or contextual sharing — allow organic conversation flow. Keep gathering information.${briefOfferInstruction}
 YOU ARE JACKIE - Senior education consultant, 10+ years placing families in private schools. You're warm but efficient.`
-    : `[STATE: DISCOVERY] You are gathering family info. Ask ONE focused question at a time. Always answer their question first, then ask yours. Do NOT recommend schools or mention school names. Max 150 words.
-
-CRITICAL: Do NOT generate a brief, summary, or any bullet-point summary of the family's needs. You are ONLY asking questions right now. Keep gathering information.${briefOfferInstruction}
-
+    : `[STATE: DISCOVERY] You are gathering family info to find the right school. Your primary goal is to collect Tier 1 data: child's grade/age, preferred location, and budget — in that priority order.
+${tier1Guidance}
+Ask ONE focused question at a time. Always answer their question first, then ask yours. Do NOT recommend schools or mention school names. Max 150 words.
+CRITICAL: Do NOT generate a brief, summary, or any bullet-point summary of the family's needs. You are ONLY asking questions right now. Do NOT interrupt emotional or contextual sharing — allow organic conversation flow. Keep gathering information.${briefOfferInstruction}
 YOU ARE LIAM - Senior education strategist, 10+ years in private school placement. You're direct and data-driven.`;
 
   const discoveryUserPrompt = `Recent chat:\n${conversationSummary}\n\nParent: "${message}"\n\nRespond as ${consultantName}. ONE question max. No filler.`;
