@@ -1229,7 +1229,7 @@ Return empty array if user didn't provide any of these facts.`;
           </div>
         </div>
       ) : (
-        /* RESULTS PHASE - Sidebar Layout */
+        /* RESULTS PHASE - Split Layout */
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative transition-all duration-400 pb-0">
         {/* Mobile tab toggle */}
         <div className="lg:hidden flex border-b bg-white">
@@ -1257,116 +1257,12 @@ Return empty array if user didn't provide any of these facts.`;
           </button>
         </div>
 
-        {/* LEFT SIDEBAR */}
-        <aside className={`
-          ${sidebarCollapsed ? 'w-0' : 'w-64'}
-          transition-all duration-300 bg-slate-100 border-r flex-col overflow-hidden
-          hidden lg:flex
-        `}>
-          {!sidebarCollapsed && (
-            <>
-              <div className="p-4 border-b bg-white">
-                <Button 
-                  className="w-full bg-teal-600 hover:bg-teal-700" 
-                  onClick={createNewConversation}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Conversation
-                </Button>
-              </div>
-
-              <div className="border-b bg-white p-3 space-y-2">
-                <button 
-                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 text-sm transition-colors"
-                  onClick={() => setShowShortlistPanel(true)}
-                >
-                  <div className="flex items-center gap-2">
-                    <Heart className="h-4 w-4 text-teal-600" />
-                    <span className="font-medium">Shortlisted</span>
-                  </div>
-                  <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">
-                    {shortlistData.length}
-                  </span>
-                </button>
-                <button 
-                  className="w-full flex items-center gap-2 p-3 rounded-lg hover:bg-slate-50 text-sm transition-colors"
-                  onClick={() => setShowNotesPanel(true)}
-                >
-                  <FileText className="h-4 w-4 text-slate-600" />
-                  <span className="font-medium">Notes</span>
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {conversations.length === 0 ? (
-                  <div className="text-center py-12 text-slate-500 text-sm">
-                    <p>No conversations yet</p>
-                  </div>
-                ) : (
-                  conversations.map(convo => (
-                    <div
-                      key={convo.id}
-                      onClick={() => selectConversation(convo)}
-                      className={`p-3 rounded-lg cursor-pointer transition-all group ${
-                        currentConversation?.id === convo.id
-                          ? 'bg-white shadow border border-teal-200'
-                          : 'hover:bg-white'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate text-slate-900">{convo.title}</p>
-                          <p className="text-xs text-slate-500 mt-1">
-                            {new Date(convo.updated_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <button
-                          onClick={(e) => toggleStarConversation(convo, e)}
-                          className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          {convo.starred ? (
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          ) : (
-                            <Star className="h-4 w-4 text-slate-400 hover:text-yellow-400" />
-                          )}
-                        </button>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setConversationToDelete(convo);
-                          setDeleteDialogOpen(true);
-                        }}
-                        className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-4 w-4 text-slate-400 hover:text-red-600" />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-              {/* Collapse button */}
-              <div className="border-t bg-white p-2">
-                <button
-                  onClick={() => setSidebarCollapsed(true)}
-                  className="w-full p-2 rounded hover:bg-slate-50 transition flex items-center justify-center"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-              </div>
-            </>
-          )}
-        </aside>
-
-        {/* Expand button when collapsed */}
-        {sidebarCollapsed && (
-          <button
-            onClick={() => setSidebarCollapsed(false)}
-            className="fixed left-0 top-1/2 -translate-y-1/2 z-50 bg-white border border-l-0 border-slate-200 rounded-r-lg p-2 shadow-lg hover:bg-slate-50 transition-all"
-          >
-            <ChevronRight className="h-5 w-5 text-slate-600" />
-          </button>
-        )}
+        {/* T046: Icon Rail */}
+        <IconRail
+          currentState={currentState}
+          showFamilyBrief={showFamilyBrief}
+          onToggleBrief={() => setShowFamilyBrief(v => !v)}
+        />
 
         {/* CENTER CONTENT AREA */}
         <main className={`flex-1 overflow-hidden bg-white transition-opacity duration-200 ${
