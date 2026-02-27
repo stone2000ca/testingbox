@@ -96,7 +96,7 @@ function resolveTransition(params) {
 
   // Dynamic cap tracking: store turn when Tier 1 first became complete
   const tier1Complete = hasGrade && hasLocation && hasBudget;
-  let tier1CompletedTurn = params.tier1CompletedTurn || null;
+  let tier1CompletedTurn = storedTier1CompletedTurn || null;
   if (tier1Complete && tier1CompletedTurn === null) {
     tier1CompletedTurn = turnCount;
     flags.tier1CompletedTurn = tier1CompletedTurn;
