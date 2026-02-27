@@ -706,17 +706,19 @@ FAMILY DATA:
 Format as a numbered list (1. Student: ... 2. Location: ... 3. Budget: ... etc.). Be direct.`;
 
     let briefMessageText = "Let me summarize what you've shared.";
+    const briefSysPrompt = consultantName === 'Jackie' ? jackieBriefSystemPrompt : liamBriefSystemPrompt;
+    const briefUsrPrompt = consultantName === 'Jackie' ? jackieBriefUserPrompt : liamBriefUserPrompt;
     try {
       const briefResult = await callOpenRouter({
-        systemPrompt: briefPrompt.split('\n\n')[0],
-        userPrompt: briefPrompt.split('\n\n').slice(1).join('\n\n'),
+        systemPrompt: briefSysPrompt,
+        userPrompt: briefUsrPrompt,
         maxTokens: 800,
         temperature: 0.5
       });
       briefMessageText = briefResult || "Let me summarize what you've shared.";
     } catch (openrouterError) {
       try {
-        const briefResult = await base44.integrations.Core.InvokeLLM({ prompt: briefPrompt });
+        const briefResult = await base44.integrations.Core.InvokeLLM({ prompt: briefSysPrompt + '\n\n' + briefUsrPrompt });
         briefMessageText = briefResult?.response || briefResult || "Let me summarize what you've shared.";
       } catch (fallbackError) {
         console.error('[ERROR] InvokeLLM BRIEF fallback failed:', fallbackError.message);
