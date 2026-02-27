@@ -388,6 +388,10 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     if (extractedBudget !== null && !finalResult.maxTuition) {
       finalResult = { ...finalResult, maxTuition: extractedBudget };
     }
+    // BUG-ENT-005: Regex fallback for locationArea — same pattern as grade/budget
+    if (extractedLocation !== null && !finalResult.locationArea) {
+      finalResult = { ...finalResult, locationArea: extractedLocation };
+    }
 
     const cleaned: any = {};
     for (const [key, value] of Object.entries(finalResult)) {
