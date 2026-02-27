@@ -1013,6 +1013,11 @@ Deno.serve(async (req) => {
       context.briefStatus = briefStatus;
       context.dataSufficiency = resolveResult.sufficiency;
       context.transitionReason = resolveResult.transitionReason;
+      if (resolveResult.tier1CompletedTurn !== undefined && resolveResult.tier1CompletedTurn !== null) {
+        context.tier1CompletedTurn = resolveResult.tier1CompletedTurn;
+      } else if (resolveResult.flags?.tier1CompletedTurn) {
+        context.tier1CompletedTurn = resolveResult.flags.tier1CompletedTurn;
+      }
 
       console.log(`[STATE] ${currentState} | briefStatus: ${briefStatus} | sufficiency: ${context.dataSufficiency} | reason: ${context.transitionReason}`);
 
