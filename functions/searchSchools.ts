@@ -50,6 +50,8 @@ async function performSearch(req) {
     schoolType,
     userLat,
     userLng,
+    resolvedLat,
+    resolvedLng,
     maxDistanceKm,
     commuteToleranceMinutes,
     limit = 20,
