@@ -251,6 +251,7 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
               childGrade: { type: ['number', 'null'] },
               locationArea: { type: ['string', 'null'] },
               maxTuition: { type: ['number', 'null'] },
+              gender: { type: ['string', 'null'] },
               priorities: { type: 'array', items: { type: 'string' } },
               interests: { type: 'array', items: { type: 'string' } },
               dealbreakers: { type: 'array', items: { type: 'string' } },
