@@ -108,7 +108,7 @@ export default function Consultant() {
   const currentState = currentConversation?.conversationContext?.state || STATES.WELCOME;
 
   // Whether the Family Brief toggle should be visible
-  const isBriefState = [STATES.DISCOVERY, STATES.BRIEF].includes(currentState);
+  const isBriefState = true; // T045: FamilyBrief visible in all states
   const hasFamilyProfileData = familyProfile && Object.entries(familyProfile).some(
     ([k, v]) => !['id', 'userId', 'conversationId', 'created_date', 'updated_date', 'created_by', 'onboardingPhase', 'onboardingComplete'].includes(k)
       && v !== null && v !== undefined && !(Array.isArray(v) && v.length === 0) && v !== ''
