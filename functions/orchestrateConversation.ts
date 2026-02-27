@@ -131,13 +131,14 @@ function resolveTransition(params) {
       return { nextState: STATES.BRIEF, sufficiency, flags, transitionReason: 'explicit_demand', briefStatus: 'generating' };
     }
   }
-  if (turnCount >= 5 && currentState === STATES.DISCOVERY) {
-    flags.FORCED_TRANSITION = true;
-    return { nextState: STATES.BRIEF, sufficiency, flags, transitionReason: 'hard_cap', briefStatus: 'generating' };
-  }
-  if (turnCount >= 5 && currentState === STATES.DISCOVERY && (sufficiency === 'MINIMUM' || sufficiency === 'RICH')) {
-    flags.SUGGEST_BRIEF = true;
-    return { nextState: STATES.DISCOVERY, sufficiency, flags, transitionReason: 'soft_nudge' };
+  if (currentState === STATES.DISCOVERY) {
+    if (tier1Complete && tier1CompletedTurn !== null && turnCount >= (tier1CompletedTurn + 2)) {
+      flags.FORCED_TRANSITION = true;
+      return { nextState: STATES.BRIEF, sufficiency, flags, transitionReason: 'enrichment_cap', briefStatus: 'generating', tier1CompletedTurn };
+    } else if (turnCount >= 10) {
+      flags.FORCED_TRANSITION = true;
+      return { nextState: STATES.BRIEF, sufficiency, flags, transitionReason: 'hard_cap', briefStatus: 'generating', tier1CompletedTurn };
+    }
   }
   if (intentSignal === 'request-brief' && turnCount < 3 && (sufficiency === 'MINIMUM' || sufficiency === 'RICH')) {
     flags.USER_INTENT_OVERRIDE = true;
