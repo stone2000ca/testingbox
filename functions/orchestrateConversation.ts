@@ -382,7 +382,7 @@ async function handleDiscovery(base44, message, conversationFamilyProfile, conte
   } else if (!hasLocation) {
     tier1Guidance = "TIER 1 PRIORITY: Location has not been collected yet. If the conversation allows, naturally steer toward asking about the city or region they're looking in.";
   } else if (!hasBudget) {
-    tier1Guidance = "TIER 1 PRIORITY: Budget has not been collected yet. If the conversation allows, naturally steer toward asking about their tuition budget or range.";
+    tier1Guidance = "TIER 1 PRIORITY: Budget has not been collected yet. If the conversation allows, naturally steer toward asking about their tuition budget or range. Budget is always annual tuition. Do NOT ask to confirm if it is per year or per month. Accept the number as-is.";
   }
 
   const personaInstructions = consultantName === 'Jackie'
