@@ -225,6 +225,8 @@ RESPONSE SCHEMA:
 CRITICAL: Extract budget/tuition amounts if mentioned (e.g., "$25,000", "25k per year", "budget is unlimited"). Store as maxTuition (number or "unlimited")
 Do NOT infer budget if user has not explicitly stated it.
 
+CRITICAL: If the user explicitly negates or removes a previously stated preference (e.g. "actually, not interested in sports", "remove arts from my priorities", "I changed my mind about boarding"), populate the corresponding remove_* field (remove_interests, remove_priorities, remove_dealbreakers) with the items to remove. Leave additive arrays for new additions only.
+
 CRITICAL: If the user confirms the brief or says something like "that looks right", "show me schools", "yes", "confirmed", "let's see", "go ahead", set intentSignal to 'confirm-brief'.`;
 
     const userPrompt = `CURRENT KNOWN DATA:
