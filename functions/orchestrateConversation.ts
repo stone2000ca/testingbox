@@ -278,6 +278,13 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
     if (/\b(son|boy|he|him|his)\b/i.test(message)) extractedGender = 'male';
     else if (/\b(daughter|girl|she|her|hers)\b/i.test(message)) extractedGender = 'female';
 
+    // BUG-ENT-005: Regex pre-pass for locationArea — city/province patterns
+    let extractedLocation = null;
+    const locationMatch = message.match(/\b(?:in|near|around|from)\s+([A-Z][a-zA-Z]+(?:[\s-][A-Z][a-zA-Z]+)?(?:,\s*[A-Za-z]{2,})?)/);
+    if (locationMatch && locationMatch[1]) {
+      extractedLocation = locationMatch[1].trim();
+    }
+
     // BUG-ENT-004: Regex pre-pass for conversational budget formats: 25K, $25K, 25 thousand, around $25,000
     let extractedBudget = null;
     const budgetMatch = message.match(/(?:budget|tuition|afford|pay|spend)?[^.]*?\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*(?:k|thousand|K)?/i);
