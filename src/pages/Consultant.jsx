@@ -939,53 +939,7 @@ Return empty array if user didn't provide any of these facts.`;
     handleBackToResults();
   };
 
-  // T044: Refresh matches when stale
-  const handleRefreshMatches = async () => {
-    setIsRefreshingMatches(true);
-    // If in DEEPDIVE, return to RESULTS first
-    if (currentState === STATES.DEEP_DIVE) {
-      setSelectedSchool(null);
-      setCurrentView('schools');
-    }
-    try {
-      const response = await base44.functions.invoke('orchestrateConversation', {
-        message: 'show me updated schools',
-        conversationHistory: messages,
-        conversationContext: {
-          ...(currentConversation?.conversationContext || {}),
-          state: STATES.RESULTS,
-          resultsStale: false
-        },
-        region: user?.profileRegion || 'Canada',
-        userId: user?.id,
-        consultantName: selectedConsultant,
-        currentSchools: [],
-        userLocation: userLocation ? { lat: userLocation.lat, lng: userLocation.lng, address: userLocation.address } : null,
-        selectedSchoolId: null
-      });
-      if (response.data.schools && response.data.schools.length > 0) {
-        setSchools(response.data.schools);
-        resetSort();
-      }
-      if (response.data.familyProfile) setFamilyProfile(response.data.familyProfile);
-      const updatedContext = {
-        ...(currentConversation?.conversationContext || {}),
-        ...(response.data.conversationContext || {}),
-        state: STATES.RESULTS,
-        resultsStale: false,
-        schools: response.data.schools || []
-      };
-      setCurrentConversation(prev => ({ ...prev, conversationContext: updatedContext }));
-      if (response.data.message) {
-        setMessages(prev => [...prev, { role: 'assistant', content: response.data.message, timestamp: new Date().toISOString() }]);
-      }
-    } catch (e) {
-      console.error('Refresh matches failed:', e);
-    }
-    setResultsStale(false);
-    setStaleBannerDismissed(true);
-    setIsRefreshingMatches(false);
-  };
+  // T047: No manual refresh handler needed — matches auto-refresh on entity extraction
 
   const handleToggleShortlist = async (schoolId) => {
     // Login gate for shortlist
