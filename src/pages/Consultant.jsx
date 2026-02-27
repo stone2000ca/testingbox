@@ -686,11 +686,9 @@ export default function Consultant() {
         setFamilyProfile(response.data.familyProfile);
       }
 
-      // T044: Read resultsStale flag from backend context
-      const backendResultsStale = response.data.conversationContext?.resultsStale === true;
-      if (backendResultsStale) {
-        setResultsStale(true);
-        setStaleBannerDismissed(false); // re-show banner on new Tier 1 change
+      // T047: If matches were auto-refreshed, bump animation key to trigger fade/reorder
+      if (response.data.conversationContext?.autoRefreshed === true) {
+        setSchoolsAnimKey(k => k + 1);
       }
 
       // CRITICAL: Update briefStatus from response immediately
