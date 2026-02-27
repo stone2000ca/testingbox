@@ -816,13 +816,11 @@ async function handleResults(base44, message, conversationFamilyProfile, context
           return `${s.name} | ${s.city} | Grade ${s.lowestGrade}-${s.highestGrade} | Tuition: ${tuitionStr}`;
         }).join('\n');
       
-      const resultsSystemPrompt = `[STATE: RESULTS] Explain these school matches. Focus on fit. Do NOT ask intake questions. Max 150 words.
+      const resultsSystemPrompt = `[STATE: RESULTS]
 
-CRITICAL STEERING RULE: You are in RESULTS state. If the parent mentions a change to grade, location, budget, or gender (e.g. "actually Grade 9", "we moved to Vancouver", "our budget is $30k"), you MUST:
-1. Briefly acknowledge the update in one sentence (e.g. "Got it — I've noted the grade change.")
-2. Stay in results mode — do NOT generate a new brief, do NOT ask discovery questions, do NOT restart onboarding
-3. Inform them that their matches will be refreshed (the system handles this automatically)
-4. Keep your response focused on the current schools or the update acknowledgement only
+CRITICAL STATE RULE: When the conversation is in RESULTS or DEEPDIVE phase and the user updates any preference (grade, budget, location, boarding/day, gender, or any other preference), you MUST stay in the current phase. Do NOT transition back to BRIEF or DISCOVERY. Acknowledge the change conversationally (e.g. "Got it, I've noted grade 6 now. You can refresh your matches whenever you're ready.") and let the system handle the refresh banner automatically. This rule applies ONLY to RESULTS and DEEPDIVE states. In DISCOVERY and BRIEF states, normal steering to BRIEF is still correct.
+
+Explain these school matches. Focus on fit. Do NOT ask intake questions. Max 150 words.
 
 ${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic.' : 'YOU ARE LIAM - Direct, strategic.'}`;
 
