@@ -999,7 +999,8 @@ Deno.serve(async (req) => {
         briefEditCount: currentBriefEditCount,
         selectedSchoolId,
         previousSchoolId,
-        userMessage: processMessage
+        userMessage: processMessage,
+        tier1CompletedTurn: context.tier1CompletedTurn || null
       });
       
       currentState = resolveResult.nextState;
