@@ -13,7 +13,7 @@ export default function IconRail({ currentState, showFamilyBrief, onToggleBrief 
 
   return (
     <nav
-      className="hidden lg:flex flex-col items-center py-3 gap-1 flex-shrink-0 border-r border-white/10"
+      className="flex flex-col items-center py-3 gap-1 flex-shrink-0 border-r border-white/10"
       style={{ width: 48, background: '#181826' }}
       aria-label="Navigation rail"
     >
