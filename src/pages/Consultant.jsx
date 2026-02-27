@@ -1377,6 +1377,42 @@ Return empty array if user didn't provide any of these facts.`;
         <main className={`flex-1 overflow-hidden bg-white transition-opacity duration-200 ${
           mobileView === 'schools' ? 'block' : 'hidden lg:block'
         }`} style={{ animationDelay: '100ms' }}>
+          {/* T044: Results stale banner */}
+          {resultsStale && !staleBannerDismissed && [STATES.RESULTS, STATES.DEEP_DIVE].includes(currentState) && (
+            <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-[#1E1E2E] border-b border-white/10">
+              <div className="flex items-center gap-2 text-sm text-white/80">
+                {isRefreshingMatches ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-teal-400" />
+                    <span>Updating your matches...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 text-teal-400" />
+                    <span>New info detected. Refresh for better matches.</span>
+                  </>
+                )}
+              </div>
+              {!isRefreshingMatches && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={handleRefreshMatches}
+                    className="text-xs font-medium px-3 py-1 rounded-md bg-teal-600 hover:bg-teal-500 text-white transition-colors"
+                  >
+                    Refresh Matches
+                  </button>
+                  <button
+                    onClick={() => setStaleBannerDismissed(true)}
+                    className="text-white/40 hover:text-white/70 transition-colors"
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {currentView === 'detail' && selectedSchool ? (
             <SchoolDetailPanel
               school={selectedSchool}
