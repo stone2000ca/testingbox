@@ -370,6 +370,7 @@ async function handleDiscovery(base44, message, conversationFamilyProfile, conte
   const hasGrade = conversationFamilyProfile?.childGrade !== null && conversationFamilyProfile?.childGrade !== undefined;
   const hasLocation = !!conversationFamilyProfile?.locationArea;
   const hasBudget = !!conversationFamilyProfile?.maxTuition;
+  const hasGender = !!conversationFamilyProfile?.gender;
 
   let tier1Guidance = '';
   if (!hasGrade) {
@@ -378,6 +379,8 @@ async function handleDiscovery(base44, message, conversationFamilyProfile, conte
     tier1Guidance = "TIER 1 PRIORITY: Location has not been collected yet. If the conversation allows, naturally steer toward asking about the city or region they're looking in.";
   } else if (!hasBudget) {
     tier1Guidance = "TIER 1 PRIORITY: Budget has not been collected yet. If the conversation allows, naturally steer toward asking about their tuition budget or range.";
+  } else if (!hasGender) {
+    tier1Guidance = "TIER 1 PRIORITY: Gender/sex of the child has not been collected yet. Naturally work in a question about whether this is for a son or daughter (or if gender doesn't matter for school choice). Do NOT ask directly 'what is your child's gender' - keep it conversational.";
   }
 
   const personaInstructions = consultantName === 'Jackie'
