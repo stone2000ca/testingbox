@@ -1,6 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, MapPin } from "lucide-react";
 
+function gradeLabel(grade) {
+  if (grade === null || grade === undefined) return '?';
+  if (grade === -2) return 'PK';
+  if (grade === -1) return 'JK';
+  if (grade === 0) return 'K';
+  return String(grade);
+}
+
 export default function SchoolDetailPanel({ 
   school, 
   onBack, 
