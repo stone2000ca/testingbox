@@ -160,14 +160,18 @@ export default function SchoolGrid({
   // Flat fallback (non-tiered mode — for backwards compat)
   if (!schools || schools.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-slate-500">No schools found matching your criteria.</p>
+      <div>
+        <PinnedShortlistSection {...sharedShortlistProps} />
+        <div className="text-center py-12">
+          <p className="text-slate-500">No schools found matching your criteria.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div>
+      <PinnedShortlistSection {...sharedShortlistProps} />
       <div className="mb-4 text-sm text-slate-600">
         Showing {schools.length} schools
       </div>
