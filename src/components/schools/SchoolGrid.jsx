@@ -144,14 +144,6 @@ function PinnedShortlistSection({ shortlistedSchools, onViewDetails, onToggleSho
           </div>
         ))}
       </div>
-      {showComparison && (
-        <ShortlistComparisonModal
-          schools={shortlistedSchools}
-          familyProfile={familyProfile}
-          onClose={() => setShowComparison(false)}
-          onNarrateComparison={onNarrateComparison}
-        />
-      )}
     </div>
   );
 }
