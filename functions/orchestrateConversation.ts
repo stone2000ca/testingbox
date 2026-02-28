@@ -315,13 +315,14 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
 
     // BUG-ENT-004: Budget extraction with ALWAYS-RUN regex fallback
     let extractedBudget = null;
-    const budgetMatch = message.match(/(?:budget|tuition|afford|pay|spend)?[^.]*?\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*(?:k|thousand|K)?/i);
+    // More reliable regex: explicitly handles patterns like $30k, 30k, 30000, $30,000
+    const budgetMatch = message.match(/(?:budget|tuition|cost|price|afford|pay|spend)?[\s:]*\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*(?:k|K|thousand)?(?:\b|$)/i);
     if (budgetMatch) {
       const raw = budgetMatch[0];
       const numStr = budgetMatch[1].replace(/,/g, '');
       const num = parseInt(numStr);
       if (!isNaN(num)) {
-        const isThousands = /\d\s*[kK]/.test(raw) || /thousand/i.test(raw);
+        const isThousands = /[kK]/.test(raw) || /thousand/i.test(raw);
         const amount = isThousands ? num * 1000 : num;
         if (amount >= 5000 && amount <= 500000) {
           extractedBudget = amount;
