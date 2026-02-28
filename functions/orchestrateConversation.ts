@@ -342,6 +342,8 @@ BUDGET EXTRACTION (BUG-ENT-004): Extract budget/tuition even in conversational f
 
 CRITICAL: If the user explicitly negates or removes a previously stated preference (e.g. "actually, not interested in sports", "remove arts from my priorities", "I changed my mind about boarding"), populate the corresponding remove_* field (remove_interests, remove_priorities, remove_dealbreakers) with the items to remove. Leave additive arrays for new additions only.
 
+LOCATION SPECIFICITY (BUG-LOC-003): For locationArea, always use the most specific location the user mentioned — city name, NOT province or state. Examples: "Montreal" not "Quebec", "Vancouver" not "British Columbia", "Calgary" not "Alberta". If the user says a region alias like "GTA" or "Greater Toronto Area", preserve that exact term as-is.
+
 CRITICAL: If the user confirms the brief or says something like "that looks right", "show me schools", "yes", "confirmed", "let's see", "go ahead", set intentSignal to 'confirm-brief'.`;
 
     const userPrompt = `CURRENT KNOWN DATA:
