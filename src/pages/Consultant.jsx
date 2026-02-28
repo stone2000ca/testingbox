@@ -1692,7 +1692,13 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
         />
 
         {/* RIGHT CHAT PANEL */}
-        <aside className="w-[450px] bg-[#2A2A3D] border-l border-white/10 flex flex-col transition-all duration-400 relative flex-shrink-0">
+        <aside
+          className="bg-[#2A2A3D] border-l border-white/10 flex flex-col relative flex-shrink-0"
+          style={{
+            width: 450,
+            transition: 'width 420ms cubic-bezier(0.22,1,0.36,1)',
+          }}
+        >
           <ChatPanel
             ref={inputRef}
             variant="sidebar"
