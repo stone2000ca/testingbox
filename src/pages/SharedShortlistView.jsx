@@ -107,20 +107,11 @@ export default function SharedShortlistView() {
       return;
     }
 
-    base44.asServiceRole?.entities?.SharedShortlist?.filter({ hash })
+    base44.entities.SharedShortlist.filter({ hash })
       .then(results => {
         if (!results || results.length === 0) {
           setError('This shortlist link is invalid or has expired.');
         } else {
-          setShortlist(results[0]);
-        }
-      })
-      .catch(() => {
-        // Fall back to non-service-role read (public entity access)
-        return base44.entities.SharedShortlist.filter({ hash });
-      })
-      .then(results => {
-        if (results && results.length > 0 && !shortlist) {
           setShortlist(results[0]);
         }
       })
