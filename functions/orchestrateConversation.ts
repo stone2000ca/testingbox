@@ -1202,14 +1202,14 @@ Deno.serve(async (req) => {
       const base44 = createClientFromRequest(req);
       const { message, conversationHistory, conversationContext, region, userId, consultantName, currentSchools, userLocation, selectedSchoolId } = await req.json();
 
-      // FIX-C-REVISED: __CONFIRM_BRIEF__ sentinel transitions to BRIEF state for confirmation, not directly to RESULTS.
+      // FIX-C: __CONFIRM_BRIEF__ sentinel goes directly to RESULTS state for immediate school display.
       let context = conversationContext || {};
       let processMessage = message;
       if (message === '__CONFIRM_BRIEF__') {
         processMessage = 'show me schools';
-        context.state = 'BRIEF';
-        context.briefStatus = 'pending_review';
-        console.log('[FIX-C-REVISED] __CONFIRM_BRIEF__ sentinel: transitioning to BRIEF state for user confirmation');
+        context.state = 'RESULTS';
+        context.briefStatus = 'confirmed';
+        console.log('[FIX-C] __CONFIRM_BRIEF__ sentinel: skipping BRIEF, going directly to RESULTS');
       }
 
       console.log('ORCH START', { 
