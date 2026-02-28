@@ -720,7 +720,7 @@ FAMILY DATA:
 Format:
 - Open with a warm 1-2 sentence intro
 - Then a numbered list:
-  1. Student: ${briefChildDisplayName}
+  1. ${briefChildDisplayName}: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}
   2. Location: ${locationArea || '(not specified)'}
   3. Budget: ${budgetDisplay}
   ${prioritiesStr ? '4. Top priorities: ' + prioritiesStr : ''}
