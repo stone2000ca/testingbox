@@ -43,7 +43,7 @@ export default function SchoolDetailPanel({
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-slate-50 rounded-lg p-4">
               <p className="text-sm text-slate-600">Grades</p>
-              <p className="text-lg font-semibold">{school.lowestGrade}-{school.highestGrade}</p>
+              <p className="text-lg font-semibold">{gradeLabel(school.lowestGrade)}–{gradeLabel(school.highestGrade)}</p>
             </div>
             <div className="bg-slate-50 rounded-lg p-4">
               <p className="text-sm text-slate-600">Tuition</p>
