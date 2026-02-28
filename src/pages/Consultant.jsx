@@ -1129,6 +1129,25 @@ Return empty array if user didn't provide any of these facts.`;
 
   // T047: No manual refresh handler needed — matches auto-refresh on entity extraction
 
+  // Open full-screen comparison view and update conversationContext with compared school names
+  const handleOpenComparison = async (comparedSchools) => {
+    setComparisonData(comparedSchools);
+    setCurrentView('comparison');
+    // Update conversationContext so chat AI knows which schools are being compared
+    const updatedContext = {
+      ...(currentConversation?.conversationContext || {}),
+      comparingSchools: comparedSchools.map(s => s.name),
+    };
+    setCurrentConversation(prev => prev ? { ...prev, conversationContext: updatedContext } : prev);
+    if (currentConversation?.id) {
+      await base44.entities.ChatHistory.update(currentConversation.id, {
+        conversationContext: updatedContext,
+      });
+    }
+    // Trigger narration
+    handleNarrateComparison(comparedSchools);
+  };
+
   // T-SL-005: AI-narrated comparison synthesis
   const handleNarrateComparison = async (comparedSchools) => {
     const isJackie = selectedConsultant === 'Jackie';
