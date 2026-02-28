@@ -431,14 +431,20 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     if (extractedGender !== null && !finalResult.gender) {
       finalResult = { ...finalResult, gender: extractedGender };
     }
-    // BUG-ENT-004 FIX: Regex fallback ALWAYS runs if LLM extraction failed to extract budget
-    if ((extractedBudget !== null || (finalResult.maxTuition === null || finalResult.maxTuition === undefined)) && !finalResult.maxTuition) {
-      if (extractedBudget !== null) {
-        finalResult = { ...finalResult, maxTuition: extractedBudget };
-      }
+    // BUG-ENT-004 FIX: Simplified — use regex budget if LLM did not provide one
+    if ((finalResult.maxTuition === null || finalResult.maxTuition === undefined) && extractedBudget !== null) {
+      finalResult = { ...finalResult, maxTuition: extractedBudget };
     }
-    if (extractedLocation !== null && !finalResult.locationArea) {
-      finalResult = { ...finalResult, locationArea: extractedLocation };
+    // FIX-LOC-004: Always clean LLM's location, then fallback to regex if needed
+    let effectiveLocation = finalResult.locationArea;
+    if (effectiveLocation) {
+      effectiveLocation = cleanLocation(effectiveLocation);
+    }
+    if ((effectiveLocation === null || effectiveLocation === undefined) && extractedLocation !== null) {
+      effectiveLocation = extractedLocation;
+    }
+    if (effectiveLocation !== null && effectiveLocation !== undefined) {
+      finalResult = { ...finalResult, locationArea: effectiveLocation };
     }
 
     const cleaned: any = {};
