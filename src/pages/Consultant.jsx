@@ -1343,22 +1343,19 @@ Return empty array if user didn't provide any of these facts.`;
             <WelcomeState onPromptClick={handleSendMessage} />
           ) : currentState === STATES.RESULTS && schools.length > 0 ? (
             <div className="h-full flex flex-col animate-fadeIn">
-              <div className="p-3 sm:p-4 border-b flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <h2 className="text-base sm:text-lg font-semibold text-slate-900">
-                  Results ({filteredSchools.length})
-                </h2>
-                <SortControl
-                  sortField={sortField}
-                  sortDirection={sortDirection}
-                  onSortFieldChange={setSortField}
-                  onSortDirectionChange={setSortDirection}
-                />
+              <div className="p-3 sm:p-4 border-b flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base sm:text-lg font-semibold text-slate-900">
+                    Results ({filteredSchools.length})
+                  </h2>
+                </div>
+                <SortControl sortMode={sortMode} onSortChange={setSortMode} />
               </div>
               <div className="flex-1 overflow-auto p-3 sm:p-4">
                 <SchoolGrid
-                  key={schoolsAnimKey}
+                  key={`${schoolsAnimKey}-${sortMode}-${JSON.stringify(priorityOverrides)}`}
                   schools={filteredSchools}
-                  tieredSchools={buildTiers(filteredSchools, familyProfile)}
+                  tieredSchools={buildTiers(filteredSchools, familyProfile, sortMode, priorityOverrides)}
                   onViewDetails={handleViewSchoolDetail}
                   onToggleShortlist={handleToggleShortlist}
                   shortlistedIds={user?.shortlist || []}
@@ -1366,6 +1363,8 @@ Return empty array if user didn't provide any of these facts.`;
                   isLoading={isTyping && schools.length === 0}
                   accentColor={selectedConsultant === 'Jackie' ? '#C27B8A' : '#6B9DAD'}
                   familyProfile={familyProfile}
+                  priorityOverrides={priorityOverrides}
+                  onPriorityToggle={handlePriorityToggle}
                 />
               </div>
             </div>
