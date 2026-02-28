@@ -734,6 +734,15 @@ export default function Consultant() {
   const handleBackToResults = () => {
     setSelectedSchool(null);
     setCurrentView('schools');
+    if (currentConversation) {
+      setCurrentConversation(prevConvo => ({
+        ...prevConvo,
+        conversationContext: {
+          ...prevConvo.conversationContext,
+          state: STATES.RESULTS,
+        },
+      }));
+    }
   };
 
   const handleComparisonBack = () => {
