@@ -600,9 +600,11 @@ export default function Consultant() {
     }
   };
 
-  const loadShortlist = async (userId) => {
+  const loadShortlist = async (userDataOrId) => {
     try {
-      const shortlistIds = user?.shortlist || [];
+      // Accept either a user object (with .shortlist) or fall back to current user state
+      const userData = typeof userDataOrId === 'object' && userDataOrId !== null ? userDataOrId : user;
+      const shortlistIds = userData?.shortlist || [];
       if (shortlistIds.length > 0) {
         const shortlistSchools = await base44.entities.School.filter({
           id: { $in: shortlistIds }

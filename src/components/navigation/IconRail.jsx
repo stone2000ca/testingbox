@@ -19,9 +19,6 @@ export default function IconRail({ currentState, activePanel, onTogglePanel }) {
   const shortlistOpacity = shortlistEnabled ? 1 : 0.35;
   const shortlistActive = activePanel === 'shortlist';
 
-  // Chat: always enabled, active when its panel is open
-  const chatActive = activePanel === 'chat';
-
   return (
     <nav
       className="hidden lg:flex flex-col items-center pt-4 gap-3 flex-shrink-0 border-l border-white/10"
