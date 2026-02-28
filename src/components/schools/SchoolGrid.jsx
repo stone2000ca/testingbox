@@ -72,6 +72,27 @@ function PinnedShortlistSection({ shortlistedSchools, onViewDetails, onToggleSho
   );
 }
 
+// =============================================================================
+// T-SL-002: Animated backfill tier card
+// =============================================================================
+function AnimatedCard({ school, isNew, ...props }) {
+  return (
+    <div
+      key={school.id}
+      className="w-full sm:w-[240px] flex-shrink-0"
+      style={isNew ? { animation: 'slideInCard 0.35s ease-out both' } : undefined}
+    >
+      <style>{`
+        @keyframes slideInCard {
+          from { opacity: 0; transform: translateY(14px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <SchoolCard school={school} {...props} />
+    </div>
+  );
+}
+
 export default function SchoolGrid({
   schools,
   onViewDetails,
@@ -85,42 +106,108 @@ export default function SchoolGrid({
   onPriorityToggle = null,
 }) {
   const [tier3Expanded, setTier3Expanded] = useState(false);
+  // T-SL-002: track newly backfilled IDs to animate them in
+  const prevShortlistedRef = useRef(shortlistedIds);
+  const [newlyBackfilledIds, setNewlyBackfilledIds] = useState(new Set());
+
+  // Detect shortlist changes and mark backfill candidates
+  const prevIds = prevShortlistedRef.current;
+  if (prevIds !== shortlistedIds) {
+    const added = shortlistedIds.filter(id => !prevIds.includes(id));
+    const removed = prevIds.filter(id => !shortlistedIds.includes(id));
+    if (added.length > 0 || removed.length > 0) {
+      // After a state change, any card that wasn't visible before is "new"
+      setTimeout(() => setNewlyBackfilledIds(new Set()), 600);
+    }
+    prevShortlistedRef.current = shortlistedIds;
+  }
 
   const sharedShortlistProps = { shortlistedSchools, onViewDetails, onToggleShortlist, familyProfile, accentColor, priorityOverrides, onPriorityToggle };
 
   // If tieredSchools prop is provided, use tiered mode
   if (tieredSchools) {
     const { topMatches = [], alsoWorthExploring = [], seeAll = [] } = tieredSchools;
-    const totalVisible = topMatches.length + alsoWorthExploring.length;
-    const tier3Count = seeAll.length;
+
+    // T-SL-002: Filter out shortlisted schools from tiers, backfill from deeper pools
+    const shortlistedSet = new Set(shortlistedIds);
+
+    // Build the full ordered pool: t1 → t2 → seeAll
+    const allPoolOrdered = [...topMatches, ...alsoWorthExploring, ...seeAll];
+    const nonShortlisted = allPoolOrdered.filter(s => !shortlistedSet.has(s.id));
+
+    // Maintain original tier sizes
+    const t1Size = topMatches.length;
+    const t2Size = alsoWorthExploring.length;
+
+    const displayedT1 = nonShortlisted.slice(0, t1Size);
+    const displayedT2 = nonShortlisted.slice(t1Size, t1Size + t2Size);
+    const displayedSeeAll = nonShortlisted.slice(t1Size + t2Size);
+
+    // Track which IDs are newly backfilled (weren't in their original tier)
+    const origT1Ids = new Set(topMatches.map(s => s.id));
+    const origT2Ids = new Set(alsoWorthExploring.map(s => s.id));
+    const backfilledT1 = displayedT1.filter(s => !origT1Ids.has(s.id)).map(s => s.id);
+    const backfilledT2 = displayedT2.filter(s => !origT2Ids.has(s.id)).map(s => s.id);
+    const allBackfilledIds = new Set([...backfilledT1, ...backfilledT2]);
+
+    const totalVisible = displayedT1.length + displayedT2.length;
+    const tier3Count = displayedSeeAll.length;
+
+    const sharedCardProps = (school, isShortlisted) => ({
+      school,
+      onViewDetails: () => onViewDetails(school.id),
+      onToggleShortlist,
+      isShortlisted,
+      familyProfile,
+      accentColor,
+      priorityOverrides,
+      onPriorityToggle,
+    });
 
     return (
       <div>
         <PinnedShortlistSection {...sharedShortlistProps} />
-        <TierSection
-          title="⭐ Top Matches"
-          subtitle="Best fit for your family based on your priorities"
-          schools={topMatches}
-          onViewDetails={onViewDetails}
-          onToggleShortlist={onToggleShortlist}
-          shortlistedIds={shortlistedIds}
-          familyProfile={familyProfile}
-          accentColor={accentColor}
-          priorityOverrides={priorityOverrides}
-          onPriorityToggle={onPriorityToggle}
-        />
-        <TierSection
-          title="Also Worth Exploring"
-          subtitle="Other strong options from the matching pool"
-          schools={alsoWorthExploring}
-          onViewDetails={onViewDetails}
-          onToggleShortlist={onToggleShortlist}
-          shortlistedIds={shortlistedIds}
-          familyProfile={familyProfile}
-          accentColor={accentColor}
-          priorityOverrides={priorityOverrides}
-          onPriorityToggle={onPriorityToggle}
-        />
+
+        {/* Tier 1: Top Matches */}
+        {displayedT1.length > 0 && (
+          <div className="mb-6">
+            <div className="mb-3">
+              <h3 className="text-sm font-semibold text-slate-800">⭐ Top Matches</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Best fit for your family based on your priorities</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {displayedT1.map((school, index) => (
+                <AnimatedCard
+                  key={school.id}
+                  isNew={allBackfilledIds.has(school.id)}
+                  index={index}
+                  {...sharedCardProps(school, shortlistedIds.includes(school.id))}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tier 2: Also Worth Exploring */}
+        {displayedT2.length > 0 && (
+          <div className="mb-6">
+            <div className="mb-3">
+              <h3 className="text-sm font-semibold text-slate-800">Also Worth Exploring</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Other strong options from the matching pool</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {displayedT2.map((school, index) => (
+                <AnimatedCard
+                  key={school.id}
+                  isNew={allBackfilledIds.has(school.id)}
+                  index={index}
+                  {...sharedCardProps(school, shortlistedIds.includes(school.id))}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         {tier3Count > 0 && (
           <div>
             <button
@@ -137,7 +224,7 @@ export default function SchoolGrid({
               <TierSection
                 title="See All Matches"
                 subtitle="Sorted by distance"
-                schools={seeAll}
+                schools={displayedSeeAll}
                 onViewDetails={onViewDetails}
                 onToggleShortlist={onToggleShortlist}
                 shortlistedIds={shortlistedIds}
