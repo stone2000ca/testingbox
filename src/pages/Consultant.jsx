@@ -1535,6 +1535,7 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
               familyProfile={familyProfile}
               consultantName={selectedConsultant}
               onClose={() => setActivePanel(null)}
+              extractedEntities={currentConversation?.conversationContext?.extractedEntities || {}}
             />
           )}
           <IconRail
@@ -1690,6 +1691,7 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
               familyProfile={familyProfile}
               consultantName={selectedConsultant}
               onClose={() => setActivePanel(null)}
+              extractedEntities={currentConversation?.conversationContext?.extractedEntities || {}}
             />
           </div>
         )}
