@@ -293,17 +293,28 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
             {rationale && (
               <p className="text-xs text-slate-500 line-clamp-2">{rationale}.</p>
             )}
-            {hasChecks && (
-              <div className="space-y-1.5">
-                {priorityChecks.map((row) => (
-                  <div key={row.id} className="flex items-center gap-2 text-xs">
-                    <CheckIcon status={row.status} />
-                    <span className={`font-medium ${row.status === 'match' ? 'text-slate-700' : row.status === 'mismatch' ? 'text-slate-500' : 'text-slate-400'}`}>{row.label}</span>
-                    <span className="text-slate-400 truncate">{row.detail}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            {hasChecks && (() => {
+              // Count active (non-dontcare) priorities for guard
+              const activeCount = priorityChecks.filter(r => (priorityOverrides[r.id] || 'nicetohave') !== 'dontcare').length;
+              return (
+                <div className="space-y-1.5">
+                  {priorityChecks.map((row) => {
+                    const flexState = priorityOverrides[row.id] || 'nicetohave';
+                    const isDontCare = flexState === 'dontcare';
+                    return (
+                      <div key={row.id} className={`flex items-center gap-2 text-xs ${isDontCare ? 'opacity-40' : ''}`}>
+                        <CheckIcon status={row.status} />
+                        <span className={`font-medium ${row.status === 'match' ? 'text-slate-700' : row.status === 'mismatch' ? 'text-slate-500' : 'text-slate-400'}`}>{row.label}</span>
+                        <span className="text-slate-400 truncate flex-1">{row.detail}</span>
+                        {onPriorityToggle && (
+                          <FlexButton rowId={row.id} state={flexState} onToggle={onPriorityToggle} totalActive={activeCount} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             {!hasChecks && school.matchExplanations?.length > 0 && (
               <div className="space-y-1.5">
                 {school.matchExplanations.map((m, i) => (
