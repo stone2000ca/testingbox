@@ -40,7 +40,7 @@ function TierSection({ title, subtitle, schools, onViewDetails, onToggleShortlis
 // =============================================================================
 // T-SL-001 + T-SL-003: Pinned Shortlist Section with Compare button
 // =============================================================================
-function PinnedShortlistSection({ shortlistedSchools, onViewDetails, onToggleShortlist, familyProfile, accentColor, priorityOverrides, onPriorityToggle }) {
+function PinnedShortlistSection({ shortlistedSchools, onViewDetails, onToggleShortlist, familyProfile, accentColor, priorityOverrides, onPriorityToggle, onNarrateComparison }) {
   const [showComparison, setShowComparison] = useState(false);
 
   if (!shortlistedSchools || shortlistedSchools.length === 0) return null;
