@@ -1304,6 +1304,7 @@ Return empty array if user didn't provide any of these facts.`;
                 <SchoolGrid
                   key={schoolsAnimKey}
                   schools={filteredSchools}
+                  tieredSchools={buildTiers(filteredSchools, familyProfile)}
                   onViewDetails={handleViewSchoolDetail}
                   onToggleShortlist={handleToggleShortlist}
                   shortlistedIds={user?.shortlist || []}
