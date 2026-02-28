@@ -139,7 +139,7 @@ function AnimatedCard({ school, isNew, ...props }) {
   return (
     <div
       key={school.id}
-      className="w-full sm:w-[240px] flex-shrink-0"
+      className="w-full"
       style={isNew ? { animation: 'slideInCard 0.35s ease-out both' } : undefined}
     >
       <style>{`
@@ -236,7 +236,7 @@ export default function SchoolGrid({
               <h3 className="text-sm font-semibold text-slate-800">⭐ Top Matches</h3>
               <p className="text-xs text-slate-500 mt-0.5">Best fit for your family based on your priorities</p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {displayedT1.map((school, index) => (
                 <AnimatedCard
                   key={school.id}
@@ -256,7 +256,7 @@ export default function SchoolGrid({
               <h3 className="text-sm font-semibold text-slate-800">Also Worth Exploring</h3>
               <p className="text-xs text-slate-500 mt-0.5">Other strong options from the matching pool</p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {displayedT2.map((school, index) => (
                 <AnimatedCard
                   key={school.id}
@@ -323,9 +323,9 @@ export default function SchoolGrid({
       <div className="mb-4 text-sm text-slate-600">
         Showing {schools.length} schools
       </div>
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {schools.map((school, index) => (
-          <div key={school.id} className="w-full sm:w-[240px] flex-shrink-0">
+          <div key={school.id} className="w-full">
             <SchoolCard
               school={school}
               index={index}
