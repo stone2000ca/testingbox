@@ -168,8 +168,12 @@ export const getSystemPrompt = (state, briefStatus, entities = {}, consultantNam
       if (briefStatus === BRIEF_STATUS.GENERATING) {
         const childRef = entities.childName
           ? entities.childName
-          : (entities.gender === 'male' ? 'your son' : entities.gender === 'female' ? 'your daughter' : 'your child');
-        return `Generate a Family Brief summarizing everything learned. When referring to the child, always use "${childRef}" — never say "Student" or "your child" unless no name or gender is known. Format it clearly with: Child (using "${childRef}"), Grade, Location, Budget range, Priorities (ranked), Dealbreakers, and any other relevant details. End with: "Does this capture what you're looking for, or would you like to adjust anything?" Do NOT mention specific schools yet.`;
+          : (entities.gender === 'male' ? 'Your son' : entities.gender === 'female' ? 'Your daughter' : 'Your child');
+        return `Generate a Family Brief summarizing everything learned.
+
+⚠️ MANDATORY RULE — NO EXCEPTIONS: NEVER use the word "Child" or "Student" as a label in the brief. The child label MUST be "${childRef}". Example format: "${childRef}: Grade 7 | Location: Toronto | Budget: $30,000/yr". If you write "Child:" or "Student:" anywhere, you have violated this rule.
+
+Format the brief clearly with these fields: ${childRef} (name/grade), Location, Budget, Priorities (ranked), Dealbreakers, and any other relevant details. End with: "Does this capture what you're looking for, or would you like to adjust anything?" Do NOT mention specific schools yet.`;
       } else if (briefStatus === BRIEF_STATUS.PENDING_REVIEW) {
         return `The Family Brief is displayed above. Wait for the user to confirm or request changes. Do NOT ask new intake questions. Do NOT mention or recommend any schools. If they confirm, acknowledge and prepare to show school matches. If they want changes, ask what they would like to adjust.`;
       } else if (briefStatus === BRIEF_STATUS.EDITING) {
