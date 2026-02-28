@@ -939,12 +939,16 @@ Max 160 words total.`;
 2. STOP. Do not write anything else.`;
       }
 
+      const comparingSchoolsNote = context.comparingSchools?.length >= 2
+        ? `\n\nCOMPARISON CONTEXT: The parent is currently viewing a side-by-side comparison of: ${context.comparingSchools.join(', ')}. If they ask questions about these schools, answer with that comparison context in mind.`
+        : '';
+
       const resultsSystemPrompt = `[STATE: RESULTS] You are currently showing school results to the parent.
 
 CRITICAL STATE RULE — READ THIS FIRST:
 You are in RESULTS state. The parent is viewing their school matches.
 
-${narrateInstruction}
+${narrateInstruction}${comparingSchoolsNote}
 
 ABSOLUTE PROHIBITIONS in RESULTS state when a preference update is detected:
 - Do NOT generate a numbered list of their preferences (Student, Location, Budget, etc.)
