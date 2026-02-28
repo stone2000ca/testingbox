@@ -9,10 +9,10 @@ import { HeaderPhotoDisplay, LogoDisplay } from '@/components/schools/HeaderPhot
 export function getTuitionBand(school) {
   const val = school.dayTuition ?? school.tuition;
   if (val == null) return { label: null, display: 'Contact school' };
-  if (val < 15000) return { label: '$', display: 'Under $15K' };
-  if (val < 25000) return { label: '$$', display: '$15K–$25K' };
-  if (val < 40000) return { label: '$$$', display: '$25K–$40K' };
-  return { label: '$$$$', display: '$40K+' };
+  if (val < 15000) return { label: '$', display: '' };
+  if (val < 25000) return { label: '$$', display: '' };
+  if (val < 40000) return { label: '$$$', display: '' };
+  return { label: '$$$$', display: '' };
 }
 
 // =============================================================================
