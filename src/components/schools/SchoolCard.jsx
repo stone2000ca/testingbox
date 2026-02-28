@@ -408,6 +408,24 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
                 ))}
               </div>
             )}
+            {/* T-RES-008: Also Worth Knowing */}
+            {(() => {
+              const extras = buildAlsoWorthKnowing(school, familyProfile);
+              if (extras.length === 0) return null;
+              return (
+                <div className="mt-2 pt-2 border-t border-slate-100">
+                  <p className="text-xs font-medium text-slate-400 mb-1.5">Also Worth Knowing</p>
+                  <div className="space-y-1">
+                    {extras.map((item, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-xs text-slate-500">
+                        <span className="text-teal-500 flex-shrink-0 mt-0.5">•</span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
