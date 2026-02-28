@@ -1,6 +1,6 @@
 import { X, Heart, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { buildPriorityChecks } from '@/components/schools/SchoolCard';
 
 function formatGrade(grade) {
   if (grade === null || grade === undefined) return '';
@@ -11,65 +11,108 @@ function formatGrade(grade) {
   return String(num);
 }
 
-function formatGradeRange(gradeFrom, gradeTo) {
-  const from = formatGrade(gradeFrom);
-  const to = formatGrade(gradeTo);
+function formatGradeRange(lo, hi) {
+  const from = formatGrade(lo);
+  const to = formatGrade(hi);
   if (!from && !to) return '';
   if (!from) return to;
   if (!to) return from;
-  return `${from}-${to}`;
+  return `${from}–${to}`;
 }
 
-export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSchool }) {
+function StatusDot({ status }) {
+  if (status === 'match') return <span className="inline-block w-2 h-2 rounded-full bg-teal-400 flex-shrink-0" />;
+  if (status === 'mismatch') return <span className="inline-block w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />;
+  return <span className="inline-block w-2 h-2 rounded-full bg-slate-500 flex-shrink-0" />;
+}
+
+export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSchool, familyProfile }) {
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-2xl z-50 flex flex-col border-l border-slate-200">
-      <div className="flex items-center justify-between p-4 border-b border-slate-200">
+    <div className="h-full flex flex-col" style={{ background: '#1E1E30', borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
         <div className="flex items-center gap-2">
-          <Heart className="w-5 h-5 text-rose-500" />
-          <h2 className="text-lg font-semibold">Shortlist</h2>
+          <Heart className="w-4 h-4 text-rose-400" />
+          <h2 className="text-sm font-semibold text-white">Shortlist</h2>
+          {shortlist.length > 0 && (
+            <span className="text-xs font-medium bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded-full">
+              {shortlist.length}
+            </span>
+          )}
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="w-5 h-5" />
-        </Button>
+        <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors rounded p-0.5">
+          <X className="w-4 h-4" />
+        </button>
       </div>
-      
-      <ScrollArea className="flex-1 p-4">
+
+      <ScrollArea className="flex-1">
         {shortlist.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">
-            <Heart className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-            <p>No schools in your shortlist yet.</p>
-            <p className="text-sm mt-1">Click the heart icon on schools to save them.</p>
+          <div className="text-center py-12 px-4">
+            <Heart className="w-10 h-10 mx-auto mb-3 text-slate-600" />
+            <p className="text-sm text-slate-400">No schools saved yet.</p>
+            <p className="text-xs text-slate-500 mt-1">Click the heart on any school to save it here.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {shortlist.map((school) => (
-              <div key={school.id} className="bg-slate-50 rounded-lg p-3 hover:bg-slate-100 transition">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-sm">{school.name}</h3>
+          <div className="p-3 space-y-2">
+            {shortlist.map((school) => {
+              const checks = familyProfile ? buildPriorityChecks(school, familyProfile).slice(0, 4) : [];
+              const tuition = school.dayTuition ?? school.tuition;
+
+              return (
+                <div
+                  key={school.id}
+                  className="rounded-lg p-3 transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
+                >
+                  {/* School name + remove */}
+                  <div className="flex items-start justify-between mb-1 gap-2">
+                    <h3 className="text-sm font-semibold text-white leading-snug">{school.name}</h3>
+                    <button
+                      onClick={() => onRemove(school.id)}
+                      className="text-slate-500 hover:text-rose-400 transition-colors flex-shrink-0 mt-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Location + grades */}
+                  <p className="text-xs text-slate-400 mb-1">
+                    {school.city}{school.provinceState ? `, ${school.provinceState}` : ''}
+                    {school.lowestGrade != null && ` · Gr ${formatGradeRange(school.lowestGrade, school.highestGrade)}`}
+                  </p>
+
+                  {/* Tuition */}
+                  {tuition > 0 && (
+                    <p className="text-xs text-slate-500 mb-2">
+                      {school.currency || 'CAD'} {tuition.toLocaleString()}/yr
+                    </p>
+                  )}
+
+                  {/* Priority checks */}
+                  {checks.length > 0 && (
+                    <div className="space-y-1 mb-2">
+                      {checks.map((row) => (
+                        <div key={row.id} className="flex items-center gap-1.5">
+                          <StatusDot status={row.status} />
+                          <span className="text-xs text-slate-400 truncate">{row.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <button
-                    onClick={() => onRemove(school.id)}
-                    className="text-slate-400 hover:text-rose-500 transition"
+                    onClick={() => onViewSchool(school.id)}
+                    className="w-full flex items-center justify-center gap-1 text-xs font-medium py-1.5 rounded transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
                   >
-                    <X className="w-4 h-4" />
+                    <ExternalLink className="w-3 h-3" />
+                    View Details
                   </button>
                 </div>
-                <p className="text-xs text-slate-600 mb-2">
-                  {school.city}, {school.region}
-                </p>
-                <p className="text-xs text-slate-500 mb-3">
-                  Grades {formatGradeRange(school.lowestGrade, school.highestGrade)} • {school.currency} {school.tuition?.toLocaleString()}
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full text-xs"
-                  onClick={() => onViewSchool(school.id)}
-                >
-                  <ExternalLink className="w-3 h-3 mr-1" />
-                  View Details
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </ScrollArea>
