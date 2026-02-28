@@ -106,7 +106,6 @@ function buildTiers(schools, familyProfile, sortMode = 'bestFit', priorityOverri
 
   return { topMatches: tier1, alsoWorthExploring: tier2, seeAll };
 }
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function Consultant() {
   const [user, setUser] = useState(null);
