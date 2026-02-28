@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import SchoolCard from './SchoolCard';
 
-export default function SchoolGrid({ schools, onViewDetails, onToggleShortlist, shortlistedIds = [] }) {
+export default function SchoolGrid({ schools, onViewDetails, onToggleShortlist, shortlistedIds = [], familyProfile = null }) {
   const [displayedCount, setDisplayedCount] = useState(20);
   const [visible, setVisible] = useState(false);
   const scrollContainerRef = useRef(null);
