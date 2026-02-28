@@ -1565,7 +1565,20 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
         >
 
 
-          {currentView === 'detail' && selectedSchool ? (
+          {comparisonData ? (
+            <ComparisonView
+              schools={comparisonData}
+              familyProfile={familyProfile}
+              onBack={() => {
+                setComparisonData(null);
+                setCurrentView('schools');
+                // Clear comparingSchools from context
+                const updatedContext = { ...(currentConversation?.conversationContext || {}) };
+                delete updatedContext.comparingSchools;
+                setCurrentConversation(prev => prev ? { ...prev, conversationContext: updatedContext } : prev);
+              }}
+            />
+          ) : currentView === 'detail' && selectedSchool ? (
             <SchoolDetailPanel
               school={selectedSchool}
               onBack={() => {
@@ -1603,17 +1616,11 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
                 priorityOverrides={priorityOverrides}
                 onPriorityToggle={handlePriorityToggle}
                 onNarrateComparison={handleNarrateComparison}
+                onOpenComparison={handleOpenComparison}
                 />
               </div>
             </div>
           ) : null}
-
-          {currentState === STATES.RESULTS && comparisonData && (
-            <ComparisonView 
-              schools={comparisonData} 
-              onBack={() => setComparisonData(null)}
-            />
-          )}
 
           
 
