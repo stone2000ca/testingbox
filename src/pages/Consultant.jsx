@@ -232,7 +232,7 @@ export default function Consultant() {
 
   const handlePriorityToggle = (rowId) => {
     setPriorityOverrides(prev => {
-      const CYCLE = ['nicetohave', 'musthave', 'dontcare'];
+      const CYCLE = ['musthave', 'nicetohave', 'dontcare'];
       const current = prev[rowId] || 'nicetohave';
       const next = CYCLE[(CYCLE.indexOf(current) + 1) % CYCLE.length];
       // Guard: at least 1 priority must remain non-dontcare
