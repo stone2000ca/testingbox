@@ -1,41 +1,27 @@
-import { ChevronUp, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+// T-RES-005: Sort toggle bar — 4 options, replaces old dropdown
+const SORT_OPTIONS = [
+  { value: 'bestFit',     label: 'Best Fit' },
+  { value: 'closest',     label: 'Closest to Me' },
+  { value: 'affordable',  label: 'Most Affordable' },
+  { value: 'newest',      label: 'New to Me' },
+];
 
-export default function SortControl({ sortField, sortDirection, onSortFieldChange, onSortDirectionChange }) {
-  const sortOptions = [
-    { value: 'relevance', label: 'Relevance' },
-    { value: 'name', label: 'Name' },
-    { value: 'distance', label: 'Distance' },
-    { value: 'tuition', label: 'Tuition' }
-  ];
-
+export default function SortControl({ sortMode, onSortChange }) {
   return (
-    <div className="flex items-center gap-3 text-sm">
-      <span className="text-slate-600 font-medium">Sort:</span>
-      <select
-        value={sortField}
-        onChange={(e) => onSortFieldChange(e.target.value)}
-        className="px-3 py-1.5 border border-slate-300 rounded-md bg-white text-slate-900 text-sm hover:border-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
-      >
-        {sortOptions.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <Button
-        size="icon"
-        variant="outline"
-        onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')}
-        className="h-8 w-8"
-        title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
-      >
-        {sortDirection === 'asc' ? (
-          <ChevronUp className="h-4 w-4" />
-        ) : (
-          <ChevronDown className="h-4 w-4" />
-        )}
-      </Button>
+    <div className="flex items-center gap-1 flex-wrap">
+      {SORT_OPTIONS.map(opt => (
+        <button
+          key={opt.value}
+          onClick={() => onSortChange(opt.value)}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+            sortMode === opt.value
+              ? 'bg-slate-800 text-white'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   );
 }
