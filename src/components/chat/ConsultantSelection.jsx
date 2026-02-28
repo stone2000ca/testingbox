@@ -125,7 +125,7 @@ export default function ConsultantSelection({ onSelectConsultant }) {
                 {/* CTA Button */}
                 <Button
                   onClick={() => onSelectConsultant(consultant.name)}
-                  className={`w-full bg-gradient-to-r ${consultant.color} hover:shadow-lg hover:shadow-${consultant.color.split('-')[1]}-500/50 text-white font-semibold py-6 transition-all`}
+                  className={`w-full bg-gradient-to-r ${consultant.color} hover:from-teal-600 hover:to-teal-500 text-white font-semibold py-6 transition-all`}
                 >
                   Meet {consultant.name}
                   <ArrowRight className="h-5 w-5 ml-2" />

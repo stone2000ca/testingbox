@@ -18,7 +18,7 @@ export default function DeepDiveConfirmation({
           : 'bg-[#6B9DAD]/20 text-[#E8E8ED] border border-[#6B9DAD]/30'
       }`}>
         <p className="text-sm">
-          Great choice — <strong>{school.name}</strong> came up as a strong match for {childName || 'your child'}. I can do a detailed analysis of how it fits your family's priorities. Want me to dig in, or would you rather keep browsing your other matches?
+          Looks like you're interested in <strong>{school.name}</strong>. Want me to do a deeper analysis of how it fits your family's priorities, or would you rather keep browsing?
         </p>
       </div>
       <div className="flex flex-col gap-2 w-full">
