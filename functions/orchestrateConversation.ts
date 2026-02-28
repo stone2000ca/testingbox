@@ -426,27 +426,6 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     }
   }
   
-  // BUG-BUD-001 FIX: maxTuition must always REPLACE, never concatenate.
-  // Handle before the generic loop and delete from extractedData to prevent re-processing.
-  if (extractedData.maxTuition !== undefined && extractedData.maxTuition !== null) {
-    let singleMaxTuition = null;
-    const rawTuition = extractedData.maxTuition;
-    if (Array.isArray(rawTuition)) {
-      const firstNum = rawTuition.find(item => typeof item === 'number' && !isNaN(item));
-      if (firstNum !== undefined) singleMaxTuition = firstNum;
-    } else if (typeof rawTuition === 'number' && !isNaN(rawTuition)) {
-      singleMaxTuition = rawTuition;
-    } else if (typeof rawTuition === 'string') {
-      const parsed = parseInt(rawTuition.replace(/[^0-9]/g, ''));
-      if (!isNaN(parsed) && parsed > 0) singleMaxTuition = parsed;
-    }
-    if (singleMaxTuition !== null) {
-      updatedFamilyProfile.maxTuition = singleMaxTuition;
-      console.log('[BUG-BUD-001] maxTuition replaced with:', singleMaxTuition, '(was:', updatedFamilyProfile.maxTuition, ')');
-    }
-    delete extractedData.maxTuition;
-  }
-
   const REMOVAL_MAP: Record<string, string> = {
     remove_priorities: 'priorities',
     remove_interests: 'interests',
