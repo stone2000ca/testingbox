@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X, Check, Circle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { buildPriorityChecks } from './SchoolCard';
 import { HeaderPhotoDisplay } from './HeaderPhotoHelper';
