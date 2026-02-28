@@ -319,6 +319,17 @@ export default function Consultant() {
     resetSort,
   } = useSchoolFiltering(schools, currentConversation?.conversationContext);
 
+  // BRIEF→RESULTS transition animation
+  useEffect(() => {
+    const wasIntake = prevIsIntakePhaseRef.current;
+    prevIsIntakePhaseRef.current = isIntakePhase;
+    if (wasIntake && !isIntakePhase) {
+      // Just switched from intake → results: trigger animation
+      setIsTransitioning(true);
+      setTimeout(() => setIsTransitioning(false), 600);
+    }
+  }, [isIntakePhase]);
+
   // TASK B: Save/restore scroll position during transition
   useEffect(() => {
     if (!isIntakePhase && chatScrollRef.current) {
