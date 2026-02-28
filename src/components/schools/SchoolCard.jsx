@@ -1,10 +1,240 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Heart, DollarSign, Users, Navigation, Check, AlertTriangle } from "lucide-react";
+import { MapPin, Heart, DollarSign, Users, Navigation, Check, AlertTriangle, X, Circle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HeaderPhotoDisplay, LogoDisplay, isClearbitUrl } from '@/components/schools/HeaderPhotoHelper';
 
-export default function SchoolCard({ school, onViewDetails, onToggleShortlist, isShortlisted, index = 0, accentColor = "#0D9488" }) {
+// =============================================================================
+// T-RES-002: Tuition Band Utility
+// =============================================================================
+function getTuitionBand(school) {
+  const val = school.dayTuition ?? school.tuition;
+  if (val == null) return { label: null, display: 'Contact school' };
+  if (val < 15000) return { label: '$', display: 'Under $15K' };
+  if (val < 25000) return { label: '$$', display: '$15K–$25K' };
+  if (val < 40000) return { label: '$$$', display: '$25K–$40K' };
+  return { label: '$$$$', display: '$40K+' };
+}
+
+// =============================================================================
+// T-RES-001: Dealbreaker Keyword Mapper
+// =============================================================================
+function mapDealbreakersToRows(dealbreakers) {
+  if (!dealbreakers || dealbreakers.length === 0) return [];
+  const rowIds = new Set();
+  const text = dealbreakers.join(' ').toLowerCase();
+  if (/class size|small class/.test(text)) rowIds.add('classSize');
+  if (/co-ed|coed|boys|girls|all-boys|all-girls|gender/.test(text)) rowIds.add('gender');
+  if (/french|immersion|bilingual|language/.test(text)) rowIds.add('language');
+  if (/close|commute|distance|nearby/.test(text)) rowIds.add('distance');
+  if (/religious|catholic|christian|jewish|muslim|faith/.test(text)) rowIds.add('religious');
+  if (/boarding|residential/.test(text)) rowIds.add('boarding');
+  if (/learning support|special needs|adhd|learning disability/.test(text)) rowIds.add('learningSupport');
+  if (/budget|affordable|cost|tuition/.test(text)) rowIds.add('budget');
+  if (/\bib\b|ap\b|montessori|curriculum|waldorf|reggio/.test(text)) rowIds.add('curriculum');
+  return Array.from(rowIds);
+}
+
+// =============================================================================
+// T-RES-001: Priority Checkmarks Builder
+// =============================================================================
+function buildPriorityChecks(school, familyProfile) {
+  if (!familyProfile) return [];
+
+  const rows = [];
+
+  // Row 0 - Distance
+  if (school.distanceKm != null) {
+    const match = school.distanceKm <= 50;
+    rows.push({
+      id: 'distance',
+      rowNum: 0,
+      label: 'Distance',
+      status: match ? 'match' : 'mismatch',
+      detail: match ? `${school.distanceKm.toFixed(1)} km away` : `${school.distanceKm.toFixed(1)} km away`,
+    });
+  }
+
+  // Row 1 - Grade
+  if (familyProfile.childGrade != null) {
+    const grade = Number(familyProfile.childGrade);
+    const lo = school.lowestGrade != null ? Number(school.lowestGrade) : null;
+    const hi = school.highestGrade != null ? Number(school.highestGrade) : null;
+    if (lo != null && hi != null) {
+      const match = grade >= lo && grade <= hi;
+      rows.push({
+        id: 'grade',
+        rowNum: 1,
+        label: 'Grade',
+        status: match ? 'match' : 'mismatch',
+        detail: match ? `Gr ${lo}–${hi} ✓` : `School: Gr ${lo}–${hi}`,
+      });
+    }
+  }
+
+  // Row 2 - Budget
+  if (familyProfile.maxTuition) {
+    const budget = Number(familyProfile.maxTuition);
+    const tuitionVal = school.dayTuition ?? school.tuition;
+    if (tuitionVal == null) {
+      rows.push({ id: 'budget', rowNum: 2, label: 'Budget', status: 'unknown', detail: 'Worth asking about' });
+    } else {
+      const match = tuitionVal <= budget;
+      rows.push({
+        id: 'budget',
+        rowNum: 2,
+        label: 'Budget',
+        status: match ? 'match' : 'mismatch',
+        detail: match ? 'Within budget' : 'Above budget',
+      });
+    }
+  }
+
+  // Row 3 - Gender
+  if (familyProfile.gender) {
+    const gp = school.genderPolicy;
+    if (!gp) {
+      rows.push({ id: 'gender', rowNum: 3, label: 'Gender', status: 'unknown', detail: 'Worth asking about' });
+    } else {
+      let match = true;
+      if (gp === 'Co-ed' || gp === 'Co-ed with single-gender classes') {
+        match = true;
+      } else if (gp === 'All-Boys') {
+        match = familyProfile.gender === 'male';
+      } else if (gp === 'All-Girls') {
+        match = familyProfile.gender === 'female';
+      }
+      if (!match) console.log('GENDER-MISMATCH:', school.name, gp, familyProfile.gender);
+      rows.push({
+        id: 'gender',
+        rowNum: 3,
+        label: 'Gender',
+        status: match ? 'match' : 'mismatch',
+        detail: gp,
+      });
+    }
+  }
+
+  // Row 4 - Curriculum
+  if (familyProfile.curriculumPreference && familyProfile.curriculumPreference.length > 0) {
+    const prefs = familyProfile.curriculumPreference.map(p => p.toLowerCase());
+    const ct = (school.curriculumType || '').toLowerCase();
+    if (!ct) {
+      rows.push({ id: 'curriculum', rowNum: 4, label: 'Curriculum', status: 'unknown', detail: 'Worth asking about' });
+    } else {
+      const match = prefs.some(p => ct.includes(p) || p.includes(ct));
+      rows.push({
+        id: 'curriculum',
+        rowNum: 4,
+        label: 'Curriculum',
+        status: match ? 'match' : 'mismatch',
+        detail: school.curriculumType,
+      });
+    }
+  }
+
+  // Row 5 - Religious (skip if no preference or 'none'/'non-denominational')
+  if (familyProfile.religiousPreference && !/none|non-denom/i.test(familyProfile.religiousPreference)) {
+    const aff = school.religiousAffiliation;
+    if (!aff) {
+      rows.push({ id: 'religious', rowNum: 5, label: 'Religious', status: 'unknown', detail: 'Worth asking about' });
+    } else {
+      const match = aff.toLowerCase().includes(familyProfile.religiousPreference.toLowerCase());
+      rows.push({ id: 'religious', rowNum: 5, label: 'Religious', status: match ? 'match' : 'mismatch', detail: aff });
+    }
+  }
+
+  // Row 6 - Boarding
+  const wantsBoarding = familyProfile.boardingPreference === 'open_to_boarding' || familyProfile.boardingPreference === 'boarding_preferred';
+  if (wantsBoarding) {
+    if (school.boardingAvailable == null) {
+      rows.push({ id: 'boarding', rowNum: 6, label: 'Boarding', status: 'unknown', detail: 'Worth asking about' });
+    } else {
+      rows.push({
+        id: 'boarding',
+        rowNum: 6,
+        label: 'Boarding',
+        status: school.boardingAvailable ? 'match' : 'mismatch',
+        detail: school.boardingAvailable ? 'Boarding available' : 'Day school only',
+      });
+    }
+  }
+
+  // Row 7 - Class Size
+  const wantsSmallClasses = familyProfile.priorities?.some(p => /class size|small class/i.test(p)) ||
+    familyProfile.dealbreakers?.some(p => /class size|small class/i.test(p));
+  if (wantsSmallClasses) {
+    const cs = school.avgClassSize ?? school.averageClassSize;
+    if (cs == null) {
+      rows.push({ id: 'classSize', rowNum: 7, label: 'Class Size', status: 'unknown', detail: 'Worth asking about' });
+    } else {
+      rows.push({
+        id: 'classSize',
+        rowNum: 7,
+        label: 'Class Size',
+        status: cs < 20 ? 'match' : 'mismatch',
+        detail: `Avg ${cs} students`,
+      });
+    }
+  }
+
+  // Row 8 - Learning Support
+  const wantsLS = familyProfile.learningDifferences?.length > 0 ||
+    familyProfile.priorities?.some(p => /learning support|special needs|adhd/i.test(p));
+  if (wantsLS) {
+    const hasLS = school.specialEdPrograms?.length > 0;
+    if (hasLS == null || school.specialEdPrograms == null) {
+      rows.push({ id: 'learningSupport', rowNum: 8, label: 'Learning Support', status: 'unknown', detail: 'Worth asking about' });
+    } else {
+      rows.push({
+        id: 'learningSupport',
+        rowNum: 8,
+        label: 'Learning Support',
+        status: hasLS ? 'match' : 'mismatch',
+        detail: hasLS ? 'Support programs available' : 'Not listed',
+      });
+    }
+  }
+
+  // Row 9 - Language
+  if (familyProfile.languagePreference && !/^english$/i.test(familyProfile.languagePreference)) {
+    const li = school.languageOfInstruction;
+    if (!li) {
+      rows.push({ id: 'language', rowNum: 9, label: 'Language', status: 'unknown', detail: 'Worth asking about' });
+    } else {
+      const match = li.toLowerCase().includes(familyProfile.languagePreference.toLowerCase());
+      rows.push({ id: 'language', rowNum: 9, label: 'Language', status: match ? 'match' : 'mismatch', detail: li });
+    }
+  }
+
+  // Sort: dealbreaker rows first, then by rowNum
+  const dbRows = mapDealbreakersToRows(familyProfile.dealbreakers || []);
+  rows.sort((a, b) => {
+    const aDB = dbRows.includes(a.id) ? 0 : 1;
+    const bDB = dbRows.includes(b.id) ? 0 : 1;
+    if (aDB !== bDB) return aDB - bDB;
+    return a.rowNum - b.rowNum;
+  });
+
+  // Apply rules: count data-backed rows (match or mismatch, not unknown)
+  const dataBacked = rows.filter(r => r.status !== 'unknown').length;
+  if (dataBacked < 3) return []; // fall back to commentary-only
+
+  // Max 1 circle: drop extra unknowns
+  let circleCount = 0;
+  const filtered = rows.filter(r => {
+    if (r.status === 'unknown') {
+      circleCount++;
+      return circleCount <= 1;
+    }
+    return true;
+  });
+
+  // Soft cap at 6
+  return filtered.slice(0, 6);
+}
+
+export default function SchoolCard({ school, onViewDetails, onToggleShortlist, isShortlisted, index = 0, accentColor = "#0D9488", familyProfile = null }) {
   const getCurrencySymbol = (currency) => {
     const symbols = { CAD: 'CA$', USD: '$', EUR: '€', GBP: '£' };
     return symbols[currency] || '$';
@@ -38,6 +268,9 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
   }
 
   const badge = getRegionBadge(school.region);
+  const tuitionBand = getTuitionBand(school);
+  const priorityChecks = buildPriorityChecks(school, familyProfile);
+  const showChecklist = priorityChecks.length > 0;
 
   return (
     <Card 
