@@ -880,6 +880,7 @@ export default function Consultant() {
       // Store extractedEntities from response for FamilyBrief fallback display
       if (response.data.extractedEntities) {
         setExtractedEntitiesData(response.data.extractedEntities);
+        console.log('[BUDGET FIX] Stored extractedEntities:', response.data.extractedEntities);
       }
 
       // T047: If matches were auto-refreshed, bump animation key to trigger fade/reorder

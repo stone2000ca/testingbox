@@ -66,7 +66,7 @@ function TagList({ label, items }) {
   );
 }
 
-export default function FamilyBrief({ familyProfile, onClose, consultantName }) {
+export default function FamilyBrief({ familyProfile, onClose, consultantName, extractedEntities = {} }) {
   const fp = familyProfile || {};
 
   const learningParts = [
@@ -134,7 +134,7 @@ export default function FamilyBrief({ familyProfile, onClose, consultantName }) 
             <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Logistics</span>
           </div>
           <Field label="Location" value={fp.locationArea} />
-          <Field label="Budget" value={formatBudget(fp.maxTuition)} />
+          <Field label="Budget" value={formatBudget(fp.maxTuition || extractedEntities?.maxTuition)} />
         </section>
 
         <div className="border-t border-white/8" />
