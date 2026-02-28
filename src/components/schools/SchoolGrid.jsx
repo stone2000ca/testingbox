@@ -43,8 +43,9 @@ export default function SchoolGrid({
   shortlistedIds = [],
   familyProfile = null,
   accentColor = "#0D9488",
-  // tiered mode — passed from Consultant
   tieredSchools = null,
+  priorityOverrides = {},
+  onPriorityToggle = null,
 }) {
   const [tier3Expanded, setTier3Expanded] = useState(false);
 
