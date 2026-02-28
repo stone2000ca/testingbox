@@ -221,6 +221,7 @@ export default function Consultant() {
   const [lastTypingTime, setLastTypingTime] = useState(Date.now());
   const [familyProfile, setFamilyProfile] = useState(null);
   const [showFamilyBrief, setShowFamilyBrief] = useState(false);
+  const [extractedEntitiesData, setExtractedEntitiesData] = useState({});
   // T046: Right-side rail panel state
   const [activePanel, setActivePanel] = useState(null); // 'brief' | 'shortlist' | null
 
@@ -874,6 +875,11 @@ export default function Consultant() {
       // T043: Update familyProfile live from orchestration response
       if (response.data.familyProfile) {
         setFamilyProfile(response.data.familyProfile);
+      }
+
+      // Store extractedEntities from response for FamilyBrief fallback display
+      if (response.data.extractedEntities) {
+        setExtractedEntitiesData(response.data.extractedEntities);
       }
 
       // T047: If matches were auto-refreshed, bump animation key to trigger fade/reorder
@@ -1535,7 +1541,7 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
               familyProfile={familyProfile}
               consultantName={selectedConsultant}
               onClose={() => setActivePanel(null)}
-              extractedEntities={currentConversation?.conversationContext?.extractedEntities || {}}
+              extractedEntities={extractedEntitiesData}
             />
           )}
           <IconRail
@@ -1691,7 +1697,7 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
               familyProfile={familyProfile}
               consultantName={selectedConsultant}
               onClose={() => setActivePanel(null)}
-              extractedEntities={currentConversation?.conversationContext?.extractedEntities || {}}
+              extractedEntities={extractedEntitiesData}
             />
           </div>
         )}
