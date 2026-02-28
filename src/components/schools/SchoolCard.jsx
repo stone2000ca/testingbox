@@ -301,7 +301,7 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
 
   return (
     <Card
-      className="overflow-hidden transition-all duration-300 group school-card flex flex-col"
+      className="overflow-hidden transition-all duration-300 group school-card flex flex-col h-full min-h-[450px]"
       style={{ '--accent-color': accentColor }}
     >
       <style>{`
