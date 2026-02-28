@@ -181,6 +181,7 @@ export default function SchoolGrid({
   priorityOverrides = {},
   onPriorityToggle = null,
   onNarrateComparison = null,
+  onOpenComparison = null,
 }) {
   const [tier3Expanded, setTier3Expanded] = useState(false);
   // T-SL-002: track newly backfilled IDs to animate them in
