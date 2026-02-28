@@ -1,7 +1,6 @@
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Heart, DollarSign, Navigation, Check, AlertTriangle, X, Circle, ChevronDown, ChevronUp, Lock, Scale, EyeOff } from "lucide-react";
+import { MapPin, Heart, Navigation, Check, AlertTriangle, X, Circle, Lock, Scale, EyeOff } from "lucide-react";
 import { HeaderPhotoDisplay, LogoDisplay } from '@/components/schools/HeaderPhotoHelper';
 
 // =============================================================================
