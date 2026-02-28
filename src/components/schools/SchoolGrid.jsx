@@ -283,9 +283,9 @@ export default function SchoolGrid({
               <h3 className="text-sm font-semibold text-slate-800">Also Worth Exploring</h3>
               <p className="text-xs text-slate-500 mt-0.5">Other strong options from the matching pool</p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', alignItems: 'stretch' }}>
               {displayedT2.map((school, index) => (
-                <div key={school.id} className="w-[240px]">
+                <div key={school.id} className="flex">
                   <AnimatedCard
                     isNew={allBackfilledIds.has(school.id)}
                     index={index}
