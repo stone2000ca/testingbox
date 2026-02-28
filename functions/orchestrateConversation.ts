@@ -512,8 +512,10 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
       try {
         const persistedProfile = await base44.entities.FamilyProfile.update(updatedFamilyProfile.id, updatedFamilyProfile);
         Object.assign(updatedFamilyProfile, persistedProfile);
+        console.log('[EXTRACT] FamilyProfile persisted successfully:', updatedFamilyProfile.id);
       } catch (e) {
-        console.error('FamilyProfile update failed:', e);
+        console.error('[EXTRACT] CRITICAL: FamilyProfile update failed:', e.message);
+        throw new Error(`FamilyProfile persistence failed: ${e.message}`);
       }
     }
   }
@@ -1327,6 +1329,7 @@ Deno.serve(async (req) => {
           briefStatus: null,
           conversationContext: context,
           familyProfile: conversationFamilyProfile,
+          extractedEntities: extractionResult?.extractedEntities || {},
           schools: []
         });
       }
@@ -1379,18 +1382,33 @@ Deno.serve(async (req) => {
 
       if (currentState === STATES.DISCOVERY) {
         responseData = await handleDiscovery(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentSchools, flags);
+        responseData.extractedEntities = extractionResult?.extractedEntities || {};
         return Response.json(responseData);
       }
 
       if (currentState === STATES.BRIEF) {
         responseData = await handleBrief(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, flags);
+        responseData.extractedEntities = extractionResult?.extractedEntities || {};
         return Response.json(responseData);
       }
 
       if (currentState === STATES.RESULTS) {
+        // BUG-FLOW-002 FIX: Ensure FamilyProfile is persisted before calling searchSchools
+        if (conversationFamilyProfile?.id && Object.keys(extractionResult?.extractedEntities || {}).length > 0) {
+          try {
+            const finalProfile = await base44.entities.FamilyProfile.filter({ id: conversationFamilyProfile.id });
+            if (finalProfile.length > 0) {
+              conversationFamilyProfile = finalProfile[0];
+              console.log('[RESULTS] Refreshed FamilyProfile from DB:', conversationFamilyProfile.id);
+            }
+          } catch (e) {
+            console.error('[RESULTS] Failed to refresh FamilyProfile:', e.message);
+          }
+        }
         const autoRefresh = context.autoRefreshed === true;
         responseData = await handleResults(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, selectedSchoolId, conversationId, userId, userLocation, autoRefresh, extractionResult?.extractedEntities || {});
         responseData.conversationContext = { ...(responseData.conversationContext || {}), autoRefreshed: autoRefresh };
+        responseData.extractedEntities = extractionResult?.extractedEntities || {};
         return Response.json(responseData);
       }
 
@@ -1405,7 +1423,8 @@ Deno.serve(async (req) => {
         briefStatus: briefStatus,
         schools: [],
         familyProfile: conversationFamilyProfile,
-        conversationContext: context
+        conversationContext: context,
+        extractedEntities: extractionResult?.extractedEntities || {}
       });
 
     } catch (error) {
