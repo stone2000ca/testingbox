@@ -165,7 +165,7 @@ function AnimatedCard({ school, isNew, ...props }) {
   return (
     <div
       key={school.id}
-      className="w-full"
+      className="w-full flex"
       style={isNew ? { animation: 'slideInCard 0.35s ease-out both' } : undefined}
     >
       <style>{`
