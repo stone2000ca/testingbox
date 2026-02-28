@@ -564,7 +564,7 @@ export default function Consultant() {
         setTokenBalance(newBalance);
         setIsPremium(plan === 'pro' || plan === 'enterprise');
         await loadConversations(userData.id);
-        await loadShortlist(userData.id);
+        await loadShortlist(userData);
       } else {
         // For guest users, check localStorage for balance
         const guestBalance = parseInt(localStorage.getItem('guestTokenBalance') || '100');
