@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import SchoolCard from './SchoolCard';
-import { ChevronDown, ChevronUp, Pin } from 'lucide-react';
+import ShortlistComparisonModal from './ShortlistComparisonModal';
+import { ChevronDown, ChevronUp, Pin, GitCompareArrows } from 'lucide-react';
 
 // =============================================================================
 // T-RES-003: Tiered SchoolGrid
