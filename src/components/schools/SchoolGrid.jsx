@@ -117,7 +117,7 @@ function PinnedShortlistSection({ shortlistedSchools, onViewDetails, onToggleSho
           {shareUrl && <ShareModal shareUrl={shareUrl} onClose={() => setShareUrl(null)} />}
           {canCompare && (
             <button
-              onClick={() => setShowComparison(true)}
+              onClick={() => onOpenComparison && onOpenComparison(shortlistedSchools)}
               className="flex items-center gap-1.5 text-xs font-medium bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-full transition-colors"
             >
               <GitCompareArrows className="h-3.5 w-3.5" />
