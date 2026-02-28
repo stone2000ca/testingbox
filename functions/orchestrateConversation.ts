@@ -41,9 +41,7 @@ const CANADIAN_METRO_COORDS = {
 function resolveLocationCoords(locationArea) {
   if (!locationArea) return null;
   const key = locationArea.toLowerCase().trim();
-  // Exact match
   if (CANADIAN_METRO_COORDS[key]) return CANADIAN_METRO_COORDS[key];
-  // Partial match — check if any key is contained in the locationArea string
   for (const [city, coords] of Object.entries(CANADIAN_METRO_COORDS)) {
     if (key.includes(city) || city.includes(key)) return coords;
   }
@@ -156,15 +154,11 @@ function resolveTransition(params) {
   console.log('[DEBUG-BRIEF] briefStatus:', params.briefStatus, 'userMessage:', userMessage);
 
   // BUG-FLOW-001 HARD GUARD: RESULTS and DEEPDIVE can NEVER regress to BRIEF or DISCOVERY.
-  // This is a code-level override — no intentSignal or LLM output can bypass it.
-  // The only valid transitions out of RESULTS/DEEPDIVE are: DEEP_DIVE (school selected) or staying put.
   const inResultsOrDeepDive = currentState === STATES.RESULTS || currentState === STATES.DEEP_DIVE;
   if (inResultsOrDeepDive) {
-    // Allow school selection to enter DEEP_DIVE
     if (selectedSchoolId && selectedSchoolId !== previousSchoolId) {
       return { nextState: STATES.DEEP_DIVE, sufficiency, flags, transitionReason: 'school_selected' };
     }
-    // Everything else: stay put. Never go to BRIEF or DISCOVERY.
     console.log('[HARD GUARD] Blocked regression from', currentState, '— intentSignal was:', intentSignal);
     return { nextState: currentState, sufficiency, flags, transitionReason: 'hard_guard_results_deepdive' };
   }
@@ -189,6 +183,16 @@ function resolveTransition(params) {
     flags.USER_INTENT_OVERRIDE = true;
     return { nextState: STATES.RESULTS, sufficiency, flags, transitionReason: 'brief_confirmed', briefStatus: 'confirmed' };
   }
+
+  // FIX-A: STOP_PHRASES — if user explicitly signals they're done with questions,
+  // always route to BRIEF regardless of data sufficiency. Must check BEFORE sufficiency guard.
+  const STOP_PHRASES = /\b(no more questions|show me schools|i('m| am) done|enough questions|just show|stop asking|skip|let'?s see|move on|go ahead|that'?s enough|ready to see)\b/i;
+  if (currentState === STATES.DISCOVERY && STOP_PHRASES.test(userMessage || '')) {
+    flags.USER_INTENT_OVERRIDE = true;
+    console.log('[FIX-A] Stop-intent detected, routing to BRIEF regardless of sufficiency:', userMessage);
+    return { nextState: STATES.BRIEF, sufficiency, flags, transitionReason: 'stop_intent', briefStatus: 'generating', tier1CompletedTurn };
+  }
+
   if ((intentSignal === 'request-brief' || intentSignal === 'request-results') && turnCount >= 3 && currentState === STATES.DISCOVERY) {
     if (sufficiency === 'MINIMUM' || sufficiency === 'RICH') {
       flags.USER_INTENT_OVERRIDE = true;
@@ -208,9 +212,11 @@ function resolveTransition(params) {
     flags.USER_INTENT_OVERRIDE = true;
     return { nextState: STATES.BRIEF, sufficiency, flags, transitionReason: 'explicit_intent', briefStatus: 'generating' };
   }
+  // FIX-B: 'request-results' from DISCOVERY now routes to BRIEF (not directly to RESULTS).
+  // BRIEF is the mandatory confirmation gate before RESULTS.
   if (intentSignal === 'request-results' && turnCount < 3 && (sufficiency === 'MINIMUM' || sufficiency === 'RICH')) {
     flags.USER_INTENT_OVERRIDE = true;
-    return { nextState: STATES.RESULTS, sufficiency, flags, transitionReason: 'explicit_intent' };
+    return { nextState: STATES.BRIEF, sufficiency, flags, transitionReason: 'explicit_intent_via_brief', briefStatus: 'generating' };
   }
   if (intentSignal === 'edit-criteria') {
     flags.USER_INTENT_OVERRIDE = true;
@@ -273,19 +279,16 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
       extractedGrade = gradeMap[gradeStr] !== undefined ? gradeMap[gradeStr] : parseInt(gradeStr);
     }
 
-    // BUG-ENT-004: Regex pre-pass for gender (son/boy/he/him → male; daughter/girl/she/her → female)
     let extractedGender = null;
     if (/\b(son|boy|he|him|his)\b/i.test(message)) extractedGender = 'male';
     else if (/\b(daughter|girl|she|her|hers)\b/i.test(message)) extractedGender = 'female';
 
-    // BUG-ENT-005: Regex pre-pass for locationArea — city/province patterns
     let extractedLocation = null;
     const locationMatch = message.match(/\b(?:in|near|around|from)\s+([A-Z][a-zA-Z]+(?:[\s-][A-Z][a-zA-Z]+)?(?:,\s*[A-Za-z]{2,})?)/);
     if (locationMatch && locationMatch[1]) {
       extractedLocation = locationMatch[1].trim();
     }
 
-    // BUG-ENT-004: Regex pre-pass for conversational budget formats: 25K, $25K, 25 thousand, around $25,000
     let extractedBudget = null;
     const budgetMatch = message.match(/(?:budget|tuition|afford|pay|spend)?[^.]*?\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*(?:k|thousand|K)?/i);
     if (budgetMatch) {
@@ -293,10 +296,8 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
       const numStr = budgetMatch[1].replace(/,/g, '');
       const num = parseInt(numStr);
       if (!isNaN(num)) {
-        // Detect "K" or "thousand" multiplier
         const isThousands = /\d\s*[kK]/.test(raw) || /thousand/i.test(raw);
         const amount = isThousands ? num * 1000 : num;
-        // Only accept as budget if amount is in a plausible tuition range (5k–500k)
         if (amount >= 5000 && amount <= 500000) {
           extractedBudget = amount;
         }
@@ -388,14 +389,12 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     if (extractedGrade !== null && !finalResult.childGrade) {
       finalResult = { ...finalResult, childGrade: extractedGrade };
     }
-    // BUG-ENT-004: Apply regex-pre-passed gender/budget only if LLM didn't extract them
     if (extractedGender !== null && !finalResult.gender) {
       finalResult = { ...finalResult, gender: extractedGender };
     }
     if (extractedBudget !== null && !finalResult.maxTuition) {
       finalResult = { ...finalResult, maxTuition: extractedBudget };
     }
-    // BUG-ENT-005: Regex fallback for locationArea — same pattern as grade/budget
     if (extractedLocation !== null && !finalResult.locationArea) {
       finalResult = { ...finalResult, locationArea: extractedLocation };
     }
@@ -435,7 +434,6 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
 
   const updatedFamilyProfile = { ...conversationFamilyProfile };
   if (Object.keys(extractedData).length > 0) {
-    // Step 1: Process removals first so additions on the same turn don't resurrect removed items
     for (const [removeKey, targetField] of Object.entries(REMOVAL_MAP)) {
       const toRemove = extractedData[removeKey];
       if (Array.isArray(toRemove) && toRemove.length > 0 && Array.isArray(updatedFamilyProfile[targetField])) {
@@ -447,9 +445,8 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
       }
     }
 
-    // Step 2: Process additions (skip the remove_* keys themselves)
     for (const [key, value] of Object.entries(extractedData)) {
-      if (key in REMOVAL_MAP) continue; // skip remove_* keys — already handled above
+      if (key in REMOVAL_MAP) continue;
       if (value !== null && value !== undefined) {
         const existing = updatedFamilyProfile[key];
         if (Array.isArray(value)) {
@@ -503,13 +500,11 @@ async function handleDiscovery(base44, message, conversationFamilyProfile, conte
     ? '\n\nIf it feels natural in the conversation, offer to generate their Family Brief.'
     : '';
 
-  // T038: Tier 1 guided collection — check which core data points are missing
   const hasGrade = conversationFamilyProfile?.childGrade !== null && conversationFamilyProfile?.childGrade !== undefined;
   const hasLocation = !!conversationFamilyProfile?.locationArea;
   const hasBudget = !!conversationFamilyProfile?.maxTuition;
   const hasGender = !!conversationFamilyProfile?.gender;
 
-  // Build "already known" summary — always injected so LLM never re-asks collected fields
   const knownFacts = [];
   if (hasGrade) knownFacts.push(`grade ${conversationFamilyProfile.childGrade}`);
   if (hasGender) knownFacts.push(`${conversationFamilyProfile.gender}`);
@@ -792,7 +787,6 @@ async function handleResults(base44, message, conversationFamilyProfile, context
     parsedTuition = typeof conversationFamilyProfile.maxTuition === 'number' ? conversationFamilyProfile.maxTuition : parseInt(conversationFamilyProfile.maxTuition);
   }
 
-  // T045: Resolve lat/lng from stated locationArea first, fall back to browser geolocation
   const locationCoords = resolveLocationCoords(conversationFamilyProfile?.locationArea);
   const resolvedLat = locationCoords?.lat ?? userLocation?.lat ?? null;
   const resolvedLng = locationCoords?.lng ?? userLocation?.lng ?? null;
@@ -807,7 +801,6 @@ async function handleResults(base44, message, conversationFamilyProfile, context
 
   if (conversationFamilyProfile?.locationArea) {
     const locationAreaLower = conversationFamilyProfile.locationArea.toLowerCase().trim();
-    // Handle regional aliases (GTA, Lower Mainland) — pass as region, not city
     const regionAliases = ['gta', 'greater toronto area', 'lower mainland', 'metro vancouver', 'greater vancouver'];
     if (regionAliases.includes(locationAreaLower)) {
       searchParams.region = conversationFamilyProfile.locationArea;
@@ -1059,7 +1052,6 @@ Generate the DEEPDIVE card for this family-school match.`;
     aiMessage = `**Great Fit for ${childDisplayName}**\n\n**Why ${selectedSchool.name} for ${childDisplayName}**\n${selectedSchool.description?.substring(0, 150) || 'School details available upon request.'}\n\n**Cost Reality**\nTuition: ${compressedSchoolData.tuitionFee}/year\n\nWhat would you like to know more about?`;
   }
 
-  // Sanitize aiMessage: remove internal labels that may have leaked from the LLM
   const sanitizedMessage = aiMessage
     .split('\n')
     .filter(line => {
@@ -1098,13 +1090,23 @@ Deno.serve(async (req) => {
       const base44 = createClientFromRequest(req);
       const { message, conversationHistory, conversationContext, region, userId, consultantName, currentSchools, userLocation, selectedSchoolId } = await req.json();
 
-      // FIX: Force RESULTS state on brief confirmation signal
+      // FIX-C: __CONFIRM_BRIEF__ sentinel only forces RESULTS if briefStatus was already pending_review.
+      // If brief hasn't been shown yet, route to BRIEF first (generating state).
       let context = conversationContext || {};
-      let processMessage = message; // Sanitize sentinel before downstream use
+      let processMessage = message;
       if (message === '__CONFIRM_BRIEF__') {
-        processMessage = 'show me schools'; // Replace sentinel with safe text
-        context.state = 'RESULTS';
-        context.briefStatus = 'confirmed';
+        processMessage = 'show me schools';
+        if (context.briefStatus === 'pending_review') {
+          // Brief was shown and user confirmed — safe to go to RESULTS
+          context.state = 'RESULTS';
+          context.briefStatus = 'confirmed';
+          console.log('[FIX-C] __CONFIRM_BRIEF__ sentinel: briefStatus was pending_review, going to RESULTS');
+        } else {
+          // Brief hasn't been shown yet — route to BRIEF first
+          context.state = 'BRIEF';
+          context.briefStatus = 'generating';
+          console.log('[FIX-C] __CONFIRM_BRIEF__ sentinel: briefStatus was', context.briefStatus, '— routing to BRIEF first');
+        }
       }
 
       console.log('ORCH START', { 
@@ -1147,10 +1149,6 @@ Deno.serve(async (req) => {
       let intentSignal = 'continue';
       let briefDelta = { additions: [], updates: [], removals: [] };
 
-      // STEP 0b: Seed conversationFamilyProfile from context.extractedEntities if DB profile is empty
-      // This handles the case where turn 1 entities were extracted but DB persist was skipped
-      // (e.g. no conversationId on turn 1). On turn 2 the frontend sends extractedEntities back
-      // inside conversationContext, so we can use them to pre-populate the profile.
       if (conversationFamilyProfile && context.extractedEntities) {
         for (const [key, value] of Object.entries(context.extractedEntities)) {
           if (value !== null && value !== undefined && !['briefDelta', 'intentSignal'].includes(key)) {
@@ -1163,10 +1161,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // STEP 1: ENTITY EXTRACTION — runs for EVERY message including the first one
-      // so that data from message 1 is available before the WELCOME handler returns
-
-      // T040b: Snapshot Tier 1 fields before extraction/merge
       const tier1Before = {
         childGrade: conversationFamilyProfile?.childGrade ?? null,
         locationArea: conversationFamilyProfile?.locationArea ?? null,
@@ -1192,11 +1186,9 @@ Deno.serve(async (req) => {
         briefDelta = { additions: [], updates: [], removals: [] };
       }
       
-      // Apply extraction results before any state handler runs
       Object.assign(conversationFamilyProfile, extractionResult.updatedFamilyProfile);
       Object.assign(context, extractionResult.updatedContext);
 
-      // T047: Compare extracted entities to detect any new data — triggers silent match refresh
       const tier1After = {
         childGrade: conversationFamilyProfile?.childGrade ?? null,
         locationArea: conversationFamilyProfile?.locationArea ?? null,
@@ -1210,25 +1202,19 @@ Deno.serve(async (req) => {
         if (oldVal === null || oldVal === undefined) return true;
         return oldVal !== newVal;
       });
-      // Also detect non-tier1 entity changes (interests, priorities, dealbreakers)
       const extractedKeys = Object.keys(extractionResult?.extractedEntities || {}).filter(k =>
         !['intentSignal', 'briefDelta', 'remove_priorities', 'remove_interests', 'remove_dealbreakers'].includes(k)
       );
       const anyEntityExtracted = extractedKeys.length > 0;
       const inResultsOrDeepDive = context.state === STATES.RESULTS || context.state === STATES.DEEP_DIVE;
-      // T047: auto-refresh flag — set when ANY entity changes in RESULTS/DEEPDIVE
       const shouldAutoRefresh = (tier1Changed || anyEntityExtracted) && inResultsOrDeepDive;
-      context.resultsStale = false; // No longer used for UI banner
+      context.resultsStale = false;
       context.autoRefreshed = shouldAutoRefresh;
       if (shouldAutoRefresh) {
         console.log('[T047] Entity change detected in RESULTS/DEEPDIVE — will auto-refresh matches');
         console.log('[T047] Changed entities:', extractedKeys, '| Tier1 changed:', tier1Changed);
       }
 
-      // STEP 2: WELCOME HANDLER — now runs after extraction so conversationFamilyProfile
-      // already contains any entities from the first message.
-      // We return familyProfile in the payload so the frontend passes it back on turn 2,
-      // ensuring entities from message 1 survive even when conversationId was not yet set.
       if (isFirstMessage && !context.state) {
         console.log('[ORCH] First message, return WELCOME greeting');
         const welcomeMessage = consultantName === 'Jackie'
@@ -1244,7 +1230,6 @@ Deno.serve(async (req) => {
         });
       }
       
-      // STEP 3: BUILD PROFILE DATA
       const profileData = {
         location: conversationFamilyProfile?.locationArea || null,
         gradeLevel: conversationFamilyProfile?.childGrade || null,
@@ -1259,7 +1244,6 @@ Deno.serve(async (req) => {
       const currentBriefEditCount = context.briefEditCount || 0;
       const previousSchoolId = context.previousSchoolId || null;
       
-      // STEP 4: RESOLVE TRANSITION
       const resolveResult = resolveTransition({
         currentState: context.state || STATES.WELCOME,
         intentSignal,
@@ -1290,7 +1274,6 @@ Deno.serve(async (req) => {
 
       console.log(`[STATE] ${currentState} | briefStatus: ${briefStatus} | sufficiency: ${context.dataSufficiency} | reason: ${context.transitionReason}`);
 
-      // STEP 5: STATE-SPECIFIC RESPONSE GENERATION (all inlined)
       let responseData;
 
       if (currentState === STATES.DISCOVERY) {
@@ -1306,7 +1289,6 @@ Deno.serve(async (req) => {
       if (currentState === STATES.RESULTS) {
         const autoRefresh = context.autoRefreshed === true;
         responseData = await handleResults(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, selectedSchoolId, conversationId, userId, userLocation, autoRefresh, extractionResult?.extractedEntities || {});
-        // T047: include autoRefreshed in context so frontend knows matches were silently updated
         responseData.conversationContext = { ...(responseData.conversationContext || {}), autoRefreshed: autoRefresh };
         return Response.json(responseData);
       }
@@ -1316,7 +1298,6 @@ Deno.serve(async (req) => {
         return Response.json(responseData);
       }
 
-      // Fallback
       return Response.json({
         message: 'I encountered an unexpected state. Please try again.',
         state: currentState,
