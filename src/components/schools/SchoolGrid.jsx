@@ -17,9 +17,9 @@ function TierSection({ title, subtitle, schools, onViewDetails, onToggleShortlis
         <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
         {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="flex flex-wrap gap-3">
         {schools.map((school, index) => (
-          <div key={school.id} className="w-full">
+          <div key={school.id} className="w-[240px]">
             <SchoolCard
               school={school}
               index={index}
