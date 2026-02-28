@@ -365,9 +365,8 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
           )}
         </div>
 
-        {/* Expanded content */}
-        {isExpanded && (
-          <div className="mt-2 border-t border-slate-100 pt-2 space-y-2">
+        {/* Matching criteria — always visible */}
+        <div className="mt-2 border-t border-slate-100 pt-2 space-y-2">
             {rationale && (
               <p className="text-xs text-slate-500 line-clamp-2">{rationale}.</p>
             )}
