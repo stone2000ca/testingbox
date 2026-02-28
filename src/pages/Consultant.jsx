@@ -1348,18 +1348,19 @@ Return empty array if user didn't provide any of these facts.`;
               </div>
               <div className="flex-1 overflow-auto p-3 sm:p-4">
                 <SchoolGrid
-                  key={`${schoolsAnimKey}-${sortMode}-${JSON.stringify(priorityOverrides)}`}
-                  schools={filteredSchools}
-                  tieredSchools={buildTiers(filteredSchools, familyProfile, sortMode, priorityOverrides)}
-                  onViewDetails={handleViewSchoolDetail}
-                  onToggleShortlist={handleToggleShortlist}
-                  shortlistedIds={user?.shortlist || []}
-                  showDistances={showDistances}
-                  isLoading={isTyping && schools.length === 0}
-                  accentColor={selectedConsultant === 'Jackie' ? '#C27B8A' : '#6B9DAD'}
-                  familyProfile={familyProfile}
-                  priorityOverrides={priorityOverrides}
-                  onPriorityToggle={handlePriorityToggle}
+                key={`${schoolsAnimKey}-${sortMode}-${JSON.stringify(priorityOverrides)}`}
+                schools={filteredSchools}
+                tieredSchools={buildTiers(filteredSchools, familyProfile, sortMode, priorityOverrides)}
+                onViewDetails={handleViewSchoolDetail}
+                onToggleShortlist={handleToggleShortlist}
+                shortlistedIds={user?.shortlist || []}
+                shortlistedSchools={shortlistData}
+                showDistances={showDistances}
+                isLoading={isTyping && schools.length === 0}
+                accentColor={selectedConsultant === 'Jackie' ? '#C27B8A' : '#6B9DAD'}
+                familyProfile={familyProfile}
+                priorityOverrides={priorityOverrides}
+                onPriorityToggle={handlePriorityToggle}
                 />
               </div>
             </div>
