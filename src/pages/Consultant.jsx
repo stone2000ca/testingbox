@@ -21,6 +21,56 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
 import { useSchoolFiltering } from '@/hooks/useSchoolFiltering';
+import { buildPriorityChecks } from '@/components/schools/SchoolCard';
+
+// =============================================================================
+// T-RES-003: Tiered Results Engine
+// =============================================================================
+function scoreSchool(school, familyProfile) {
+  const checks = buildPriorityChecks(school, familyProfile);
+  const greenCount = checks.filter(r => r.status === 'match').length;
+
+  // Tiebreaker 1: data completeness (non-null fields)
+  const importantFields = ['name', 'city', 'curriculumType', 'genderPolicy', 'dayTuition', 'tuition', 'lowestGrade', 'highestGrade', 'boardingAvailable', 'description', 'headerPhotoUrl', 'logoUrl'];
+  const completeness = importantFields.filter(f => school[f] != null && school[f] !== '').length;
+
+  // Tiebreaker 2: proximity (lower = better, null = worst)
+  const proximity = school.distanceKm != null ? school.distanceKm : 99999;
+
+  return { greenCount, completeness, proximity };
+}
+
+function buildTiers(schools, familyProfile) {
+  if (!schools || schools.length === 0) return null;
+
+  const scored = schools.map(s => ({ school: s, ...scoreSchool(s, familyProfile) }));
+  scored.sort((a, b) => {
+    if (b.greenCount !== a.greenCount) return b.greenCount - a.greenCount;
+    if (b.completeness !== a.completeness) return b.completeness - a.completeness;
+    return a.proximity - b.proximity;
+  });
+
+  const TIER1_SIZE = Math.min(5, Math.max(3, Math.ceil(scored.length * 0.25)));
+  const TIER2_SIZE = Math.min(5, Math.max(2, Math.ceil(scored.length * 0.2)));
+  const TOTAL_CAP = 7;
+
+  const tier1 = scored.slice(0, TIER1_SIZE).map(s => s.school);
+  const remaining = scored.slice(TIER1_SIZE);
+
+  // Tier 2: random sample from remaining
+  const tier2Count = Math.min(TIER2_SIZE, Math.max(0, TOTAL_CAP - tier1.length));
+  const shuffled = [...remaining].sort(() => Math.random() - 0.5);
+  const tier2 = shuffled.slice(0, tier2Count).map(s => s.school);
+  const tier2Ids = new Set(tier2.map(s => s.id));
+
+  // Tier 3: rest, sorted by distance
+  const seeAll = remaining
+    .filter(s => !tier2Ids.has(s.school.id))
+    .sort((a, b) => a.proximity - b.proximity)
+    .map(s => s.school);
+
+  return { topMatches: tier1, alsoWorthExploring: tier2, seeAll };
+}
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function Consultant() {
