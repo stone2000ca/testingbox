@@ -283,14 +283,15 @@ export default function SchoolGrid({
               <h3 className="text-sm font-semibold text-slate-800">Also Worth Exploring</h3>
               <p className="text-xs text-slate-500 mt-0.5">Other strong options from the matching pool</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="flex flex-wrap gap-3">
               {displayedT2.map((school, index) => (
-                <AnimatedCard
-                  key={school.id}
-                  isNew={allBackfilledIds.has(school.id)}
-                  index={index}
-                  {...sharedCardProps(school, shortlistedIds.includes(school.id))}
-                />
+                <div key={school.id} className="w-[240px]">
+                  <AnimatedCard
+                    isNew={allBackfilledIds.has(school.id)}
+                    index={index}
+                    {...sharedCardProps(school, shortlistedIds.includes(school.id))}
+                  />
+                </div>
               ))}
             </div>
           </div>
