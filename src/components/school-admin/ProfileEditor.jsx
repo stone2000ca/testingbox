@@ -68,7 +68,7 @@ const TIERS = [
     label: 'Tier 1 — Required',
     color: 'red',
     weight: 0.5,
-    motivational: 'These fields are essential for families to find and evaluate your school.',
+    motivational: 'Essential information families need to find your school.',
     fields: ['name', 'city', 'provinceState', 'country', 'lowestGrade', 'highestGrade', 'genderPolicy', 'dayTuition', 'schoolType'],
   },
   {
