@@ -978,10 +978,10 @@ export default function Consultant() {
        });
        setIsTyping(false);
 
-       // Add error message to chat
+       // Add error message to chat with actual error details
        const errorMessage = {
          role: 'assistant',
-         content: 'Sorry, something went wrong. Please try again.',
+         content: `Sorry, error: ${error?.message || 'Unknown error'} | Stack: ${error?.stack || 'No stack trace'}`,
          timestamp: new Date().toISOString()
        };
        setMessages([...updatedMessages, errorMessage]);
