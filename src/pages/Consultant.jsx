@@ -703,14 +703,6 @@ export default function Consultant() {
       }
 
       // Call orchestrateConversation with current schools context and user location
-      console.log('[SEND_MESSAGE] Calling orchestrateConversation with payload:', {
-        messageText,
-        consultantName: selectedConsultant,
-        userId: user?.id,
-        conversationContextExists: !!currentConversation?.conversationContext,
-        messagesLength: messages.length
-      });
-
       const response = await base44.functions.invoke('orchestrateConversation', {
         message: messageText,
         conversationHistory: messages,
@@ -731,20 +723,8 @@ export default function Consultant() {
         returningUserContext
       });
 
-      console.log('[SEND_MESSAGE] Response received from orchestrateConversation:', {
-        responseStatus: response?.status,
-        hasData: !!response?.data,
-        dataKeys: response?.data ? Object.keys(response.data) : 'NO_DATA',
-        messageLength: response?.data?.message?.length,
-        stateReturned: response?.data?.state,
-        schoolsCount: response?.data?.schools?.length
-      });
-
-      console.log('[SEND_MESSAGE] Processing response data...');
-
       // T043: Update familyProfile live from orchestration response
       if (response.data.familyProfile) {
-        console.log('[SEND_MESSAGE] Setting familyProfile:', response.data.familyProfile);
         setFamilyProfile(response.data.familyProfile);
       }
 
@@ -969,19 +949,13 @@ export default function Consultant() {
          }
        }
     } catch (error) {
-       console.error('[SEND_MESSAGE] CATCH BLOCK - Error sending message:', {
-         errorMessage: error?.message,
-         errorStatus: error?.response?.status,
-         errorData: error?.response?.data,
-         errorStack: error?.stack,
-         fullError: error
-       });
+       console.error('Error sending message:', error);
        setIsTyping(false);
 
-       // Add error message to chat with actual error details
+       // Add error message to chat
        const errorMessage = {
          role: 'assistant',
-         content: `Sorry, error: ${error?.message || 'Unknown error'} | Stack: ${error?.stack || 'No stack trace'}`,
+         content: 'Sorry, something went wrong. Please try again.',
          timestamp: new Date().toISOString()
        };
        setMessages([...updatedMessages, errorMessage]);
