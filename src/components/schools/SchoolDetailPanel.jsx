@@ -176,20 +176,20 @@ function DataGridTier({ school, familyProfile }) {
 
 // TIER 3: Detailed Sections
 function DetailedSectionsTier({ school }) {
+  const noData = <p className="text-sm text-slate-500 italic">Information not available</p>;
+
   return (
     <div className="p-6 space-y-8 border-b border-slate-700">
       {/* About */}
-      {(school.description || school.missionStatement) && (
-        <div>
-          <h3 className="text-lg font-bold text-white mb-3">About</h3>
-          {school.missionStatement && (
-            <p className="text-sm text-slate-300 mb-3 italic">"{school.missionStatement}"</p>
-          )}
-          {school.description && (
-            <p className="text-sm text-slate-400">{school.description}</p>
-          )}
-        </div>
-      )}
+      <div>
+        <h3 className="text-lg font-bold text-white mb-3">About</h3>
+        {school.missionStatement ? (
+          <p className="text-sm text-slate-300 mb-3 italic">"{school.missionStatement}"</p>
+        ) : null}
+        {school.description ? (
+          <p className="text-sm text-slate-400">{school.description}</p>
+        ) : !school.missionStatement ? noData : null}
+      </div>
       
       {/* Curriculum */}
       <div>
@@ -198,90 +198,85 @@ function DetailedSectionsTier({ school }) {
           {school.curriculumType && (
             <p className="text-sm text-slate-300"><span className="font-semibold">Type:</span> {school.curriculumType}</p>
           )}
-          {school.curriculum?.length > 0 && (
+          {school.curriculum?.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {school.curriculum.map((curr, idx) => (
-                <span key={idx} className="px-3 py-1 bg-teal-500/20 text-teal-300 rounded-full text-xs">
-                  {curr}
-                </span>
+                <span key={idx} className="px-3 py-1 bg-teal-500/20 text-teal-300 rounded-full text-xs">{curr}</span>
               ))}
             </div>
-          )}
-          {school.specializations?.length > 0 && (
+          ) : null}
+          {school.specializations?.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {school.specializations.map((spec, idx) => (
-                <span key={idx} className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-xs">
-                  {spec}
-                </span>
+                <span key={idx} className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-xs">{spec}</span>
               ))}
             </div>
-          )}
+          ) : null}
+          {!school.curriculumType && !school.curriculum?.length && !school.specializations?.length ? noData : null}
         </div>
       </div>
       
       {/* Programs */}
-      {(school.artsPrograms?.length > 0 || school.sportsPrograms?.length > 0 || school.clubs?.length > 0) && (
-        <div>
-          <h3 className="text-lg font-bold text-white mb-3">Programs & Activities</h3>
-          <div className="space-y-3">
-            {school.artsPrograms?.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-teal-300 mb-2">Arts</p>
-                <div className="flex flex-wrap gap-2">
-                  {school.artsPrograms.slice(0, 6).map((prog, idx) => (
-                    <span key={idx} className="text-xs text-slate-400">{prog}</span>
-                  ))}
-                </div>
+      <div>
+        <h3 className="text-lg font-bold text-white mb-3">Programs & Activities</h3>
+        <div className="space-y-3">
+          {school.artsPrograms?.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-teal-300 mb-2">Arts</p>
+              <div className="flex flex-wrap gap-2">
+                {school.artsPrograms.slice(0, 6).map((prog, idx) => (
+                  <span key={idx} className="text-xs text-slate-400">{prog}</span>
+                ))}
               </div>
-            )}
-            {school.sportsPrograms?.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-amber-300 mb-2">Sports</p>
-                <div className="flex flex-wrap gap-2">
-                  {school.sportsPrograms.slice(0, 6).map((prog, idx) => (
-                    <span key={idx} className="text-xs text-slate-400">{prog}</span>
-                  ))}
-                </div>
+            </div>
+          )}
+          {school.sportsPrograms?.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-amber-300 mb-2">Sports</p>
+              <div className="flex flex-wrap gap-2">
+                {school.sportsPrograms.slice(0, 6).map((prog, idx) => (
+                  <span key={idx} className="text-xs text-slate-400">{prog}</span>
+                ))}
               </div>
-            )}
-            {school.clubs?.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-purple-300 mb-2">Clubs</p>
-                <div className="flex flex-wrap gap-2">
-                  {school.clubs.slice(0, 6).map((club, idx) => (
-                    <span key={idx} className="text-xs text-slate-400">{club}</span>
-                  ))}
-                </div>
+            </div>
+          )}
+          {school.clubs?.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-purple-300 mb-2">Clubs</p>
+              <div className="flex flex-wrap gap-2">
+                {school.clubs.slice(0, 6).map((club, idx) => (
+                  <span key={idx} className="text-xs text-slate-400">{club}</span>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+          {!school.artsPrograms?.length && !school.sportsPrograms?.length && !school.clubs?.length ? noData : null}
         </div>
-      )}
+      </div>
       
       {/* Admissions */}
-      {(school.applicationDeadline || school.admissionRequirements?.length > 0 || school.openHouseDates?.length > 0) && (
-        <div>
-          <h3 className="text-lg font-bold text-white mb-3">Admissions</h3>
-          <div className="space-y-2 text-sm text-slate-400">
-            {school.applicationDeadline && (
-              <p><span className="font-semibold text-slate-300">Deadline:</span> {school.applicationDeadline}</p>
-            )}
-            {school.admissionRequirements?.length > 0 && (
-              <div>
-                <p className="font-semibold text-slate-300">Requirements:</p>
-                <ul className="list-disc list-inside space-y-1 ml-2">
-                  {school.admissionRequirements.slice(0, 4).map((req, idx) => (
-                    <li key={idx}>{req}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {school.openHouseDates?.length > 0 && (
-              <p><span className="font-semibold text-slate-300">Open House Dates:</span> {school.openHouseDates.join(', ')}</p>
-            )}
-          </div>
+      <div>
+        <h3 className="text-lg font-bold text-white mb-3">Admissions</h3>
+        <div className="space-y-2 text-sm text-slate-400">
+          {school.applicationDeadline ? (
+            <p><span className="font-semibold text-slate-300">Deadline:</span> {school.applicationDeadline}</p>
+          ) : null}
+          {school.admissionRequirements?.length > 0 ? (
+            <div>
+              <p className="font-semibold text-slate-300">Requirements:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                {school.admissionRequirements.slice(0, 4).map((req, idx) => (
+                  <li key={idx}>{req}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {school.openHouseDates?.length > 0 ? (
+            <p><span className="font-semibold text-slate-300">Open House Dates:</span> {school.openHouseDates.join(', ')}</p>
+          ) : null}
+          {!school.applicationDeadline && !school.admissionRequirements?.length && !school.openHouseDates?.length ? noData : null}
         </div>
-      )}
+      </div>
     </div>
   );
 }
