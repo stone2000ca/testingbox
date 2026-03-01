@@ -469,7 +469,8 @@ async function performSearch(req) {
     distanceKm: s.distanceKm,
     schoolType: s.schoolType,
     headerPhotoUrl: s.headerPhotoUrl,
-    logoUrl: s.logoUrl
+    logoUrl: s.logoUrl,
+    relaxedMatch: isRelaxedPass
   }));
 
   try {
