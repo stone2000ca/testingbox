@@ -363,13 +363,18 @@ export default function Consultant() {
       if (chatSession.matchedSchools) {
         try {
           const matchedSchoolIds = JSON.parse(chatSession.matchedSchools);
+          console.log('[RESTORE] Parsed matchedSchoolIds:', matchedSchoolIds);
           if (matchedSchoolIds && matchedSchoolIds.length > 0) {
-            // Fetch actual School entities using filter
-            const schoolData = await base44.entities.School.filter({ id: { $in: matchedSchoolIds } });
-            setSchools(schoolData);
+            // Fetch actual School entities individually using Promise.all
+            const schoolData = await Promise.all(
+              matchedSchoolIds.map(id => base44.entities.School.get(id))
+            );
+            const validSchools = schoolData.filter(s => s !== null);
+            console.log('[RESTORE] Fetched schools count:', validSchools.length);
+            setSchools(validSchools);
           }
         } catch (e) {
-          console.error('Failed to restore schools:', e);
+          console.error('[RESTORE] Failed to restore schools:', e);
         }
       }
 
