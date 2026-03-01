@@ -7,6 +7,52 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Save, Eye, X, CheckCircle2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+
+// =============================================================================
+// Inline ring chart (weighted score only)
+// =============================================================================
+function isFilled(value) {
+  if (typeof value === 'boolean') return value !== null && value !== undefined;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'string') return value.trim() !== '';
+  return value !== null && value !== undefined;
+}
+
+const TIER_WEIGHTS = [
+  { fields: ['name','city','provinceState','country','lowestGrade','highestGrade','genderPolicy','dayTuition','schoolType'], weight: 50 },
+  { fields: ['description','website','boardingAvailable','religiousAffiliation','languageOfInstruction','avgClassSize','studentTeacherRatio'], weight: 30 },
+  { fields: ['artsPrograms','sportsPrograms','clubs','facilities','specialEdPrograms','curriculumType','accreditations'], weight: 15 },
+  { fields: ['logoUrl','headerPhotoUrl','photoGallery'], weight: 5 },
+];
+
+function calcWeightedScore(data) {
+  if (!data) return 0;
+  let total = 0;
+  for (const tier of TIER_WEIGHTS) {
+    const filled = tier.fields.filter(f => isFilled(data[f])).length;
+    total += (filled / tier.fields.length) * tier.weight;
+  }
+  return Math.round(total);
+}
+
+function CompletenessRing({ score }) {
+  const circumference = 2 * Math.PI * 45;
+  const offset = circumference - (score / 100) * circumference;
+  const color = score >= 80 ? '#22c55e' : score >= 50 ? '#14b8a6' : score >= 25 ? '#f59e0b' : '#ef4444';
+  return (
+    <div className="relative w-20 h-20 flex-shrink-0">
+      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="45" fill="none" stroke="#f1f5f9" strokeWidth="9" />
+        <circle cx="50" cy="50" r="45" fill="none" stroke={color} strokeWidth="9"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          strokeLinecap="round" className="transition-all duration-500" />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-lg font-bold text-slate-900 leading-tight">{score}%</span>
+      </div>
+    </div>
+  );
+}
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '../../utils';
 
