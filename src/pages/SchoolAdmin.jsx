@@ -215,27 +215,31 @@ export default function SchoolAdmin() {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
           {currentView === 'profile' && (
-            <ProfileEditor 
-              school={school} 
-              onSave={handleSaveSchool}
-              isSaving={isSaving}
-            />
+            <ProfileEditor school={school} onSave={handleSaveSchool} isSaving={isSaving} />
           )}
-          
-          {currentView === 'analytics' && (
-            <Analytics school={school} />
+          {currentView === 'media' && (
+            <div className="p-6 max-w-3xl mx-auto">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Photos & Media</h2>
+              <PhotosMediaSection school={school} onUpdate={(field, value) => setSchool({ ...school, [field]: value })} />
+            </div>
           )}
-          
+          {currentView === 'testimonials' && (
+            <TestimonialsSection school={school} />
+          )}
           {currentView === 'inquiries' && (
             <Inquiries schoolId={school.id} />
           )}
-          
+          {currentView === 'analytics' && (
+            <Analytics school={school} />
+          )}
+          {currentView === 'csv' && (
+            <CSVUpload school={school} onUpdate={loadSchoolData} />
+          )}
           {currentView === 'subscription' && (
             <Subscription school={school} onUpdate={loadSchoolData} />
           )}
-          
-          {currentView === 'csv' && (
-            <CSVUpload school={school} onUpdate={loadSchoolData} />
+          {currentView === 'account' && (
+            <AccountSection school={school} />
           )}
         </main>
       </div>
