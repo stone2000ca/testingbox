@@ -76,6 +76,21 @@ export default function SchoolAdmin() {
     );
   }
 
+  // Access gate: family-only accounts cannot access school portal
+  if (!loading && user && user.account_type === 'family') {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center max-w-md">
+          <Building2 className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2">School Portal Access Required</h2>
+          <p className="text-slate-600 mb-6">
+            Your account is set up as a family account. To access the school portal, please contact support to update your account type.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!school) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
