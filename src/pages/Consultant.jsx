@@ -1369,8 +1369,8 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
     );
   }
 
-  // Show consultant selection if not yet selected
-  if (!selectedConsultant) {
+  // Show consultant selection if not yet selected (but skip if restoring a session from URL)
+  if (!selectedConsultant && !sessionIdParam) {
     return (
       <div className="h-screen flex flex-col bg-slate-50">
         <a 
@@ -1383,6 +1383,15 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
         <div id="consultant-selection" className="flex-1 overflow-auto">
           <ConsultantSelection onSelectConsultant={handleSelectConsultant} />
         </div>
+      </div>
+    );
+  }
+
+  // If sessionId is in URL but consultant not yet selected, show loading spinner while restoration completes
+  if (!selectedConsultant && sessionIdParam) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin h-8 w-8 border-4 border-teal-600 border-t-transparent rounded-full" />
       </div>
     );
   }
