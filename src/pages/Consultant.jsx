@@ -364,10 +364,25 @@ export default function Consultant() {
       if (chatSession.matchedSchools) {
         try {
           const allSchools = await School.filter();
+          console.log('[RESTORE] School.filter() returned', allSchools.length, 'schools');
+          
           const matchedSchoolIds = JSON.parse(chatSession.matchedSchools);
+          console.log('[RESTORE] matchedSchoolIds:', JSON.stringify(matchedSchoolIds.slice(0, 3)));
+          
           const validSchools = allSchools.filter(s => matchedSchoolIds.includes(s.id));
-          console.log('[RESTORE] Restored schools count:', validSchools.length);
+          console.log('[RESTORE] validSchools count:', validSchools.length);
+          
+          if (validSchools.length > 0) {
+            console.log('[RESTORE] First school:', validSchools[0].name);
+          }
+          
           setSchools(validSchools);
+          console.log('[RESTORE] setSchools called with', validSchools.length, 'schools');
+          
+          if (validSchools.length > 0) {
+            setCurrentView('schools');
+            console.log('[RESTORE] setCurrentView called with schools');
+          }
         } catch (e) {
           console.error('[RESTORE] Failed to restore schools:', e);
         }
