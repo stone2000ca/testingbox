@@ -6,6 +6,7 @@ import AdminSchools from '@/components/admin/AdminSchools';
 import AdminUsers from '@/components/admin/AdminUsers';
 import AdminClaims from '@/components/admin/AdminClaims';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
+import AdminSubmissions from '@/components/admin/AdminSubmissions';
 
 export default function Admin() {
   const [user, setUser] = useState(null);
