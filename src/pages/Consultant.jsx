@@ -326,12 +326,25 @@ export default function Consultant() {
     setRestoringSession(true);
     try {
       // Fetch ChatSession
+      console.log('[RESTORE] Attempting to fetch ChatSession with ID:', sessionIdParam);
       const chatSession = await base44.entities.ChatSession.get(sessionIdParam);
+      console.log('[RESTORE] ChatSession fetched:', chatSession ? 'Success' : 'Not found', chatSession);
+      
       if (!chatSession) {
-        console.error('ChatSession not found:', sessionIdParam);
+        console.error('[RESTORE] ChatSession not found with ID:', sessionIdParam);
         setSessionRestored(true);
         return;
       }
+      
+      console.log('[RESTORE] ChatSession data:', JSON.stringify({
+        consultantSelected: chatSession.consultantSelected,
+        childName: chatSession.childName,
+        childGrade: chatSession.childGrade,
+        locationArea: chatSession.locationArea,
+        maxTuition: chatSession.maxTuition,
+        priorities: chatSession.priorities,
+        matchedSchoolsCount: chatSession.matchedSchools ? JSON.parse(chatSession.matchedSchools).length : 0
+      }));
 
       // WC6: Store session data for returning user context
       setRestoredSessionData({
