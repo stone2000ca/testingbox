@@ -15,6 +15,10 @@ import NotesPanel from '@/components/chat/NotesPanel';
 import ComparisonView from '@/components/schools/ComparisonView';
 import SortControl from '@/components/schools/SortControl';
 import { getTuitionBand, buildPriorityChecks } from '@/components/schools/SchoolCard';
+import { validateBriefContent, generateProgrammaticBrief } from '@/utils/briefUtils';
+import { buildTiers } from '@/utils/tierEngine';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { getShortlistNudge } from '@/utils/shortlistNudges';
 import LoginGateModal from '@/components/dialogs/LoginGateModal';
 import FamilyBriefPanel from '@/components/chat/FamilyBriefPanel';
 import ChatPanel from '@/components/chat/ChatPanel';
@@ -25,128 +29,7 @@ import Navbar from '@/components/navigation/Navbar';
 import { useSchoolFiltering } from '@/hooks/useSchoolFiltering';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-// =============================================================================
-// KI-52: Brief Content Validator + Programmatic Fallback
-// =============================================================================
-function validateBriefContent(text) {
-  if (!text) return false;
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  if (words.length <= 50) return false;
-  const lower = text.toLowerCase();
-  const hits = [
-    /\bgrade\b|\byr\s*\d|\byear\s*\d|\bgrade\s*\d/i.test(lower),
-    /\blocation\b|\bcity\b|\btown\b|\barea\b|\bontario\b|\bbc\b|\balberta\b|\bquebec\b|\btoronto\b|\bvancouver\b|\bcalgary\b|\bottawa\b/i.test(lower),
-    /\bbudget\b|\btuition\b|\bcost\b|\$\d|\baffordabl/i.test(lower),
-  ].filter(Boolean).length;
-  return hits >= 2;
-}
-
-function generateProgrammaticBrief(profile) {
-  if (!profile) return null;
-
-  const lines = [];
-
-  // Child
-  const gradeStr = profile.childGrade != null ? (Number(profile.childGrade) <= 0 ? 'Kindergarten' : `Grade ${profile.childGrade}`) : null;
-  const childParts = [profile.childName, gradeStr].filter(Boolean);
-  if (childParts.length) lines.push(`**Child:** ${childParts.join(', ')}`);
-
-  // Location
-  if (profile.locationArea) lines.push(`**Location:** ${profile.locationArea}`);
-
-  // Budget
-  if (profile.maxTuition) lines.push(`**Budget:** Up to $${Number(profile.maxTuition).toLocaleString()}`);
-  else if (profile.budgetRange) lines.push(`**Budget:** ${profile.budgetRange.replace(/_/g, ' ')}`);
-
-  // Priorities
-  if (profile.priorities?.length) lines.push(`**Priorities:** ${profile.priorities.join(', ')}`);
-
-  // Dealbreakers
-  if (profile.dealbreakers?.length) lines.push(`**Dealbreakers:** ${profile.dealbreakers.join(', ')}`);
-
-  // Curriculum
-  if (profile.curriculumPreference?.length) lines.push(`**Curriculum:** ${profile.curriculumPreference.join(', ')}`);
-
-  // Boarding
-  if (profile.boardingPreference && profile.boardingPreference !== 'day_only') {
-    lines.push(`**Boarding:** ${profile.boardingPreference.replace(/_/g, ' ')}`);
-  }
-
-  if (lines.length < 2) return null; // Not enough data for a meaningful brief
-
-  return `Here's what I've put together so far:\n\n${lines.join('\n')}\n\nDoes this look right, or is there anything you'd like to adjust?`;
-}
-
-// =============================================================================
-// T-RES-003: Tiered Results Engine
-// =============================================================================
-const IMPORTANT_FIELDS = ['name', 'city', 'curriculumType', 'genderPolicy', 'dayTuition', 'tuition', 'lowestGrade', 'highestGrade', 'boardingAvailable', 'description', 'headerPhotoUrl', 'logoUrl'];
 const DEFAULT_GREETING = "Hi! I'm your NextSchool education consultant. I help families across Canada, the US, and Europe find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you in a school?";
-
-function buildTiers(schools, familyProfile, sortMode = 'bestFit', priorityOverrides = {}) {
-  if (!schools || schools.length === 0) return null;
-
-  // Apply T-RES-006: filter out musthave mismatches, weight dontcares out
-  const effectiveProfile = familyProfile ? { ...familyProfile } : null;
-
-  function applySort(arr) {
-    if (sortMode === 'closest') {
-      return [...arr].sort((a, b) => (a.school.distanceKm ?? 99999) - (b.school.distanceKm ?? 99999));
-    }
-    if (sortMode === 'affordable') {
-      const tval = s => s.school.dayTuition ?? s.school.tuition ?? 99999;
-      return [...arr].sort((a, b) => tval(a) - tval(b));
-    }
-    if (sortMode === 'newest') {
-      return [...arr].sort(() => Math.random() - 0.5);
-    }
-    // bestFit (default)
-    return [...arr].sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      if (b.completeness !== a.completeness) return b.completeness - a.completeness;
-      return a.proximity - b.proximity;
-    });
-  }
-
-  const scored = schools.map(s => {
-    const checks = buildPriorityChecks(s, effectiveProfile);
-    // Apply overrides: musthave mismatch → penalize heavily; dontcare → skip from score
-    let score = 0;
-    let mustHaveFail = false;
-    checks.forEach(row => {
-      const flex = priorityOverrides[row.id] || 'nicetohave';
-      if (flex === 'dontcare') return;
-      if (row.status === 'match') score += (flex === 'musthave' ? 2 : 1);
-      if (row.status === 'mismatch' && flex === 'musthave') mustHaveFail = true;
-    });
-    const completeness = IMPORTANT_FIELDS.filter(f => s[f] != null && s[f] !== '').length;
-    const proximity = s.distanceKm != null ? s.distanceKm : 99999;
-    return { school: s, score, completeness, proximity, mustHaveFail };
-  });
-
-  // Filter out must-have failures
-  const passing = scored.filter(s => !s.mustHaveFail);
-  const sorted = applySort(passing);
-
-  const TIER1_SIZE = Math.min(5, Math.max(3, Math.ceil(sorted.length * 0.25)));
-  const TIER2_SIZE = Math.min(5, Math.max(2, Math.ceil(sorted.length * 0.2)));
-  const TOTAL_CAP = 7;
-
-  const tier1 = sorted.slice(0, TIER1_SIZE).map(s => s.school);
-  const remaining = sorted.slice(TIER1_SIZE);
-
-  const tier2Count = Math.min(TIER2_SIZE, Math.max(0, TOTAL_CAP - tier1.length));
-  // For non-bestFit sorts, preserve sort order in tier2; for bestFit shuffle tier2
-  const tier2pool = sortMode === 'bestFit' ? [...remaining].sort(() => Math.random() - 0.5) : remaining;
-  const tier2 = tier2pool.slice(0, tier2Count).map(s => s.school);
-  const tier2Ids = new Set(tier2.map(s => s.id));
-
-  const seeAll = remaining
-    .filter(s => !tier2Ids.has(s.school.id))
-    .map(s => s.school);
-
-  return { topMatches: tier1, alsoWorthExploring: tier2, seeAll };
-}
 
 export default function Consultant() {
   const [user, setUser] = useState(null);
@@ -182,7 +65,7 @@ export default function Consultant() {
   const [shortlistData, setShortlistData] = useState([]);
   
   // Distance feature
-  const [userLocation, setUserLocation] = useState(null);
+  const userLocation = useUserLocation();
   
   // Delete conversation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -394,7 +277,6 @@ export default function Consultant() {
     schemaScript.innerHTML = JSON.stringify(schemaData);
 
     checkAuth();
-    loadUserLocation();
 
     // Track session start
     base44.functions.invoke('trackSessionEvent', {
@@ -435,66 +317,6 @@ export default function Consultant() {
 
   const handleRestoreGuestSession = () => {
     restoreGuestSession(isAuthenticated, user, currentConversation, setMessages, setSelectedConsultant, setCurrentConversation, base44);
-  };
-
-
-
-  const loadUserLocation = async () => {
-    // Check localStorage first
-    const savedLocation = localStorage.getItem('userLocation');
-    if (savedLocation) {
-      setUserLocation(JSON.parse(savedLocation));
-      return;
-    }
-
-    // Default to Toronto if geolocation unavailable or fails
-    const defaultLocation = {
-      lat: 43.6532,
-      lng: -79.3832,
-      address: 'Toronto, Ontario'
-    };
-
-    // Try browser geolocation
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          
-          // Reverse geocode to get address
-          try {
-            const apiKey = Deno?.env?.get('GOOGLE_MAPS_API_KEY');
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
-            );
-            const data = await response.json();
-            
-            const location = {
-              lat: latitude,
-              lng: longitude,
-              address: data.results[0]?.formatted_address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-            };
-            
-            setUserLocation(location);
-            localStorage.setItem('userLocation', JSON.stringify(location));
-          } catch (error) {
-            console.error('Geocoding failed:', error);
-            const location = { lat: latitude, lng: longitude, address: null };
-            setUserLocation(location);
-            localStorage.setItem('userLocation', JSON.stringify(location));
-          }
-        },
-        (error) => {
-          console.log('Geolocation denied or failed:', error);
-          // Fall back to Toronto
-          setUserLocation(defaultLocation);
-          localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
-        }
-      );
-    } else {
-      // Fall back to Toronto if geolocation not available
-      setUserLocation(defaultLocation);
-      localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
-    }
   };
 
   // Progress through loading stages
@@ -1255,58 +1077,18 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
 
       // T-SL-004: Determine nudge (max 1 per action, only in RESULTS state)
       if (currentState === STATES.RESULTS) {
-        const newCount = updatedShortlist.length;
-        const isJackie = selectedConsultant === 'Jackie';
-
-        if (!isRemoving) {
-          // --- ADDING ---
-          if (newCount === 1) {
-            injectShortlistNudge(isJackie
-              ? "Great pick — I'll keep that at the top for you. Keep browsing and save anything else that catches your eye."
-              : "Noted. I've pinned that one for you. Keep going — save anything worth a closer look."
-            );
-          } else if (newCount === 2) {
-            injectShortlistNudge(isJackie
-              ? "You've got two saved now — want me to compare them side by side? Just say 'compare' and I'll walk you through the differences."
-              : "Two shortlisted. Hit 'Compare These' in your shortlist, or ask me to break down the differences."
-            );
-          } else if (newCount >= 3) {
-            // Check: does this pick contradict the brief? (above budget)
-            const budget = familyProfile?.maxTuition;
-            const schoolTuition = school?.dayTuition ?? school?.tuition;
-            if (budget && schoolTuition && schoolTuition > budget) {
-              injectShortlistNudge(isJackie
-                ? `I noticed ${school.name} is above your stated budget — that's totally fine to explore, but want me to flag that when we compare?`
-                : `Worth noting: ${school.name} is above your budget range. I can still work with it — just want you to have the full picture.`
-              );
-            } else {
-              // Check similarity: all same curriculum or school type
-              const shortlistedData = shortlistData.filter(s => updatedShortlist.includes(s.id));
-              const curriculums = shortlistedData.map(s => s.curriculumType).filter(Boolean);
-              const allSameCurriculum = curriculums.length >= 2 && curriculums.every(c => c === curriculums[0]);
-              const types = shortlistedData.map(s => s.schoolType).filter(Boolean);
-              const allSameType = types.length >= 2 && types.every(t => t === types[0]);
-              if (allSameCurriculum || allSameType) {
-                injectShortlistNudge(isJackie
-                  ? "Your picks are looking quite similar in profile — want me to surface a school with a different approach as a contrast?"
-                  : "Your shortlist is fairly uniform so far. Want me to pull in a wildcard — something with a different structure or vibe?"
-                );
-              } else {
-                injectShortlistNudge(isJackie
-                  ? "Strong shortlist forming. When you're ready, I can help you narrow it down or compare them in detail."
-                  : "Good shortlist. Say the word when you want to start narrowing — I can rank these against your priorities."
-                );
-              }
-            }
-          }
-        } else {
-          // --- REMOVING --- only nudge if list hits 0 after browsing results
-          if (newCount === 0 && schools.length > 0) {
-            injectShortlistNudge(isJackie
-              ? "Take your time — save anything that catches your eye and I'll keep track of them for you."
-              : "No rush. Save any that stand out and I'll track them. I can always resurface something you passed on."
-            );
-          }
+        const nudge = getShortlistNudge({
+          isRemoving,
+          newCount: updatedShortlist.length,
+          isJackie: selectedConsultant === 'Jackie',
+          school,
+          familyProfile,
+          shortlistData: shortlistData.filter(s => updatedShortlist.includes(s.id)),
+          schools
+        });
+        
+        if (nudge) {
+          injectShortlistNudge(nudge);
         }
       }
     } catch (error) {
