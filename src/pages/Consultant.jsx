@@ -377,6 +377,7 @@ export default function Consultant() {
           maxTuition: String(chatSession.maxTuition || 30000) 
         });
         console.log('RESTORE searchSchools response:', response);
+        alert('RESTORE response type: ' + typeof response + ' keys: ' + Object.keys(response || {}).join(',') + ' length: ' + (response?.length || response?.data?.length || 'none'));
         const schools = response.data || response;
         console.log('RESTORE schools extracted:', schools?.length);
         if (schools && schools.length > 0) {
