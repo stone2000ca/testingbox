@@ -42,6 +42,7 @@ export default function Consultant() {
   const [loading, setLoading] = useState(true);
   const [sessionRestored, setSessionRestored] = useState(false);
   const [restoringSession, setRestoringSession] = useState(false);
+  const isRestoringSessionRef = useRef(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [selectedConsultant, setSelectedConsultant] = useState(null);
   const [showResponseChips, setShowResponseChips] = useState(false);
@@ -204,12 +205,14 @@ export default function Consultant() {
     setCurrentView(stateToView(conversationState));
   }, [currentConversation?.conversationContext?.state, selectedSchool, currentView]);
   
-  const isIntakePhase = schools.length === 0 && 
+  const isIntakePhase = !isRestoringSessionRef.current && (
+                        schools.length === 0 && 
                         currentView !== 'schools' && 
                         currentView !== 'detail' && 
                         currentView !== 'comparison' && 
                         currentView !== 'comparison-table' &&
-                        ![STATES.RESULTS, STATES.DEEP_DIVE].includes(currentState);
+                        ![STATES.RESULTS, STATES.DEEP_DIVE].includes(currentState)
+                      );
 
   // School filtering/sorting via extracted hook
   const {
@@ -318,6 +321,8 @@ export default function Consultant() {
   const restoreSessionFromParam = async () => {
     if (!sessionIdParam) return;
     
+    // CRITICAL: Set flag FIRST to override isIntakePhase during restoration
+    isRestoringSessionRef.current = true;
     setRestoringSession(true);
     try {
       // Fetch ChatSession
@@ -363,17 +368,18 @@ export default function Consultant() {
         }
       }
 
-      // Fetch and restore matched schools
+      // FIX #1: Fetch and restore matched schools using direct ID fetching
       let restoredSchools = [];
       if (chatSession.matchedSchools) {
         try {
-          const allSchools = await School.filter();
-          console.log('[RESTORE] School.filter() returned', allSchools.length, 'schools');
-          
           const matchedSchoolIds = JSON.parse(chatSession.matchedSchools);
           console.log('[RESTORE] matchedSchoolIds:', JSON.stringify(matchedSchoolIds.slice(0, 3)));
           
-          const validSchools = allSchools.filter(s => matchedSchoolIds.includes(s.id));
+          // Use Promise.all to fetch schools by ID instead of filtering all schools
+          const validSchools = await Promise.all(
+            matchedSchoolIds.map(id => School.get(id).catch(() => null))
+          ).then(results => results.filter(s => s !== null));
+          
           console.log('[RESTORE] validSchools count:', validSchools.length);
           
           if (validSchools.length > 0) {
@@ -434,6 +440,8 @@ export default function Consultant() {
       console.error('Failed to restore session:', error);
       setSessionRestored(true);
     } finally {
+      // FIX #2: Clear restoration flag after state is fully set
+      isRestoringSessionRef.current = false;
       setRestoringSession(false);
     }
   };
