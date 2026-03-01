@@ -603,16 +603,6 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
         </Select>
       </div>
       <TagInput label="Accreditations" field="accreditations" placeholder="Add accreditation" formData={formData} onChange={handleChange} />
-
-      {/* Testimonials */}
-      <div className="pt-2 border-t">
-        <Label className="block mb-3 text-sm font-semibold text-slate-700">Testimonials</Label>
-        <TestimonialsEditor
-          schoolId={school.id}
-          testimonials={testimonials}
-          setTestimonials={setTestimonials}
-        />
-      </div>
     </div>
   );
 
