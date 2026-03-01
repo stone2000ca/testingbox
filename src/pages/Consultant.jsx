@@ -740,7 +740,7 @@ export default function Consultant() {
       }
 
       // T047: If matches were auto-refreshed, bump animation key to trigger fade/reorder
-      if (response.data.conversationContext?.autoRefreshed === true) {
+      if (response.data?.conversationContext?.autoRefreshed === true) {
         setSchoolsAnimKey(k => k + 1);
       }
 
