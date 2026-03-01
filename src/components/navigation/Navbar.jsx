@@ -73,7 +73,7 @@ export default function Navbar({ variant = "default" }) {
           <Link to={createPageUrl('About')} className="text-slate-600 hover:text-teal-600 text-sm">About</Link>
         </nav>
         {isAuthenticated && user ? (
-          <Link to={createPageUrl('ParentDashboard')}>
+          <Link to={createPageUrl('Dashboard')}>
             <Button variant="outline" className="gap-2">
               <User className="h-4 w-4" />
               Dashboard
