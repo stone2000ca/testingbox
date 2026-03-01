@@ -373,12 +373,25 @@ export default function Consultant() {
       }
 
       // Fetch and restore FamilyProfile
+      let restoredProfile = null;
       if (chatSession.familyProfileId) {
-        const profile = await base44.entities.FamilyProfile.get(chatSession.familyProfileId);
-        if (profile) {
-          setFamilyProfile(profile);
-          console.log('[RESTORE] Loaded FamilyProfile for:', profile.childName);
+        restoredProfile = await base44.entities.FamilyProfile.get(chatSession.familyProfileId);
+        if (restoredProfile) {
+          setFamilyProfile(restoredProfile);
+          console.log('[RESTORE] Loaded FamilyProfile for:', restoredProfile.childName);
         }
+      } else {
+        // Fallback: create profile data from ChatSession
+        restoredProfile = {
+          childName: chatSession.childName,
+          childGrade: chatSession.childGrade,
+          locationArea: chatSession.locationArea,
+          maxTuition: chatSession.maxTuition,
+          priorities: chatSession.priorities || [],
+          learningDifferences: chatSession.learningDifferences || []
+        };
+        setFamilyProfile(restoredProfile);
+        console.log('[RESTORE] Using ChatSession data as FamilyProfile fallback');
       }
 
       // FIX #1: Re-run search using searchSchools backend function with saved profile data
