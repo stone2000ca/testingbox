@@ -963,7 +963,7 @@ export default function Consultant() {
        // Add error message to chat
         const errorMessage = {
           role: 'assistant',
-          content: `Error: ${error?.message || 'unknown'} | at: ${error?.stack?.split('\n')[1] || 'no stack'}`,
+          content: 'Sorry, something went wrong. Please try again.',
           timestamp: new Date().toISOString()
         };
        setMessages([...updatedMessages, errorMessage]);
