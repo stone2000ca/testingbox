@@ -67,18 +67,6 @@ export function buildPriorityChecks(school, familyProfile) {
     }
   }
 
-  if (familyProfile.gender) {
-    const gp = school.genderPolicy;
-    if (!gp) {
-      rows.push({ id: 'gender', rowNum: 3, label: 'Gender', status: 'unknown', detail: 'Worth asking about' });
-    } else {
-      let match = true;
-      if (gp === 'All-Boys') match = familyProfile.gender === 'male';
-      else if (gp === 'All-Girls') match = familyProfile.gender === 'female';
-      rows.push({ id: 'gender', rowNum: 3, label: 'Gender', status: match ? 'match' : 'mismatch', detail: gp });
-    }
-  }
-
   if (familyProfile.curriculumPreference && familyProfile.curriculumPreference.length > 0) {
     const prefs = familyProfile.curriculumPreference.map(p => p.toLowerCase());
     const ct = (school.curriculumType || '').toLowerCase();
