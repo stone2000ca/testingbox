@@ -4,6 +4,7 @@ import { createPageUrl } from '../../utils';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import UpgradePaywallModal from '@/components/dialogs/UpgradePaywallModal';
+import { CheckCircle, Copy } from 'lucide-react';
 import {
   MapPin,
   DollarSign,
@@ -51,6 +52,9 @@ export default function SchoolSearchProfile({
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showShareUpgrade, setShowShareUpgrade] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState(null);
+  const [copiedToClipboard, setCopiedToClipboard] = useState(false);
   const [editData, setEditData] = useState({
     childGrade: session.childGrade,
     maxTuition: session.maxTuition,
@@ -109,6 +113,37 @@ export default function SchoolSearchProfile({
       console.error('Failed to save edits:', err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      // Generate UUID for shareToken
+      const shareToken = crypto.randomUUID();
+      await base44.entities.ChatSession.update(session.id, { shareToken });
+      const url = `https://nextschool.ca/profile/${shareToken}`;
+      setShareUrl(url);
+      setShowShareModal(true);
+    } catch (err) {
+      console.error('Failed to generate share link:', err);
+    }
+  };
+
+  const handleCopyUrl = () => {
+    if (shareUrl) {
+      navigator.clipboard.writeText(shareUrl);
+      setCopiedToClipboard(true);
+      setTimeout(() => setCopiedToClipboard(false), 2000);
+    }
+  };
+
+  const handleRemoveSharing = async () => {
+    try {
+      await base44.entities.ChatSession.update(session.id, { shareToken: null });
+      setShowShareModal(false);
+      setShareUrl(null);
+    } catch (err) {
+      console.error('Failed to remove sharing:', err);
     }
   };
 
@@ -337,6 +372,7 @@ export default function SchoolSearchProfile({
           </Button>
           {isPaid ? (
             <Button
+              onClick={handleShare}
               variant="outline"
               className="flex-1 border-white/20 text-white hover:bg-white/10 gap-2 text-sm"
             >
@@ -495,6 +531,48 @@ export default function SchoolSearchProfile({
         variant="SHARE"
         onClose={() => setShowShareUpgrade(false)}
       />
+
+      {/* WC13: Share Modal for Paid Users */}
+      {showShareModal && shareUrl && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl max-w-lg w-full p-8 shadow-2xl border border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-2">Share This Profile</h2>
+            <p className="text-white/70 mb-6">Send this link to your partner or anyone you want to collaborate with.</p>
+            
+            {/* URL Display */}
+            <div className="bg-white/10 border border-white/20 rounded-lg p-4 mb-6 break-all">
+              <p className="text-sm text-white/90 font-mono">{shareUrl}</p>
+            </div>
+
+            {/* Copy Button */}
+            <Button
+              onClick={handleCopyUrl}
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white gap-2 mb-3"
+            >
+              {copiedToClipboard ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  Copy Link
+                </>
+              )}
+            </Button>
+
+            {/* Remove Sharing Button */}
+            <Button
+              onClick={handleRemoveSharing}
+              variant="outline"
+              className="w-full border-white/20 text-white hover:bg-white/10"
+            >
+              Remove Sharing
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
