@@ -226,6 +226,9 @@ export default function SchoolAdmin() {
           {currentView === 'testimonials' && (
             <TestimonialsSection school={school} />
           )}
+          {currentView === 'events' && (
+            <EventsSection school={school} />
+          )}
           {currentView === 'inquiries' && (
             <Inquiries schoolId={school.id} />
           )}
