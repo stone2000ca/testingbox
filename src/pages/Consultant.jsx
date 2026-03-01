@@ -3,6 +3,9 @@ import { base44 } from '@/api/base44Client';
 import School from '@/entities/School';
 import { STATES, BRIEF_STATUS } from './stateMachineConfig';
 import { restoreGuestSession } from '@/components/chat/SessionRestorer';
+
+// Import searchSchools function
+const searchSchools = (params) => base44.functions.invoke('searchSchools', params);
 import { Button } from "@/components/ui/button";
 import { Plus, Heart, FileText, Sparkles, Trash2, Star, ClipboardList } from "lucide-react";
 import IconRail from '@/components/navigation/IconRail';
