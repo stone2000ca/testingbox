@@ -1526,8 +1526,8 @@ Deno.serve(async (req) => {
 
       console.log(`[STATE] ${currentState} | briefStatus: ${briefStatus} | sufficiency: ${context.dataSufficiency} | reason: ${context.transitionReason}`);
 
-      // Track previous state for WC10 narrative generation
-      context.previousState = context.state;
+      // Track previous state for WC10 narrative generation (BEFORE updating to new state)
+      context.previousState = context.state || STATES.WELCOME;
 
       let responseData;
 
