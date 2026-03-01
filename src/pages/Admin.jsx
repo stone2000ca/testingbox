@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Shield, LayoutDashboard, Building2, Users, ClipboardCheck, BarChart3 } from 'lucide-react';
+import { Shield, LayoutDashboard, Building2, Users, ClipboardCheck, BarChart3, PlusSquare } from 'lucide-react';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import AdminSchools from '@/components/admin/AdminSchools';
 import AdminUsers from '@/components/admin/AdminUsers';
