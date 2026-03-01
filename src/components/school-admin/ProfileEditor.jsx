@@ -4,21 +4,232 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Save, Eye, Upload, X, CheckCircle2 } from 'lucide-react';
+import { Save, Eye, X, CheckCircle2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '../../utils';
 
+// =============================================================================
+// Tier definitions
+// =============================================================================
+const TIERS = [
+  {
+    id: 'tier1',
+    label: 'Tier 1 — Required',
+    color: 'red',
+    weight: 0.5,
+    motivational: 'These fields are essential for families to find and evaluate your school.',
+    fields: ['name', 'city', 'provinceState', 'country', 'lowestGrade', 'highestGrade', 'genderPolicy', 'dayTuition', 'schoolType'],
+  },
+  {
+    id: 'tier2',
+    label: 'Tier 2 — Important',
+    color: 'amber',
+    weight: 0.3,
+    motivational: 'Families actively filter by these. Completing them boosts your match rate.',
+    fields: ['description', 'website', 'boardingAvailable', 'religiousAffiliation', 'languageOfInstruction', 'avgClassSize', 'studentTeacherRatio'],
+  },
+  {
+    id: 'tier3',
+    label: 'Tier 3 — Enrichment',
+    color: 'teal',
+    weight: 0.15,
+    motivational: 'Stand out with program details. These help parents picture their child's life here.',
+    fields: ['artsPrograms', 'sportsPrograms', 'clubs', 'facilities', 'specialEdPrograms', 'curriculum', 'accreditations'],
+  },
+  {
+    id: 'tier4',
+    label: 'Tier 4 — Media',
+    color: 'indigo',
+    weight: 0.05,
+    motivational: 'Photos drive clicks. A header photo alone can double profile views.',
+    fields: ['logoUrl', 'headerPhotoUrl', 'photoGallery'],
+  },
+];
+
+function isFilled(value) {
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'string') return value.trim() !== '';
+  return value !== null && value !== undefined;
+}
+
+function countFilled(formData, fields) {
+  return fields.filter(f => isFilled(formData[f])).length;
+}
+
+// Tier header color classes
+const TIER_COLORS = {
+  red:    { header: 'bg-red-50 border-red-200',    badge: 'bg-red-100 text-red-700',    dot: 'bg-red-400' },
+  amber:  { header: 'bg-amber-50 border-amber-200', badge: 'bg-amber-100 text-amber-700', dot: 'bg-amber-400' },
+  teal:   { header: 'bg-teal-50 border-teal-200',   badge: 'bg-teal-100 text-teal-700',   dot: 'bg-teal-500' },
+  indigo: { header: 'bg-indigo-50 border-indigo-200', badge: 'bg-indigo-100 text-indigo-700', dot: 'bg-indigo-400' },
+};
+
+// =============================================================================
+// TierSection — collapsible accordion block
+// =============================================================================
+function TierSection({ tier, filled, open, onToggle, children }) {
+  const total = tier.fields.length;
+  const cls = TIER_COLORS[tier.color];
+  const isComplete = filled === total;
+
+  return (
+    <div className="border rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`w-full flex items-center justify-between px-5 py-4 ${cls.header} border-b transition-colors hover:brightness-95`}
+      >
+        <div className="flex items-center gap-3">
+          <span className={`h-2.5 w-2.5 rounded-full ${cls.dot}`} />
+          <span className="font-semibold text-slate-800">{tier.label}</span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cls.badge}`}>
+            {filled}/{total} filled
+          </span>
+          {isComplete && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-500 hidden sm:block">{tier.motivational}</span>
+          {open ? <ChevronUp className="h-4 w-4 text-slate-500" /> : <ChevronDown className="h-4 w-4 text-slate-500" />}
+        </div>
+      </button>
+      {open && (
+        <div className="p-5 bg-white space-y-4">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
+// TagInput
+// =============================================================================
+function TagInput({ label, field, placeholder, formData, onChange, required }) {
+  const [inputValue, setInputValue] = useState('');
+  const values = formData[field] || [];
+
+  const add = () => {
+    if (!inputValue.trim()) return;
+    onChange(field, [...values, inputValue.trim()]);
+    setInputValue('');
+  };
+
+  const remove = (idx) => {
+    onChange(field, values.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div>
+      <Label className="flex items-center gap-1">
+        {label}
+        {required && <span className="text-red-500">*</span>}
+      </Label>
+      <div className="flex flex-wrap gap-2 mb-2">
+        {values.map((item, idx) => (
+          <Badge key={idx} variant="secondary" className="flex items-center gap-1">
+            {item}
+            <button onClick={() => remove(idx)} className="ml-1 hover:text-red-600">
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder={placeholder}
+          onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+        />
+        <Button type="button" variant="outline" onClick={add}>Add</Button>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// FieldLabel
+// =============================================================================
+function FieldLabel({ children, required, aiEnriched }) {
+  return (
+    <Label className="flex items-center gap-2">
+      {children}
+      {required && <span className="text-red-500 font-bold">*</span>}
+      {aiEnriched && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Auto-filled</span>}
+    </Label>
+  );
+}
+
+// =============================================================================
+// ImageUploadField
+// =============================================================================
+function ImageUploadField({ label, field, hint, formData, onChange }) {
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [preview, setPreview] = useState(null);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreview(ev.target.result);
+    reader.readAsDataURL(file);
+
+    setUploadProgress(10);
+    const interval = setInterval(() => setUploadProgress(p => Math.min(p + 10, 90)), 100);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      clearInterval(interval);
+      setUploadProgress(100);
+      onChange(field, file_url);
+      setTimeout(() => { setUploadProgress(0); setPreview(null); }, 1000);
+    } catch {
+      clearInterval(interval);
+      setUploadProgress(0);
+      alert('Upload failed. Please try again.');
+    }
+  };
+
+  const currentUrl = formData[field];
+
+  return (
+    <div>
+      <Label>{label}</Label>
+      {hint && <p className="text-xs text-slate-500 mb-2">{hint}</p>}
+      {(currentUrl || preview) && (
+        <div className="mb-2">
+          <img
+            src={preview || currentUrl}
+            alt={label}
+            className={field === 'logoUrl' ? 'w-24 h-24 object-contain border rounded-lg bg-white p-2' : 'w-full h-40 object-cover rounded-lg'}
+          />
+        </div>
+      )}
+      <input
+        type="file"
+        accept="image/jpeg,image/jpg,image/png,image/webp"
+        onChange={handleUpload}
+        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
+      />
+      {uploadProgress > 0 && uploadProgress < 100 && (
+        <div className="mt-2 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+          <div className="bg-teal-600 h-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
+// Main ProfileEditor
+// =============================================================================
 export default function ProfileEditor({ school, onSave, isSaving }) {
   const [formData, setFormData] = useState(school);
   const [autoSaved, setAutoSaved] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({});
-  const [imagePreview, setImagePreview] = useState({});
   const [verifiedFields, setVerifiedFields] = useState(school?.verifiedFields || {});
-  const [sectionRefs, setSectionRefs] = useState({});
+  const [openTiers, setOpenTiers] = useState({ tier1: true, tier2: false, tier3: false, tier4: false });
 
   useEffect(() => {
     setFormData(school);
@@ -26,18 +237,9 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
   }, [school]);
 
   const handleChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
-    // Mark field as verified when admin manually edits it
-    if (!verifiedFields[field]) {
-      const updatedVerified = { ...verifiedFields, [field]: true };
-      setVerifiedFields(updatedVerified);
-      setFormData({ ...formData, [field]: value, verifiedFields: updatedVerified });
-    }
-  };
-
-  const handleArrayChange = (field, value) => {
-    const array = value.split(',').map(item => item.trim()).filter(Boolean);
-    handleChange(field, array);
+    const updatedVerified = verifiedFields[field] ? verifiedFields : { ...verifiedFields, [field]: true };
+    setVerifiedFields(updatedVerified);
+    setFormData(prev => ({ ...prev, [field]: value, verifiedFields: updatedVerified }));
   };
 
   const handleSave = async () => {
@@ -46,138 +248,211 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
     setTimeout(() => setAutoSaved(false), 2000);
   };
 
-  const handleImageUpload = async (e, field) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const toggleTier = (tierId) => setOpenTiers(prev => ({ ...prev, [tierId]: !prev[tierId] }));
 
-    // TASK D: Validate file type and size
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      alert('Please upload a JPG, PNG, or WebP image');
-      return;
-    }
+  const isAI = (field) => school?.aiEnrichedFields?.includes(field) && !verifiedFields[field];
 
-    const maxSizes = {
-      logoUrl: 500 * 1024, // 500KB
-      headerPhotoUrl: 2 * 1024 * 1024, // 2MB
-      photoGallery: 2 * 1024 * 1024 // 2MB
-    };
+  // Tier 1 completeness for warning banner
+  const tier1Filled = countFilled(formData, TIERS[0].fields);
+  const tier1Total = TIERS[0].fields.length;
+  const showTier1Warning = tier1Filled < tier1Total;
 
-    if (file.size > (maxSizes[field] || 2 * 1024 * 1024)) {
-      alert(`File too large. Maximum size: ${(maxSizes[field] || 2 * 1024 * 1024) / 1024 / 1024}MB`);
-      return;
-    }
-
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview({ ...imagePreview, [field]: e.target.result });
-    };
-    reader.readAsDataURL(file);
-
-    setUploadingImage(true);
-    setUploadProgress({ ...uploadProgress, [field]: 0 });
-
-    try {
-      // Simulate upload progress
-      const interval = setInterval(() => {
-        setUploadProgress(prev => ({
-          ...prev,
-          [field]: Math.min((prev[field] || 0) + 10, 90)
-        }));
-      }, 100);
-
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      
-      clearInterval(interval);
-      setUploadProgress({ ...uploadProgress, [field]: 100 });
-      
-      handleChange(field, file_url);
-      
-      setTimeout(() => {
-        setUploadProgress({ ...uploadProgress, [field]: 0 });
-        setImagePreview({ ...imagePreview, [field]: null });
-      }, 1000);
-    } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Upload failed. Please try again.');
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleAddToArray = (field, newValue) => {
-    if (!newValue.trim()) return;
-    const current = formData[field] || [];
-    handleChange(field, [...current, newValue.trim()]);
-  };
-
-  const handleRemoveFromArray = (field, index) => {
-    const current = formData[field] || [];
-    handleChange(field, current.filter((_, i) => i !== index));
-  };
-
-  const TagInput = ({ label, field, placeholder }) => {
-    const [inputValue, setInputValue] = useState('');
-    const values = formData[field] || [];
-
-    return (
-      <div>
-        <Label>{label}</Label>
-        <div className="flex flex-wrap gap-2 mb-2">
-          {values.map((item, index) => (
-            <Badge key={index} variant="secondary" className="flex items-center gap-1">
-              {item}
-              <button
-                onClick={() => handleRemoveFromArray(field, index)}
-                className="ml-1 hover:text-red-600"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
+  // ==========================================================================
+  // Tier 1 fields
+  // ==========================================================================
+  const tier1Content = (
+    <>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="col-span-2">
+          <FieldLabel required aiEnriched={isAI('name')}>School Name</FieldLabel>
+          <Input value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} className={isAI('name') ? 'bg-blue-50 border-blue-200' : ''} />
         </div>
-        <div className="flex gap-2">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={placeholder}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddToArray(field, inputValue);
-                setInputValue('');
-              }
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              handleAddToArray(field, inputValue);
-              setInputValue('');
-            }}
-          >
-            Add
-          </Button>
+        <div>
+          <FieldLabel required>City</FieldLabel>
+          <Input value={formData.city || ''} onChange={(e) => handleChange('city', e.target.value)} />
+        </div>
+        <div>
+          <FieldLabel required>Province/State</FieldLabel>
+          <Input value={formData.provinceState || ''} onChange={(e) => handleChange('provinceState', e.target.value)} />
+        </div>
+        <div>
+          <FieldLabel required>Country</FieldLabel>
+          <Input value={formData.country || ''} onChange={(e) => handleChange('country', e.target.value)} />
+        </div>
+        <div>
+          <FieldLabel required>School Type</FieldLabel>
+          <Select value={formData.schoolType || ''} onValueChange={(val) => handleChange('schoolType', val)}>
+            <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+            <SelectContent>
+              {['Day School','Boarding School','Private','Special Needs','All-Girls','General','Religious','Arts-Focused','Military','Online','All-Boys'].map(t => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <FieldLabel required>Lowest Grade</FieldLabel>
+          <Input type="number" value={formData.lowestGrade ?? ''} onChange={(e) => handleChange('lowestGrade', parseInt(e.target.value))} placeholder="-2 = PK, -1 = JK, 0 = K" />
+        </div>
+        <div>
+          <FieldLabel required>Highest Grade</FieldLabel>
+          <Input type="number" value={formData.highestGrade ?? ''} onChange={(e) => handleChange('highestGrade', parseInt(e.target.value))} />
+        </div>
+        <div>
+          <FieldLabel required>Gender Policy</FieldLabel>
+          <Select value={formData.genderPolicy || ''} onValueChange={(val) => handleChange('genderPolicy', val)}>
+            <SelectTrigger><SelectValue placeholder="Select policy" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Co-ed">Co-ed</SelectItem>
+              <SelectItem value="All-Boys">All-Boys</SelectItem>
+              <SelectItem value="All-Girls">All-Girls</SelectItem>
+              <SelectItem value="Co-ed with single-gender classes">Co-ed with single-gender classes</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <FieldLabel required>Day Tuition (Annual)</FieldLabel>
+          <Input type="number" value={formData.dayTuition || ''} onChange={(e) => handleChange('dayTuition', parseFloat(e.target.value))} placeholder="e.g. 25000" />
+        </div>
+        <div>
+          <Label>Currency</Label>
+          <Select value={formData.currency || 'CAD'} onValueChange={(val) => handleChange('currency', val)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="CAD">CAD</SelectItem>
+              <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="EUR">EUR</SelectItem>
+              <SelectItem value="GBP">GBP</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
-    );
-  };
-
-  const isFieldAIEnriched = (field) => {
-    return school?.aiEnrichedFields?.includes(field) && !verifiedFields[field];
-  };
-
-  const FieldLabel = ({ children, field, required = false }) => (
-    <Label className="flex items-center gap-2">
-      {children}
-      {required && <span className="text-red-500">*</span>}
-      {isFieldAIEnriched(field) && !verifiedFields[field] && (
-        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Auto-filled</span>
-      )}
-    </Label>
+    </>
   );
+
+  // ==========================================================================
+  // Tier 2 fields
+  // ==========================================================================
+  const tier2Content = (
+    <div className="space-y-4">
+      <div>
+        <FieldLabel aiEnriched={isAI('description')}>School Description</FieldLabel>
+        <Textarea value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} rows={4} className={isAI('description') ? 'bg-blue-50 border-blue-200' : ''} />
+      </div>
+      <div>
+        <Label>Website</Label>
+        <Input value={formData.website || ''} onChange={(e) => handleChange('website', e.target.value)} placeholder="https://..." />
+      </div>
+      <div className="flex items-center justify-between py-2">
+        <Label>Boarding Available</Label>
+        <Switch checked={formData.boardingAvailable || false} onCheckedChange={(val) => handleChange('boardingAvailable', val)} />
+      </div>
+      {formData.boardingAvailable && (
+        <div>
+          <Label>Boarding Type</Label>
+          <Select value={formData.boardingType || ''} onValueChange={(val) => handleChange('boardingType', val)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="full">Full Boarding</SelectItem>
+              <SelectItem value="weekly">Weekly Boarding</SelectItem>
+              <SelectItem value="day">Day School Only</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <div>
+        <Label>Religious Affiliation</Label>
+        <Input value={formData.religiousAffiliation || ''} onChange={(e) => handleChange('religiousAffiliation', e.target.value)} placeholder="e.g. Non-denominational, Catholic" />
+      </div>
+      <div>
+        <Label>Language of Instruction</Label>
+        <Input value={formData.languageOfInstruction || ''} onChange={(e) => handleChange('languageOfInstruction', e.target.value)} placeholder="e.g. English, French, Bilingual" />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Average Class Size</Label>
+          <Input type="number" value={formData.avgClassSize || ''} onChange={(e) => handleChange('avgClassSize', parseInt(e.target.value))} />
+        </div>
+        <div>
+          <Label>Student-Teacher Ratio</Label>
+          <Input value={formData.studentTeacherRatio || ''} onChange={(e) => handleChange('studentTeacherRatio', e.target.value)} placeholder="e.g. 12:1" />
+        </div>
+      </div>
+    </div>
+  );
+
+  // ==========================================================================
+  // Tier 3 fields
+  // ==========================================================================
+  const tier3Content = (
+    <div className="space-y-4">
+      <TagInput label="Arts Programs" field="artsPrograms" placeholder="Add arts program" formData={formData} onChange={handleChange} />
+      <TagInput label="Sports Programs" field="sportsPrograms" placeholder="Add sports program" formData={formData} onChange={handleChange} />
+      <TagInput label="Clubs & Activities" field="clubs" placeholder="Add club" formData={formData} onChange={handleChange} />
+      <TagInput label="Facilities" field="facilities" placeholder="e.g. Pool, Theatre, Lab" formData={formData} onChange={handleChange} />
+      <TagInput label="Special Education Programs" field="specialEdPrograms" placeholder="Add program" formData={formData} onChange={handleChange} />
+      <div>
+        <Label>Curriculum Type</Label>
+        <Select value={formData.curriculumType || ''} onValueChange={(val) => handleChange('curriculumType', val)}>
+          <SelectTrigger><SelectValue placeholder="Select curriculum" /></SelectTrigger>
+          <SelectContent>
+            {['Traditional','Montessori','IB','Waldorf','AP','Catholic','Other'].map(c => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <TagInput label="Accreditations" field="accreditations" placeholder="Add accreditation" formData={formData} onChange={handleChange} />
+    </div>
+  );
+
+  // ==========================================================================
+  // Tier 4 fields (Media)
+  // ==========================================================================
+  const tier4Content = (
+    <div className="space-y-6">
+      <ImageUploadField label="School Logo" field="logoUrl" hint="Square image, max 500KB" formData={formData} onChange={handleChange} />
+      <ImageUploadField label="Header Photo" field="headerPhotoUrl" hint="16:9 ratio, 1200×675px, max 2MB" formData={formData} onChange={handleChange} />
+
+      {/* Photo Gallery */}
+      <div>
+        <Label>Photo Gallery</Label>
+        <p className="text-xs text-slate-500 mb-2">Up to 10 images, max 2MB each</p>
+        {formData.photoGallery && formData.photoGallery.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {formData.photoGallery.map((url, idx) => (
+              <div key={idx} className="relative group">
+                <img src={url} alt={`Gallery ${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                <button
+                  onClick={() => handleChange('photoGallery', formData.photoGallery.filter((_, i) => i !== idx))}
+                  className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {(!formData.photoGallery || formData.photoGallery.length < 10) && (
+          <input
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              try {
+                const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                handleChange('photoGallery', [...(formData.photoGallery || []), file_url]);
+              } catch { alert('Upload failed.'); }
+            }}
+            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
+          />
+        )}
+      </div>
+    </div>
+  );
+
+  const tierContents = [tier1Content, tier2Content, tier3Content, tier4Content];
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -185,12 +460,7 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Profile Editor</h2>
-          <p className="text-slate-600">Review and update your school's profile information</p>
-          {school?.aiEnrichedFields && school.aiEnrichedFields.length > 0 && (
-            <p className="text-sm text-blue-600 mt-1">
-              {school.aiEnrichedFields.filter(f => !verifiedFields[f]).length} auto-filled fields need verification
-            </p>
-          )}
+          <p className="text-slate-600 text-sm mt-0.5">Complete each tier to improve your school's visibility and match rate.</p>
         </div>
         <div className="flex items-center gap-3">
           {autoSaved && (
@@ -199,479 +469,44 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
               <span>Saved</span>
             </div>
           )}
-          <a
-            href={createPageUrl(`SchoolProfile?id=${school.id}`)}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button variant="outline">
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
+          <a href={createPageUrl(`SchoolProfile?id=${school.id}`)} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline"><Eye className="h-4 w-4 mr-2" />Preview</Button>
           </a>
-          <Button 
-            onClick={handleSave}
-            disabled={isSaving}
-            className="bg-teal-600 hover:bg-teal-700"
-          >
+          <Button onClick={handleSave} disabled={isSaving} className="bg-teal-600 hover:bg-teal-700">
             <Save className="h-4 w-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </div>
 
-      <div className="space-y-6">
-        {/* Basic Info */}
-        <Card className="p-6" id="basic" ref={(el) => sectionRefs.basic = el}>
-          <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <FieldLabel field="name" required>School Name</FieldLabel>
-              <Input
-                value={formData.name || ''}
-                onChange={(e) => handleChange('name', e.target.value)}
-                className={isFieldAIEnriched('name') ? 'bg-blue-50 border-blue-200' : ''}
-              />
-            </div>
-            <div>
-              <Label>Website</Label>
-              <Input
-                value={formData.website || ''}
-                onChange={(e) => handleChange('website', e.target.value)}
-                placeholder="https://..."
-              />
-            </div>
-            <div className="col-span-2">
-              <Label>Address</Label>
-              <Input
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>City</Label>
-              <Input
-                value={formData.city || ''}
-                onChange={(e) => handleChange('city', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Province/State</Label>
-              <Input
-                value={formData.provinceState || ''}
-                onChange={(e) => handleChange('provinceState', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Country</Label>
-              <Input
-                value={formData.country || ''}
-                onChange={(e) => handleChange('country', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Region</Label>
-              <Select value={formData.region} onValueChange={(val) => handleChange('region', val)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Canada">Canada</SelectItem>
-                  <SelectItem value="US">US</SelectItem>
-                  <SelectItem value="Europe">Europe</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Grades Served</Label>
-              <Input
-                value={formData.gradesServed || ''}
-                onChange={(e) => handleChange('gradesServed', e.target.value)}
-                placeholder="e.g., K-12"
-              />
-            </div>
-            <div>
-              <Label>Enrollment</Label>
-              <Input
-                type="number"
-                value={formData.enrollment || ''}
-                onChange={(e) => handleChange('enrollment', parseInt(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label>Founded</Label>
-              <Input
-                type="number"
-                value={formData.founded || ''}
-                onChange={(e) => handleChange('founded', parseInt(e.target.value))}
-                placeholder="Year"
-              />
-            </div>
-            <div>
-              <Label>Phone</Label>
-              <Input
-                value={formData.phone || ''}
-                onChange={(e) => handleChange('phone', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={formData.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
-              />
-            </div>
+      {/* Tier 1 Warning Banner */}
+      {showTier1Warning && (
+        <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-800">
+              {tier1Total - tier1Filled} required field{tier1Total - tier1Filled !== 1 ? 's' : ''} still missing
+            </p>
+            <p className="text-xs text-red-600 mt-0.5">
+              Complete all Tier 1 fields to ensure your school appears in family searches. You can still save your progress.
+            </p>
           </div>
-        </Card>
+        </div>
+      )}
 
-        {/* Academics */}
-        <Card className="p-6" id="academics" ref={(el) => sectionRefs.academics = el}>
-          <h3 className="text-lg font-semibold mb-4">Academics</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Curriculum Type</Label>
-              <Select value={formData.curriculumType} onValueChange={(val) => handleChange('curriculumType', val)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Traditional">Traditional</SelectItem>
-                  <SelectItem value="Montessori">Montessori</SelectItem>
-                  <SelectItem value="IB">IB</SelectItem>
-                  <SelectItem value="Waldorf">Waldorf</SelectItem>
-                  <SelectItem value="AP">AP</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Average Class Size</Label>
-              <Input
-                type="number"
-                value={formData.avgClassSize || ''}
-                onChange={(e) => handleChange('avgClassSize', parseInt(e.target.value))}
-              />
-            </div>
-            <div className="col-span-2">
-              <Label>Student-Teacher Ratio</Label>
-              <Input
-                value={formData.studentTeacherRatio || ''}
-                onChange={(e) => handleChange('studentTeacherRatio', e.target.value)}
-                placeholder="e.g., 12:1"
-              />
-            </div>
-            <div className="col-span-2">
-              <TagInput
-                label="Specializations"
-                field="specializations"
-                placeholder="Add specialization (e.g., STEM, Arts)"
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Financial */}
-        <Card className="p-6" id="financial" ref={(el) => sectionRefs.financial = el}>
-          <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Tuition (Annual)</Label>
-              <Input
-                type="number"
-                value={formData.tuition || ''}
-                onChange={(e) => handleChange('tuition', parseFloat(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label>Currency</Label>
-              <Select value={formData.currency} onValueChange={(val) => handleChange('currency', val)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CAD">CAD</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="GBP">GBP</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2 flex items-center justify-between">
-              <Label>Financial Aid Available</Label>
-              <Switch
-                checked={formData.financialAidAvailable || false}
-                onCheckedChange={(val) => handleChange('financialAidAvailable', val)}
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Culture */}
-        <Card className="p-6" id="culture" ref={(el) => sectionRefs.culture = el}>
-          <h3 className="text-lg font-semibold mb-4">Culture & Philosophy</h3>
-          <div className="space-y-4">
-            <div>
-              <Label>Mission Statement</Label>
-              <Textarea
-                value={formData.missionStatement || ''}
-                onChange={(e) => handleChange('missionStatement', e.target.value)}
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label>Teaching Philosophy</Label>
-              <Textarea
-                value={formData.teachingPhilosophy || ''}
-                onChange={(e) => handleChange('teachingPhilosophy', e.target.value)}
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label>Religious Affiliation</Label>
-              <Input
-                value={formData.religiousAffiliation || ''}
-                onChange={(e) => handleChange('religiousAffiliation', e.target.value)}
-              />
-            </div>
-            <TagInput
-              label="Core Values"
-              field="values"
-              placeholder="Add a value"
-            />
-          </div>
-        </Card>
-
-        {/* Programs */}
-        <Card className="p-6" id="programs" ref={(el) => sectionRefs.programs = el}>
-          <h3 className="text-lg font-semibold mb-4">Programs & Activities</h3>
-          <div className="space-y-4">
-            <TagInput
-              label="Arts Programs"
-              field="artsPrograms"
-              placeholder="Add arts program"
-            />
-            <TagInput
-              label="Sports Programs"
-              field="sportsPrograms"
-              placeholder="Add sports program"
-            />
-            <TagInput
-              label="Clubs"
-              field="clubs"
-              placeholder="Add club"
-            />
-            <TagInput
-              label="Languages Offered"
-              field="languages"
-              placeholder="Add language"
-            />
-            <TagInput
-              label="Special Education Programs"
-              field="specialEdPrograms"
-              placeholder="Add program"
-            />
-          </div>
-        </Card>
-
-        {/* Media */}
-        <Card className="p-6" id="media" ref={(el) => sectionRefs.media = el}>
-          <h3 className="text-lg font-semibold mb-4">Media & Photos</h3>
-          <div className="space-y-6">
-            {/* Logo Upload */}
-            <div>
-              <FieldLabel field="logoUrl">School Logo</FieldLabel>
-              <p className="text-xs text-slate-500 mb-2">Square image, 200x200px, max 500KB</p>
-              {(formData.logoUrl || imagePreview.logoUrl) && (
-                <div className="mb-2">
-                  <img 
-                    src={imagePreview.logoUrl || formData.logoUrl} 
-                    alt="Logo preview" 
-                    className="w-24 h-24 object-contain border rounded-lg bg-white p-2"
-                  />
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                onChange={(e) => handleImageUpload(e, 'logoUrl')}
-                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-              />
-              {uploadProgress.logoUrl > 0 && uploadProgress.logoUrl < 100 && (
-                <div className="mt-2 bg-slate-200 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-teal-600 h-full transition-all duration-300"
-                    style={{ width: `${uploadProgress.logoUrl}%` }}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Header Photo Upload */}
-            <div>
-              <FieldLabel field="headerPhotoUrl">Header Photo</FieldLabel>
-              <p className="text-xs text-slate-500 mb-2">16:9 aspect ratio, 1200x675px, max 2MB</p>
-              {(formData.headerPhotoUrl || imagePreview.headerPhotoUrl) && (
-                <div className="mb-2">
-                  <img 
-                    src={imagePreview.headerPhotoUrl || formData.headerPhotoUrl} 
-                    alt="Header preview" 
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                onChange={(e) => handleImageUpload(e, 'headerPhotoUrl')}
-                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-              />
-              {uploadProgress.headerPhotoUrl > 0 && uploadProgress.headerPhotoUrl < 100 && (
-                <div className="mt-2 bg-slate-200 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-teal-600 h-full transition-all duration-300"
-                    style={{ width: `${uploadProgress.headerPhotoUrl}%` }}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Gallery Upload */}
-            <div>
-              <FieldLabel field="photoGallery">Photo Gallery</FieldLabel>
-              <p className="text-xs text-slate-500 mb-2">Up to 10 images, max 2MB each</p>
-              {formData.photoGallery && formData.photoGallery.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 mb-2">
-                  {formData.photoGallery.map((url, idx) => (
-                    <div key={idx} className="relative group">
-                      <img 
-                        src={url} 
-                        alt={`Gallery ${idx + 1}`}
-                        className="w-full h-24 object-cover rounded-lg"
-                      />
-                      <button
-                        onClick={() => {
-                          const updated = formData.photoGallery.filter((_, i) => i !== idx);
-                          handleChange('photoGallery', updated);
-                        }}
-                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {(!formData.photoGallery || formData.photoGallery.length < 10) && (
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    
-                    setUploadingImage(true);
-                    try {
-                      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                      const currentGallery = formData.photoGallery || [];
-                      handleChange('photoGallery', [...currentGallery, file_url]);
-                    } catch (error) {
-                      console.error('Upload failed:', error);
-                    } finally {
-                      setUploadingImage(false);
-                    }
-                  }}
-                  className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-                />
-              )}
-            </div>
-            
-            <div>
-              <Label>Hero Image (Legacy)</Label>
-              {formData.heroImage && (
-                <img src={formData.heroImage} alt="Hero" className="w-full h-48 object-cover rounded-lg mb-2" />
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, 'heroImage')}
-                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-              />
-            </div>
-            <div>
-              <Label>Virtual Tour URL</Label>
-              <Input
-                value={formData.virtualTourUrl || ''}
-                onChange={(e) => handleChange('virtualTourUrl', e.target.value)}
-                placeholder="https://..."
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Admissions */}
-        <Card className="p-6" id="admissions" ref={(el) => sectionRefs.admissions = el}>
-          <h3 className="text-lg font-semibold mb-4">Admissions</h3>
-          <div className="space-y-4">
-            <div>
-              <Label>Application Deadline</Label>
-              <Input
-                value={formData.applicationDeadline || ''}
-                onChange={(e) => handleChange('applicationDeadline', e.target.value)}
-                placeholder="e.g., March 1, 2024"
-              />
-            </div>
-            <div>
-              <Label>Acceptance Rate (%)</Label>
-              <Input
-                type="number"
-                value={formData.acceptanceRate || ''}
-                onChange={(e) => handleChange('acceptanceRate', parseFloat(e.target.value))}
-                min="0"
-                max="100"
-              />
-            </div>
-            <TagInput
-              label="Admission Requirements"
-              field="admissionRequirements"
-              placeholder="Add requirement"
-            />
-            <TagInput
-              label="Open House Dates"
-              field="openHouseDates"
-              placeholder="Add date"
-            />
-          </div>
-        </Card>
-
-        {/* Boarding */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Boarding Information</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Boarding Available</Label>
-              <Switch
-                checked={formData.boardingAvailable || false}
-                onCheckedChange={(val) => handleChange('boardingAvailable', val)}
-              />
-            </div>
-            {formData.boardingAvailable && (
-              <div>
-                <Label>Boarding Type</Label>
-                <Select value={formData.boardingType} onValueChange={(val) => handleChange('boardingType', val)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="full">Full Boarding</SelectItem>
-                    <SelectItem value="weekly">Weekly Boarding</SelectItem>
-                    <SelectItem value="day">Day School Only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-        </Card>
+      {/* Tier Accordions */}
+      <div className="space-y-4">
+        {TIERS.map((tier, idx) => (
+          <TierSection
+            key={tier.id}
+            tier={tier}
+            filled={countFilled(formData, tier.fields)}
+            open={openTiers[tier.id]}
+            onToggle={() => toggleTier(tier.id)}
+          >
+            {tierContents[idx]}
+          </TierSection>
+        ))}
       </div>
     </div>
   );
