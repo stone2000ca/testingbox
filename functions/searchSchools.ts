@@ -246,6 +246,7 @@ async function performSearch(req) {
       }
     }
     
+    // Gender preference filter (explicit genderPreference field)
     if (familyProfile?.genderPreference) {
       const genderPref = familyProfile.genderPreference.toLowerCase();
       const schoolGender = (school.genderPolicy || school.schoolType || '').toLowerCase();
@@ -260,6 +261,30 @@ async function performSearch(req) {
         const isCoed = /\b(co[\s-]?ed|coeducational|mixed)\b/i.test(schoolGender);
         const isSingleGender = /\b(all[\s-]?boys?|all[\s-]?girls?|boys?[\s-]?only|girls?[\s-]?only|male|female)\b/i.test(schoolGender);
         if (!isCoed && isSingleGender) return false;
+      }
+    }
+
+    // Gender dealbreaker filter — parsed from free-text dealbreakers array
+    // DB values: 'Co-ed', 'All-Boys', 'All-Girls', 'Co-ed with single-gender classes'
+    const dealbreakers = payload.dealbreakers || familyProfile?.dealbreakers || [];
+    if (Array.isArray(dealbreakers) && dealbreakers.length > 0) {
+      const dbText = dealbreakers.join(' ').toLowerCase();
+      const wantsAllGirls = /\ball[\s-]?girls?\b|girls[\s-]?only|single[\s-]?gender.*girl|daughter.*all[\s-]?girl/i.test(dbText);
+      const wantsAllBoys = /\ball[\s-]?boys?\b|boys[\s-]?only|single[\s-]?gender.*boy|son.*all[\s-]?boy/i.test(dbText);
+      const wantsCoed = /\bco[\s-]?ed\b|coeducational|mixed gender|no single[\s-]?gender|not (all[\s-]?girls?|all[\s-]?boys?)/i.test(dbText);
+
+      const gp = school.genderPolicy || '';
+      if (wantsAllGirls && gp !== 'All-Girls') {
+        console.log(`[GENDER DEALBREAKER] ✗ Excluded ${school.name}: genderPolicy="${gp}", needs All-Girls`);
+        return false;
+      }
+      if (wantsAllBoys && gp !== 'All-Boys') {
+        console.log(`[GENDER DEALBREAKER] ✗ Excluded ${school.name}: genderPolicy="${gp}", needs All-Boys`);
+        return false;
+      }
+      if (wantsCoed && (gp === 'All-Boys' || gp === 'All-Girls')) {
+        console.log(`[GENDER DEALBREAKER] ✗ Excluded ${school.name}: genderPolicy="${gp}", needs Co-ed`);
+        return false;
       }
     }
     
