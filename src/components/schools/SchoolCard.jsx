@@ -169,7 +169,7 @@ function buildAlsoWorthKnowing(school, familyProfile) {
   if (familyProfile) {
     if (familyProfile.childGrade != null) priorityIds.add('grade');
     if (familyProfile.maxTuition) priorityIds.add('budget');
-    if (familyProfile.gender) priorityIds.add('gender');
+
     if (familyProfile.curriculumPreference?.length > 0) priorityIds.add('curriculum');
     if (familyProfile.boardingPreference && familyProfile.boardingPreference !== 'day_only') priorityIds.add('boarding');
     if (familyProfile.religiousPreference) priorityIds.add('religious');
