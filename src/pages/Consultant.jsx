@@ -36,6 +36,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const DEFAULT_GREETING = "Hi! I'm your NextSchool education consultant. I help families across Canada, the US, and Europe find the perfect private school. Tell me about your child — what grade are they in, and what matters most to you in a school?";
 
+const mapStateToView = (state) => {
+  if ([STATES.WELCOME, STATES.DISCOVERY, STATES.BRIEF].includes(state)) return 'chat';
+  if (state === STATES.RESULTS) return 'schools';
+  if (state === STATES.DEEP_DIVE) return 'detail';
+  return 'chat';
+};
+
 export default function Consultant() {
   const [searchParams] = useSearchParams();
   const sessionIdParam = searchParams.get('sessionId');
