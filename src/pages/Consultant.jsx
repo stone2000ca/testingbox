@@ -338,16 +338,19 @@ export default function Consultant() {
         updatedDate: chatSession.updated_date
       });
 
-      // Restore consultant selection
+      // CRITICAL: Restore consultant selection FIRST so chat panel can render correctly
       if (chatSession.consultantSelected) {
         setSelectedConsultant(chatSession.consultantSelected);
+        console.log('[RESTORE] setSelectedConsultant:', chatSession.consultantSelected);
       }
 
-      // Fetch and restore ChatHistory messages
+      // Fetch and restore ChatHistory messages and context
+      let chatHistory = null;
       if (chatSession.chatHistoryId) {
-        const chatHistory = await base44.entities.ChatHistory.get(chatSession.chatHistoryId);
+        chatHistory = await base44.entities.ChatHistory.get(chatSession.chatHistoryId);
         if (chatHistory?.messages) {
           setMessages(chatHistory.messages);
+          console.log('[RESTORE] Loaded', chatHistory.messages.length, 'messages from ChatHistory');
         }
       }
 
@@ -356,11 +359,12 @@ export default function Consultant() {
         const profile = await base44.entities.FamilyProfile.get(chatSession.familyProfileId);
         if (profile) {
           setFamilyProfile(profile);
-          setOnboardingPhase(profile.onboardingPhase || STATES.DISCOVERY);
+          console.log('[RESTORE] Loaded FamilyProfile for:', profile.childName);
         }
       }
 
-      // Fetch and restore matched schools BEFORE setting onboardingPhase
+      // Fetch and restore matched schools
+      let restoredSchools = [];
       if (chatSession.matchedSchools) {
         try {
           const allSchools = await School.filter();
@@ -377,28 +381,43 @@ export default function Consultant() {
           }
           
           setSchools(validSchools);
+          restoredSchools = validSchools;
           console.log('[RESTORE] setSchools called with', validSchools.length, 'schools');
-          
-          if (validSchools.length > 0) {
-            setCurrentView('schools');
-            console.log('[RESTORE] setCurrentView called with schools');
-          }
         } catch (e) {
           console.error('[RESTORE] Failed to restore schools:', e);
         }
       }
 
-      // Set currentConversation
-      if (chatSession.chatHistoryId) {
-        const chatHistory = await base44.entities.ChatHistory.get(chatSession.chatHistoryId);
-        if (chatHistory) {
-          setCurrentConversation(chatHistory);
-        }
+      // CRITICAL: Set currentView to 'schools' BEFORE setting currentConversation
+      // This ensures isIntakePhase condition evaluates correctly
+      if (restoredSchools.length > 0) {
+        setCurrentView('schools');
+        console.log('[RESTORE] setCurrentView called with "schools"');
       }
 
-      // Determine onboardingPhase based on session state - set AFTER schools are loaded
-      const phase = chatSession.matchedSchools ? STATES.RESULTS : STATES.DISCOVERY;
-      setOnboardingPhase(phase);
+      // Set currentConversation with RESULTS state in context
+      if (chatHistory) {
+        const restoredContext = {
+          ...(chatHistory.conversationContext || {}),
+          state: STATES.RESULTS,
+          schools: restoredSchools
+        };
+        setCurrentConversation({
+          ...chatHistory,
+          conversationContext: restoredContext
+        });
+        console.log('[RESTORE] setCurrentConversation with state:', STATES.RESULTS);
+      }
+
+      // Set onboardingPhase to RESULTS
+      setOnboardingPhase(STATES.RESULTS);
+      console.log('[RESTORE] setOnboardingPhase to STATES.RESULTS');
+
+      // Load shortlist from user if authenticated
+      if (isAuthenticated && user) {
+        await loadShortlist(user);
+        console.log('[RESTORE] Loaded shortlist for user:', user.email);
+      }
 
       // Add welcome-back message
       const childName = chatSession.childName || 'your child';
@@ -408,6 +427,7 @@ export default function Consultant() {
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, welcomeMsg]);
+      console.log('[RESTORE] Added welcome-back message');
 
       setSessionRestored(true);
     } catch (error) {
