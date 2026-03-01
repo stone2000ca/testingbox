@@ -752,7 +752,11 @@ export default function Consultant() {
   const handleSelectConsultant = (consultantName) => {
     setSelectedConsultant(consultantName);
     // Track consultant selection
-    trackEvent('consultant_selected');
+    base44.functions.invoke('trackSessionEvent', {
+      eventType: 'consultant_selected',
+      consultantName: consultantName,
+      sessionId
+    }).catch(err => console.error('Failed to track:', err));
 
     // CRITICAL: Complete state reset for fresh conversation
     setCurrentConversation({ conversationContext: {} });
