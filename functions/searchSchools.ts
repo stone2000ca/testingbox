@@ -514,7 +514,7 @@ async function performSearch(req) {
     total: schools.length,
     returned: condensedSchools.length,
     edgeCaseMessage,
-    relaxedFilters: false
+    relaxedFilters: isRelaxedPass
   });
 }
 
