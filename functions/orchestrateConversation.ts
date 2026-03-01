@@ -1085,7 +1085,7 @@ ${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic, experienced.
 // =============================================================================
 // INLINED: handleDeepDive
 // =============================================================================
-async function handleDeepDive(base44, selectedSchoolId, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, returningUserContextBlock) {
+async function handleDeepDive(base44, selectedSchoolId, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, userId, returningUserContextBlock) {
   const STATES = { WELCOME: 'WELCOME', DISCOVERY: 'DISCOVERY', BRIEF: 'BRIEF', RESULTS: 'RESULTS', DEEP_DIVE: 'DEEP_DIVE' };
 
   console.log('[DEEPDIVE_START]', selectedSchoolId);
@@ -1169,6 +1169,7 @@ Generate the DEEPDIVE card for this family-school match.`;
 
   console.log('[DEEPDIVE] Attempting AI-generated card');
 
+  let deepDiveAnalysis = null;
   try {
     const aiResponse = await callOpenRouter({
       systemPrompt: deepDiveSystemPrompt,
@@ -1183,6 +1184,52 @@ Generate the DEEPDIVE card for this family-school match.`;
   } catch (llmError) {
     console.error('[DEEPDIVE] OpenRouter failed:', llmError.message);
     aiMessage = `**Great Fit for ${childDisplayName}**\n\n**Why ${selectedSchool.name} for ${childDisplayName}**\n${selectedSchool.description?.substring(0, 150) || 'School details available upon request.'}\n\n**Cost Reality**\nTuition: ${compressedSchoolData.tuitionFee}/year\n\nWhat would you like to know more about?`;
+  }
+
+  // E10b: Generate structured analysis in parallel
+  try {
+    const analysisResponse = await callOpenRouter({
+      systemPrompt: `You are a school analysis engine. Given a consultant's analysis of a school for a specific family, extract structured data. Return ONLY valid JSON matching the schema.`,
+      userPrompt: `Consultant's analysis: ${aiMessage}\n\nSchool data: ${JSON.stringify(compressedSchoolData)}\n\nFamily profile: child=${childDisplayName}, budget=${resolvedMaxTuition}, priorities=${resolvedPriorities?.join(', ') || 'None'}\n\nExtract: fitLabel (strong_match/good_match/worth_exploring), fitScore (0-100), tradeOffs (array with dimension, strength, concern, dataSource), dataGaps (array of field names with missing data relevant to this family), visitQuestions (array of 3-5 personalized questions for school visit), financialSummary (tuition, aidAvailable boolean, estimatedNetCost, budgetFit).`,
+      maxTokens: 800,
+      temperature: 0.3,
+      responseSchema: {
+        name: 'school_analysis',
+        schema: {
+          type: 'object',
+          properties: {
+            fitLabel: { type: 'string', enum: ['strong_match', 'good_match', 'worth_exploring'] },
+            fitScore: { type: 'number' },
+            tradeOffs: { type: 'array', items: { type: 'object', properties: { dimension: { type: 'string' }, strength: { type: 'string' }, concern: { type: 'string' }, dataSource: { type: 'string' } } } },
+            dataGaps: { type: 'array', items: { type: 'string' } },
+            visitQuestions: { type: 'array', items: { type: 'string' } },
+            financialSummary: { type: 'object', properties: { tuition: { type: 'number' }, aidAvailable: { type: 'boolean' }, estimatedNetCost: { type: 'number' }, budgetFit: { type: 'string' } } }
+          },
+          required: ['fitLabel', 'fitScore', 'tradeOffs', 'dataGaps', 'visitQuestions', 'financialSummary']
+        }
+      }
+    });
+    deepDiveAnalysis = typeof analysisResponse === 'string' ? JSON.parse(analysisResponse) : analysisResponse;
+    console.log('[E10b] Structured analysis extracted successfully');
+
+    // Save to SchoolAnalysis entity (non-blocking)
+    if (userId && selectedSchoolId && deepDiveAnalysis) {
+      try {
+        const existing = await base44.entities.SchoolAnalysis.filter({ userId, schoolId: selectedSchoolId });
+        if (existing && existing.length > 0) {
+          await base44.entities.SchoolAnalysis.update(existing[0].id, { ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
+          console.log('[E10b] SchoolAnalysis updated:', existing[0].id);
+        } else {
+          const created = await base44.entities.SchoolAnalysis.create({ userId, schoolId: selectedSchoolId, ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
+          console.log('[E10b] SchoolAnalysis created:', created.id);
+        }
+      } catch (persistError) {
+        console.error('[E10b] Failed to persist SchoolAnalysis (non-blocking):', persistError.message);
+      }
+    }
+  } catch (analysisError) {
+    console.error('[E10b] Structured analysis failed (non-blocking):', analysisError.message);
+    deepDiveAnalysis = null;
   }
 
   const sanitizedMessage = aiMessage
@@ -1201,7 +1248,8 @@ Generate the DEEPDIVE card for this family-school match.`;
     briefStatus: briefStatus,
     schools: currentSchools || [],
     familyProfile: conversationFamilyProfile,
-    conversationContext: context
+    conversationContext: context,
+    deepDiveAnalysis: deepDiveAnalysis
   };
 }
 
@@ -1524,7 +1572,7 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
       }
 
       if (currentState === STATES.DEEP_DIVE) {
-        responseData = await handleDeepDive(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, returningUserContextBlock);
+        responseData = await handleDeepDive(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, userId, returningUserContextBlock);
         return Response.json(responseData);
       }
 
