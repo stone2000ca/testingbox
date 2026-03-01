@@ -7,6 +7,7 @@ import AdminUsers from '@/components/admin/AdminUsers';
 import AdminClaims from '@/components/admin/AdminClaims';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminSubmissions from '@/components/admin/AdminSubmissions';
+import AdminDisputes from '@/components/admin/AdminDisputes';
 
 export default function Admin() {
   const [user, setUser] = useState(null);
