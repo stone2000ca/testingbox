@@ -980,6 +980,21 @@ export default function Consultant() {
         setSchools(finalOrderedSchools);
         // Reset sort to relevance when new schools arrive
         resetSort();
+
+        // Auto-populate shortlist for new users with no saved favorites
+        if (isAuthenticated && user && !hasAutoPopulatedShortlist.current) {
+          const currentShortlist = user.shortlist || [];
+          if (currentShortlist.length === 0) {
+            const tiers = buildTiers(finalOrderedSchools, familyProfile);
+            const topIds = (tiers?.topMatches || []).slice(0, 5).map(s => s.id);
+            if (topIds.length > 0) {
+              hasAutoPopulatedShortlist.current = true;
+              await base44.auth.updateMe({ shortlist: topIds });
+              setUser(prev => ({ ...prev, shortlist: topIds }));
+              await loadShortlist({ ...user, shortlist: topIds });
+            }
+          }
+        }
         // BUG-DD-001 FIX: View switching handled in state mapping logic above
       }
 
