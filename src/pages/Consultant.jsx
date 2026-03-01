@@ -374,14 +374,13 @@ export default function Consultant() {
 
       // DIRECT SEARCH CALL - Simplest possible fix
       try {
-        alert('ABOUT TO CALL searchSchools');
         const response = await searchSchools({ 
           region: chatSession.locationArea || 'Toronto', 
           grade: String(chatSession.childGrade || 5), 
           maxTuition: String(chatSession.maxTuition || 30000) 
         });
         console.log('RESTORE searchSchools response:', response);
-        alert('RESTORE response type: ' + typeof response + ' keys: ' + Object.keys(response || {}).join(',') + ' length: ' + (response?.length || response?.data?.length || 'none'));
+        setDebugInfo('response type=' + typeof response + ' isArray=' + Array.isArray(response) + ' keys=' + Object.keys(response||{}).join(',') + ' dataLen=' + (response?.data?.length) + ' respLen=' + (response?.length));
         const schools = response.data || response;
         console.log('RESTORE schools extracted:', schools?.length);
         if (schools && schools.length > 0) {
@@ -389,7 +388,7 @@ export default function Consultant() {
           console.log('RESTORE setSchools called with', schools.length, 'schools');
         }
       } catch (err) {
-        alert('searchSchools ERROR: ' + err.message);
+        setDebugInfo('searchSchools ERROR: ' + err.message);
         console.error('RESTORE searchSchools error:', err);
       }
 
