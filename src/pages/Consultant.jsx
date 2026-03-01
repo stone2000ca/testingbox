@@ -380,7 +380,7 @@ export default function Consultant() {
           maxTuition: String(chatSession.maxTuition || 30000) 
         });
         console.log('RESTORE searchSchools response:', response);
-        setDebugInfo('typeof response.data=' + typeof response.data + ' isArray=' + Array.isArray(response.data) + ' dataDataType=' + typeof response?.data?.data + ' dataDataIsArray=' + Array.isArray(response?.data?.data));
+        setDebugInfo('keys=' + Object.keys(response.data || {}).join(',') + ' | first200=' + JSON.stringify(response.data).substring(0, 200));
         const schoolsData = response?.data?.data || response?.data || response;
         console.log('RESTORE schools extracted:', schoolsData?.length);
         if (schoolsData && schoolsData.length > 0) {
