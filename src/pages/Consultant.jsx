@@ -892,20 +892,7 @@ export default function Consultant() {
         // BUG-DD-001 FIX: View switching handled in state mapping logic above
       }
 
-      // P0 FIX: Create ChatSession when brief is confirmed and transitioning to RESULTS
-      // DEBUG: Log all variables before condition check
-      console.log('[CHATSESSION DEBUG] Before create check:', {
-        isAuthenticated,
-        userId: user?.id,
-        state: response.data.state,
-        responseHasFamilyProfile: !!response.data.familyProfile,
-        stateFamilyProfile: response.data.familyProfile,
-        stateVar_familyProfile: familyProfile,
-        newBriefStatus,
-        STATES_RESULTS: STATES.RESULTS
-      });
-
-      // SIMPLIFIED: Just check if state is RESULTS - ignore auth/profile for now to verify create works
+      // Create ChatSession when brief is confirmed and transitioning to RESULTS
       if (response.data.state === STATES.RESULTS) {
         try {
           const matchedSchoolIds = response.data.schools ? response.data.schools.map(s => s.id) : [];
@@ -914,13 +901,6 @@ export default function Consultant() {
             ? `${profileForSession.childName}'s School Search Profile`
             : 'School Search Profile';
           
-          console.log('[CHATSESSION] Attempting create with:', {
-            userId: user?.id,
-            currentConversationId: currentConversation?.id,
-            sessionToken: sessionId,
-            matchedSchoolCount: matchedSchoolIds.length
-          });
-
           const chatSession = await base44.entities.ChatSession.create({
             sessionToken: sessionId,
             userId: user?.id,
@@ -937,17 +917,11 @@ export default function Consultant() {
             profileName
           });
           
-          console.log('[CHAT SESSION CREATION SUCCESS] New ChatSession created:', chatSession.id);
-          
           // Update URL with sessionId
           const newUrl = createPageUrl(`Consultant?sessionId=${chatSession.id}`);
           window.history.replaceState({}, document.title, newUrl);
         } catch (sessionError) {
-          console.error('[CHAT SESSION CREATION ERROR]', {
-            error: sessionError.message,
-            stack: sessionError.stack,
-            fullError: sessionError
-          });
+          console.error('Failed to create ChatSession:', sessionError);
         }
       }
 
