@@ -27,11 +27,14 @@ const TIER_WEIGHTS = [
   { fields: ['logoUrl','headerPhotoUrl','photoGallery'], weight: 5 },
 ];
 
-function calcWeightedScore(data) {
+function calcWeightedScore(data, testimonialCount = 0) {
   if (!data) return 0;
   let total = 0;
   for (const tier of TIER_WEIGHTS) {
-    const filled = tier.fields.filter(f => isFilled(data[f])).length;
+    const filled = tier.fields.filter(f => {
+      if (f === '_testimonials') return testimonialCount > 0;
+      return isFilled(data[f]);
+    }).length;
     total += (filled / tier.fields.length) * tier.weight;
   }
   return Math.round(total);
