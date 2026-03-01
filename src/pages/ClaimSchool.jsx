@@ -85,7 +85,20 @@ export default function ClaimSchool() {
     try {
       const schools = await base44.entities.School.filter({ id: schoolId });
       if (schools && schools.length > 0) {
-        setSchool(schools[0]);
+        const s = schools[0];
+        setSchool(s);
+        // Check if already claimed by another user
+        if (s.claimStatus === 'claimed') {
+          const admins = await base44.entities.SchoolAdmin.filter({ schoolId: schoolId, role: 'owner', isActive: true });
+          if (admins.length > 0 && admins[0].userId) {
+            const users = await base44.entities.User.filter({ id: admins[0].userId });
+            const ownerEmail = users[0]?.email || '';
+            const domain = ownerEmail.split('@')[1] || null;
+            setAlreadyClaimed({ domain });
+          } else {
+            setAlreadyClaimed({ domain: null });
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load school:', error);
