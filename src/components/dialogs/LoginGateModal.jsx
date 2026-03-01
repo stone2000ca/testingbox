@@ -2,7 +2,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { User, Sparkles, Check } from "lucide-react";
 
-export default function LoginGateModal({ consultantName, onClose }) {
+export default function LoginGateModal({ consultantName, childName = 'your child', onClose }) {
   const handleSignup = () => {
     // Redirect to signup, will return to same page after
     base44.auth.redirectToLogin(window.location.pathname);
@@ -26,10 +26,10 @@ export default function LoginGateModal({ consultantName, onClose }) {
         {/* Heading */}
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-slate-900 mb-3">
-            {consultantName} has your recommendations ready
+            Create a free account
           </h2>
           <p className="text-slate-600">
-            Create a free account to see your personalized school matches and save your progress.
+            Save {childName}'s School Search Profile and pick up where you left off anytime.
           </p>
         </div>
 
