@@ -352,6 +352,26 @@ export default function SchoolProfile() {
                   </Card>
                 )}
 
+                {testimonials.length > 0 && (
+                  <Card className="p-6">
+                    <h2 className="text-lg font-bold mb-1">Testimonials</h2>
+                    <p className="text-xs text-slate-500 mb-4">Provided by {school.name}</p>
+                    <div className="space-y-4">
+                      {testimonials.map((t) => (
+                        <div key={t.id} className="bg-slate-50 rounded-lg p-4 border border-slate-100">
+                          <p className="text-slate-700 leading-relaxed italic mb-3">"{t.quote_text}"</p>
+                          <div className="flex items-center gap-2 text-sm text-slate-500">
+                            <span className="font-medium text-slate-700">{t.author_first_name}</span>
+                            <span>·</span>
+                            <span className="capitalize">{t.author_role}</span>
+                            {t.year && <><span>·</span><span>{t.year}</span></>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
                 {(school.founded || school.studentTeacherRatio || school.financialAidAvailable !== null || school.religiousAffiliation) && (
                   <Card className="p-6">
                     <h2 className="text-xl font-bold mb-4">Key Facts</h2>
