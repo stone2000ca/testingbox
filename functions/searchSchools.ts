@@ -194,13 +194,15 @@ async function performSearch(req) {
 
   let hardFiltered = locationFiltered.filter(school => {
      const parsedMinGrade = minGrade !== undefined && minGrade !== null ? parseInt(minGrade) : null;
+     // BUG-MATCH-S41 FIX: Grade range check moved to soft penalty (scoring) instead of hard filter.
+     // Only hard-exclude if grade is MORE than 2 grades outside the range.
      if (parsedMinGrade !== null) {
        let sLow = parseInt(school.lowestGrade);
        let sHigh = parseInt(school.highestGrade);
-       // BUG-SEARCH-003 FIX: If grades are missing, don't filter out the school — let distance/other scoring handle it
        if (!isNaN(sLow) && !isNaN(sHigh)) {
-         if (!(sLow <= parsedMinGrade && sHigh >= parsedMinGrade)) {
-           console.log(`[GRADE FILTER] Excluded ${school.name}: grades ${sLow}-${sHigh}, need ${parsedMinGrade}`);
+         const distanceOutsideRange = parsedMinGrade < sLow ? sLow - parsedMinGrade : (parsedMinGrade > sHigh ? parsedMinGrade - sHigh : 0);
+         if (distanceOutsideRange > 2) {
+           console.log(`[GRADE FILTER] Excluded ${school.name}: grades ${sLow}-${sHigh}, need ${parsedMinGrade} (${distanceOutsideRange} grades outside range)`);
            return false;
          }
        } else {
