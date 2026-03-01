@@ -118,7 +118,6 @@ export default function SchoolAdmin() {
 
   const navItems = [
     { id: 'profile', label: 'Profile Editor', icon: Building2 },
-    { id: 'completeness', label: 'Profile Checklist', icon: CheckCircle2 },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, locked: school.subscriptionTier === 'free' },
     { id: 'inquiries', label: 'Inquiries', icon: Mail },
     { id: 'subscription', label: 'Subscription', icon: CreditCard },
