@@ -386,6 +386,7 @@ export default function Consultant() {
           console.log('RESTORE setSchools called with', schools.length, 'schools');
         }
       } catch (err) {
+        alert('searchSchools ERROR: ' + err.message);
         console.error('RESTORE searchSchools error:', err);
       }
 
