@@ -892,6 +892,40 @@ export default function Consultant() {
         // BUG-DD-001 FIX: View switching handled in state mapping logic above
       }
 
+      // P0 FIX: Create ChatSession when brief is confirmed and transitioning to RESULTS
+      if (response.data.state === STATES.RESULTS && isAuthenticated && user && familyProfile && currentConversation?.id) {
+        try {
+          const matchedSchoolIds = response.data.schools ? response.data.schools.map(s => s.id) : [];
+          const profileName = familyProfile.childName 
+            ? `${familyProfile.childName}'s School Search Profile`
+            : 'School Search Profile';
+          
+          const chatSession = await base44.entities.ChatSession.create({
+            sessionToken: sessionId,
+            userId: user.id,
+            familyProfileId: familyProfile.id || null,
+            chatHistoryId: currentConversation.id,
+            status: 'active',
+            consultantSelected: selectedConsultant,
+            childName: familyProfile.childName,
+            childGrade: familyProfile.childGrade,
+            locationArea: familyProfile.locationArea,
+            maxTuition: familyProfile.maxTuition,
+            priorities: familyProfile.priorities,
+            matchedSchools: JSON.stringify(matchedSchoolIds),
+            profileName
+          });
+          
+          console.log('[CHAT SESSION CREATION] New ChatSession created:', chatSession.id);
+          
+          // Update URL with sessionId
+          const newUrl = createPageUrl(`Consultant?sessionId=${chatSession.id}`);
+          window.history.replaceState({}, document.title, newUrl);
+        } catch (sessionError) {
+          console.error('Failed to create ChatSession:', sessionError);
+        }
+      }
+
       // KI-52: Brief content validator — swap thin LLM brief for programmatic fallback
       // DOUBLE-BRIEF FIX: Only apply when the RESPONSE state is also BRIEF (not when transitioning to RESULTS)
       let aiMessageContent = response.data.message;
