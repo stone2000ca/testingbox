@@ -21,6 +21,8 @@ import {
   Trophy,
   Globe,
   MoreVertical,
+  Plus,
+  X,
 } from 'lucide-react';
 
 const PRIORITY_ICONS = {
@@ -33,6 +35,8 @@ const PRIORITY_ICONS = {
   'Languages': Globe,
 };
 
+const AVAILABLE_PRIORITIES = ['Arts', 'Academics', 'Nurturing', 'STEM', 'Sports', 'Music', 'Languages'];
+
 export default function SchoolSearchProfile({
   session,
   onViewMatches,
@@ -43,6 +47,15 @@ export default function SchoolSearchProfile({
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    childGrade: session.childGrade,
+    maxTuition: session.maxTuition,
+    locationArea: session.locationArea,
+    priorities: session.priorities || [],
+    learningDifferences: session.learningDifferences || [],
+  });
 
   const handleViewMatches = () => {
     navigate(createPageUrl('Consultant') + '?sessionId=' + session.id);
@@ -59,6 +72,41 @@ export default function SchoolSearchProfile({
       console.error('Failed to archive session:', err);
     } finally {
       setIsArchiving(false);
+    }
+  };
+
+  const handleSaveEdits = async () => {
+    setIsSaving(true);
+    try {
+      // Update ChatSession with new profile data
+      await base44.entities.ChatSession.update(session.id, {
+        childGrade: editData.childGrade,
+        maxTuition: editData.maxTuition,
+        locationArea: editData.locationArea,
+        priorities: editData.priorities,
+        learningDifferences: editData.learningDifferences,
+      });
+
+      // Re-run school matching
+      const matchResult = await base44.functions.invoke('matchSchoolsForProfile', {
+        sessionId: session.id,
+        familyProfile: editData,
+      });
+
+      // Regenerate AI narrative
+      if (matchResult.data?.success) {
+        await base44.functions.invoke('generateProfileNarrative', {
+          sessionId: session.id,
+          familyProfile: editData,
+        }).catch(err => console.error('Narrative regeneration failed:', err));
+      }
+
+      setIsEditMode(false);
+      if (onArchive) onArchive(); // Trigger refresh
+    } catch (err) {
+      console.error('Failed to save edits:', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -267,33 +315,168 @@ export default function SchoolSearchProfile({
         </div>
       </div>
 
-      {/* Action Bar */}
-      <div className="p-4 flex gap-2 flex-wrap">
-        <Button
-          onClick={handleViewMatches}
-          className="flex-1 bg-teal-600 hover:bg-teal-700 text-white gap-2 text-sm"
-        >
-          <Eye className="w-4 h-4" />
-          View Matches
-        </Button>
-        <Button
-          onClick={onEditProfile}
-          variant="outline"
-          className="flex-1 border-white/20 text-white hover:bg-white/10 gap-2 text-sm"
-        >
-          <Edit className="w-4 h-4" />
-          Edit
-        </Button>
-        {isPaid && (
+      {/* Action Bar or Edit Mode */}
+      {!isEditMode ? (
+        <div className="p-4 flex gap-2 flex-wrap">
           <Button
+            onClick={handleViewMatches}
+            className="flex-1 bg-teal-600 hover:bg-teal-700 text-white gap-2 text-sm"
+          >
+            <Eye className="w-4 h-4" />
+            View Matches
+          </Button>
+          <Button
+            onClick={() => setIsEditMode(true)}
             variant="outline"
             className="flex-1 border-white/20 text-white hover:bg-white/10 gap-2 text-sm"
           >
-            <Share2 className="w-4 h-4" />
-            Share
+            <Edit className="w-4 h-4" />
+            Edit
           </Button>
-        )}
-      </div>
+          {isPaid && (
+            <Button
+              variant="outline"
+              className="flex-1 border-white/20 text-white hover:bg-white/10 gap-2 text-sm"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </Button>
+          )}
+        </div>
+      ) : (
+        /* Edit Mode */
+        <div className="p-5 border-t border-white/10 bg-white/5 space-y-4">
+          {/* Grade */}
+          <div>
+            <label className="text-xs text-white/60 mb-2 block">Grade</label>
+            <select
+              value={editData.childGrade || ''}
+              onChange={(e) => setEditData({ ...editData, childGrade: e.target.value ? parseInt(e.target.value) : null })}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm"
+            >
+              <option value="">Select Grade</option>
+              {[...Array(13)].map((_, i) => (
+                <option key={i} value={i}>{`Grade ${i}`}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Budget Slider */}
+          <div>
+            <label className="text-xs text-white/60 mb-2 block">Budget</label>
+            <input
+              type="range"
+              min="5000"
+              max="100000"
+              step="5000"
+              value={editData.maxTuition || 30000}
+              onChange={(e) => setEditData({ ...editData, maxTuition: parseInt(e.target.value) })}
+              className="w-full"
+            />
+            <div className="text-sm text-teal-400 mt-1">
+              ${(editData.maxTuition / 1000 || 30).toFixed(0)}K/year
+            </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="text-xs text-white/60 mb-2 block">Location</label>
+            <input
+              type="text"
+              value={editData.locationArea || ''}
+              onChange={(e) => setEditData({ ...editData, locationArea: e.target.value })}
+              placeholder="City or region"
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm placeholder:text-white/40"
+            />
+          </div>
+
+          {/* Priorities */}
+          <div>
+            <label className="text-xs text-white/60 mb-2 block">Priorities</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {editData.priorities.map((p, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-1 px-2 py-1 bg-white/10 border border-white/20 rounded-full text-xs text-white"
+                >
+                  {p}
+                  <button
+                    onClick={() => setEditData({
+                      ...editData,
+                      priorities: editData.priorities.filter((_, i) => i !== idx)
+                    })}
+                    className="ml-1"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <select
+              onChange={(e) => {
+                if (e.target.value && !editData.priorities.includes(e.target.value)) {
+                  setEditData({
+                    ...editData,
+                    priorities: [...editData.priorities, e.target.value]
+                  });
+                }
+                e.target.value = '';
+              }}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm"
+            >
+              <option value="">+ Add Priority</option>
+              {AVAILABLE_PRIORITIES.map(p => (
+                <option key={p} value={p} disabled={editData.priorities.includes(p)}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Special Needs */}
+          <div>
+            <label className="text-xs text-white/60 mb-2 block">Special Needs</label>
+            <input
+              type="text"
+              value={editData.learningDifferences?.join(', ') || ''}
+              onChange={(e) => setEditData({
+                ...editData,
+                learningDifferences: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+              })}
+              placeholder="E.g., dyslexia support, gifted program"
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm placeholder:text-white/40"
+            />
+          </div>
+
+          {/* Save/Cancel */}
+          <div className="flex gap-2 pt-2">
+            <Button
+              onClick={handleSaveEdits}
+              disabled={isSaving}
+              className="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-sm"
+            >
+              {isSaving ? 'Updating matches...' : 'Save Changes'}
+            </Button>
+            <Button
+              onClick={() => {
+                setIsEditMode(false);
+                setEditData({
+                  childGrade: session.childGrade,
+                  maxTuition: session.maxTuition,
+                  locationArea: session.locationArea,
+                  priorities: session.priorities || [],
+                  learningDifferences: session.learningDifferences || [],
+                });
+              }}
+              disabled={isSaving}
+              variant="outline"
+              className="flex-1 border-white/20 text-white hover:bg-white/10 text-sm"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
