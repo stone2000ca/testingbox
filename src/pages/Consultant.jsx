@@ -46,6 +46,7 @@ export default function Consultant() {
   const [loading, setLoading] = useState(true);
   const [sessionRestored, setSessionRestored] = useState(false);
   const [restoringSession, setRestoringSession] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
   const isRestoringSessionRef = useRef(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [selectedConsultant, setSelectedConsultant] = useState(null);
