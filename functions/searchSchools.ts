@@ -323,7 +323,32 @@ async function performSearch(req) {
   
   console.log(`Hard filters: ${locationFiltered.length} → ${hardFiltered.length} schools`);
   
+  // BUG-MATCH-S41 FIX: Fallback with relaxed filters if no results found
+  let schoolsToRank = hardFiltered;
+  let isRelaxedPass = false;
   if (hardFiltered.length === 0) {
+    console.log('[FALLBACK] No schools after strict filters — attempting relaxed pass');
+    // Relaxed pass: keep location + grade range check only, remove distance and budget filters
+    schoolsToRank = locationFiltered.filter(school => {
+      const parsedMinGrade = minGrade !== undefined && minGrade !== null ? parseInt(minGrade) : null;
+      if (parsedMinGrade !== null) {
+        let sLow = parseInt(school.lowestGrade);
+        let sHigh = parseInt(school.highestGrade);
+        if (!isNaN(sLow) && !isNaN(sHigh)) {
+          // In relaxed mode, allow grades up to 3 outside range (more lenient than strict mode)
+          const distanceOutsideRange = parsedMinGrade < sLow ? sLow - parsedMinGrade : (parsedMinGrade > sHigh ? parsedMinGrade - sHigh : 0);
+          if (distanceOutsideRange > 3) {
+            return false;
+          }
+        }
+      }
+      return true;
+    });
+    isRelaxedPass = true;
+    console.log(`[FALLBACK] Relaxed pass: ${schoolsToRank.length} schools available`);
+  }
+  
+  if (schoolsToRank.length === 0) {
     return Response.json({ 
       schools: [], 
       total: 0,
