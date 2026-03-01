@@ -8,7 +8,10 @@ export default function ChatSessionCard({ session }) {
   const navigate = useNavigate();
 
   const handleContinue = () => {
-    navigate(createPageUrl('Consultant') + `?sessionId=${session.id}`);
+    // Navigate to Consultant page with session ID in state/params
+    navigate(createPageUrl('Consultant'), { 
+      state: { resumeSessionId: session.id } 
+    });
   };
 
   // Format dates
