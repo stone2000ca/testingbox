@@ -368,19 +368,21 @@ export default function Consultant() {
         }
       }
 
-      // FIX #1: Fetch and restore matched schools using direct ID fetching
+      // FIX #1: Re-run search using searchSchools backend function with saved profile data
       let restoredSchools = [];
       if (chatSession.matchedSchools) {
         try {
-          const matchedSchoolIds = JSON.parse(chatSession.matchedSchools);
-          console.log('[RESTORE] matchedSchoolIds:', JSON.stringify(matchedSchoolIds.slice(0, 3)));
+          console.log('[RESTORE] Re-running search with profile data - location:', chatSession.locationArea, 'grade:', chatSession.childGrade, 'budget:', chatSession.maxTuition);
           
-          // Use Promise.all to fetch schools by ID instead of filtering all schools
-          const validSchools = await Promise.all(
-            matchedSchoolIds.map(id => School.get(id).catch(() => null))
-          ).then(results => results.filter(s => s !== null));
+          const searchResponse = await base44.functions.invoke('searchSchools', {
+            city: chatSession.locationArea,
+            minGrade: chatSession.childGrade,
+            maxTuition: chatSession.maxTuition,
+            limit: 20
+          });
           
-          console.log('[RESTORE] validSchools count:', validSchools.length);
+          const validSchools = searchResponse.data || [];
+          console.log('[RESTORE] searchSchools returned', validSchools.length, 'schools');
           
           if (validSchools.length > 0) {
             console.log('[RESTORE] First school:', validSchools[0].name);
@@ -390,7 +392,7 @@ export default function Consultant() {
           restoredSchools = validSchools;
           console.log('[RESTORE] setSchools called with', validSchools.length, 'schools');
         } catch (e) {
-          console.error('[RESTORE] Failed to restore schools:', e);
+          console.error('[RESTORE] Failed to restore schools via searchSchools:', e);
         }
       }
 
