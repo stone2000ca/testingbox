@@ -107,6 +107,7 @@ export default function Admin() {
           {currentView === 'users' && <AdminUsers />}
           {currentView === 'claims' && <AdminClaims />}
           {currentView === 'analytics' && <AdminAnalytics />}
+          {currentView === 'submissions' && <AdminSubmissions />}
         </main>
       </div>
     </div>
