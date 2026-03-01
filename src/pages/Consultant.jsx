@@ -783,17 +783,17 @@ export default function Consultant() {
       const isDeepDivingSchool = isViewingSchoolDetail;
       
       // FIX #3: First priority - if schools are returned, display them (ONLY if not in DEEP_DIVE)
-      if (response.data.schools && response.data.schools.length > 0 && !isDeepDivingSchool) {
-        // Track schools shown
-        trackEvent('schools_shown', { metadata: { schoolCount: response.data.schools.length } });
+      if ((response.data.schools || []).length > 0 && !isDeepDivingSchool) {
+       // Track schools shown
+       trackEvent('schools_shown', { metadata: { schoolCount: (response.data.schools || []).length } });
 
-        // Show feedback prompt if not already shown
-        if (!feedbackPromptShown && messages.length > 5) {
-          setFeedbackPromptShown(true);
-        }
-        // Reorder schools to match the order mentioned in AI response
-        const aiResponse = response.data.message;
-        const orderedSchools = [...response.data.schools];
+       // Show feedback prompt if not already shown
+       if (!feedbackPromptShown && messages.length > 5) {
+         setFeedbackPromptShown(true);
+       }
+       // Reorder schools to match the order mentioned in AI response
+       const aiResponse = response.data.message;
+       const orderedSchools = [...(response.data.schools || [])];
 
         const mentionedSchools = [];
         const remainingSchools = [];
