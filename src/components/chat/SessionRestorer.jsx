@@ -3,6 +3,7 @@
 // Last Modified: 2026-03-01
 
 import { STATES } from '@/pages/stateMachineConfig';
+import { STATES as STATES_FOR_GUEST } from '@/pages/stateMachineConfig';
 
 export async function restoreSessionFromParam(
   sessionIdParam,
