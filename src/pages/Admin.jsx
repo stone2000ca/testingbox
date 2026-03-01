@@ -47,7 +47,8 @@ export default function Admin() {
     { id: 'schools', label: 'Schools', icon: Building2 },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'claims', label: 'Claims', icon: ClipboardCheck },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'submissions', label: 'Submissions', icon: PlusSquare }
   ];
 
   return (
