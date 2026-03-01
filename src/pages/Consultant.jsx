@@ -214,6 +214,9 @@ export default function Consultant() {
                         ![STATES.RESULTS, STATES.DEEP_DIVE].includes(currentState)
                       );
 
+  // Override: show split layout if schools exist (from session restore)
+  const showSchoolGrid = schools.length > 0;
+
   // School filtering/sorting via extracted hook
   const {
     filteredSchools,

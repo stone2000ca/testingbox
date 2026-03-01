@@ -52,7 +52,6 @@ import Admin from './pages/Admin';
 import AdminFeedback from './pages/AdminFeedback';
 import BlogPost from './pages/BlogPost';
 import ClaimSchool from './pages/ClaimSchool';
-import Consultant from './pages/Consultant';
 import Contact from './pages/Contact';
 import Dashboard from './pages/Dashboard';
 import Feedback from './pages/Feedback';
@@ -73,6 +72,7 @@ import SharedShortlistView from './pages/SharedShortlistView';
 import SubmitSchool from './pages/SubmitSchool';
 import Terms from './pages/Terms';
 import stateMachineConfig from './pages/stateMachineConfig';
+import Consultant from './pages/Consultant';
 import __Layout from './Layout.jsx';
 
 
@@ -82,7 +82,6 @@ export const PAGES = {
     "AdminFeedback": AdminFeedback,
     "BlogPost": BlogPost,
     "ClaimSchool": ClaimSchool,
-    "Consultant": Consultant,
     "Contact": Contact,
     "Dashboard": Dashboard,
     "Feedback": Feedback,
@@ -103,6 +102,7 @@ export const PAGES = {
     "SubmitSchool": SubmitSchool,
     "Terms": Terms,
     "stateMachineConfig": stateMachineConfig,
+    "Consultant": Consultant,
 }
 
 export const pagesConfig = {
