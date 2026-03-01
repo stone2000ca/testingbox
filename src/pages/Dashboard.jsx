@@ -395,11 +395,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Global Shortlist */}
-            {!showArchivedTab && (
-
-            )}
-
             {/* WC7: Global Shortlist Section */}
             {!showArchivedTab && (
             <div className="mt-12 pt-8 border-t border-white/10">
