@@ -306,7 +306,6 @@ export default function Consultant() {
 
   // WC5: Session loading from URL param
   useEffect(() => {
-    alert('useEffect fired: sessionIdParam=' + sessionIdParam + ' sessionRestored=' + sessionRestored + ' isAuth=' + isAuthenticated + ' user=' + !!user);
     if (sessionIdParam && !sessionRestored && isAuthenticated && user) {
       restoreSessionFromParam();
     }
