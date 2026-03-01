@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Building2, BarChart3, Mail, CreditCard, Upload, Crown, Sparkles, Image, MessageSquareQuote, User } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import ProfileEditor from '@/components/school-admin/ProfileEditor';
 import Analytics from '@/components/school-admin/Analytics';
