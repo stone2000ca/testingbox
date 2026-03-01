@@ -246,46 +246,67 @@ async function performSearch(req) {
       }
     }
     
-    // Gender preference filter (explicit genderPreference field)
-    if (familyProfile?.genderPreference) {
-      const genderPref = familyProfile.genderPreference.toLowerCase();
-      const schoolGender = (school.genderPolicy || school.schoolType || '').toLowerCase();
-      
-      if (genderPref === 'all boys' || genderPref === 'boys') {
-        const isBoys = /\b(all[\s-]?boys?|boys?[\s-]?only|male)\b/i.test(schoolGender);
-        if (!isBoys) return false;
-      } else if (genderPref === 'all girls' || genderPref === 'girls') {
-        const isGirls = /\b(all[\s-]?girls?|girls?[\s-]?only|female)\b/i.test(schoolGender);
-        if (!isGirls) return false;
-      } else if (genderPref === 'co-ed' || genderPref === 'coed') {
-        const isCoed = /\b(co[\s-]?ed|coeducational|mixed)\b/i.test(schoolGender);
-        const isSingleGender = /\b(all[\s-]?boys?|all[\s-]?girls?|boys?[\s-]?only|girls?[\s-]?only|male|female)\b/i.test(schoolGender);
-        if (!isCoed && isSingleGender) return false;
+    // ── GENDER WATERFALL FILTER ────────────────────────────────────────────────
+    // Priority order:
+    // 1. schoolGenderExclusions  → hard-exclude those genderPolicy types
+    // 2. schoolGenderPreference  → return ONLY schools with that genderPolicy
+    // 3. childGender only        → inclusive: son=All-Boys+Co-ed, daughter=All-Girls+Co-ed
+    // 4. nothing known           → no filter
+    // Rule: null genderPolicy = 'unknown' → always INCLUDED (don't penalise missing data)
+    // ──────────────────────────────────────────────────────────────────────────
+    const gp = school.genderPolicy || null; // null = unknown, pass through all gender filters
+
+    // Step 1: Hard exclusions
+    const exclusions = familyProfile?.schoolGenderExclusions || [];
+    if (gp !== null && Array.isArray(exclusions) && exclusions.length > 0) {
+      const gpLower = gp.toLowerCase();
+      const excluded = exclusions.some(ex => {
+        const exL = ex.toLowerCase();
+        if (exL === 'all-girls') return gpLower === 'all-girls';
+        if (exL === 'all-boys') return gpLower === 'all-boys';
+        if (exL === 'co-ed') return gpLower === 'co-ed' || gpLower === 'co-ed with single-gender classes';
+        return false;
+      });
+      if (excluded) {
+        console.log(`[GENDER] ✗ Excluded (exclusion list) ${school.name}: genderPolicy="${gp}"`);
+        return false;
       }
     }
 
-    // Gender dealbreaker filter — parsed from free-text dealbreakers array
-    // DB values: 'Co-ed', 'All-Boys', 'All-Girls', 'Co-ed with single-gender classes'
-    if (Array.isArray(dealbreakers) && dealbreakers.length > 0) {
-      const dbText = dealbreakers.join(' ').toLowerCase();
-      const wantsAllGirls = /\ball[\s-]?girls?\b|girls[\s-]?only|single[\s-]?gender.*girl|daughter.*all[\s-]?girl/i.test(dbText);
-      const wantsAllBoys = /\ball[\s-]?boys?\b|boys[\s-]?only|single[\s-]?gender.*boy|son.*all[\s-]?boy/i.test(dbText);
-      const wantsCoed = /\bco[\s-]?ed\b|coeducational|mixed gender|no single[\s-]?gender|not (all[\s-]?girls?|all[\s-]?boys?)/i.test(dbText);
-
-      const gp = school.genderPolicy || '';
-      if (wantsAllGirls && gp !== 'All-Girls') {
-        console.log(`[GENDER DEALBREAKER] ✗ Excluded ${school.name}: genderPolicy="${gp}", needs All-Girls`);
-        return false;
-      }
-      if (wantsAllBoys && gp !== 'All-Boys') {
-        console.log(`[GENDER DEALBREAKER] ✗ Excluded ${school.name}: genderPolicy="${gp}", needs All-Boys`);
-        return false;
-      }
-      if (wantsCoed && (gp === 'All-Boys' || gp === 'All-Girls')) {
-        console.log(`[GENDER DEALBREAKER] ✗ Excluded ${school.name}: genderPolicy="${gp}", needs Co-ed`);
+    // Step 2: Explicit preference — ONLY matching schools (nulls pass through)
+    const genderPref = familyProfile?.schoolGenderPreference || null;
+    if (gp !== null && genderPref) {
+      const gpLower = gp.toLowerCase();
+      const prefLower = genderPref.toLowerCase();
+      let matches = false;
+      if (prefLower === 'all-girls') matches = gpLower === 'all-girls';
+      else if (prefLower === 'all-boys') matches = gpLower === 'all-boys';
+      else if (prefLower === 'co-ed') matches = gpLower === 'co-ed' || gpLower === 'co-ed with single-gender classes';
+      if (!matches) {
+        console.log(`[GENDER] ✗ Excluded (explicit pref=${genderPref}) ${school.name}: genderPolicy="${gp}"`);
         return false;
       }
     }
+
+    // Step 3: Implicit from childGender — inclusive filter (nulls pass through)
+    if (gp !== null && !genderPref) {
+      const childGender = familyProfile?.childGender || null;
+      if (childGender === 'male') {
+        // Sons: show All-Boys and Co-ed; exclude All-Girls
+        if (gp === 'All-Girls') {
+          console.log(`[GENDER] ✗ Excluded (son, implicit) ${school.name}: All-Girls`);
+          return false;
+        }
+      } else if (childGender === 'female') {
+        // Daughters: show All-Girls and Co-ed; exclude All-Boys
+        if (gp === 'All-Boys') {
+          console.log(`[GENDER] ✗ Excluded (daughter, implicit) ${school.name}: All-Boys`);
+          return false;
+        }
+      }
+      // Step 4: childGender unknown → no filter
+    }
+    // ── END GENDER WATERFALL ──────────────────────────────────────────────────
     
     if (familyProfile?.commuteToleranceMinutes && school.distanceKm) {
       const estimatedCommute = school.distanceKm * 2;
