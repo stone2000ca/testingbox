@@ -850,7 +850,11 @@ export default function Consultant() {
 
   const handleSendMessage = async (messageText, explicitSchoolId = null, displayText = null) => {
     // Track message sent
-    trackEvent('message_sent');
+    base44.functions.invoke('trackSessionEvent', {
+      eventType: 'message_sent',
+      consultantName: selectedConsultant,
+      sessionId
+    }).catch(err => console.error('Failed to track:', err));
     // SOFT LOGIN GATE: Check if user is confirming the Brief without being logged in
     const isBriefConfirmation = messageText === '__CONFIRM_BRIEF__' ||
                                  messageText.toLowerCase().includes("that's right") || 
