@@ -444,6 +444,9 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
   const tier1Total = TIERS[0].fields.length;
   const showTier1Warning = tier1Filled < tier1Total;
 
+  // Helper: is this Tier 1 field empty and validation triggered?
+  const v = (field) => showValidation && !isFilled(formData[field]);
+
   // ==========================================================================
   // Tier 1 fields
   // ==========================================================================
