@@ -97,8 +97,11 @@ const TIERS = [
   },
 ];
 
-function countFilled(formData, fields) {
-  return fields.filter(f => isFilled(formData[f])).length;
+function countFilled(formData, fields, testimonialCount = 0) {
+  return fields.filter(f => {
+    if (f === '_testimonials') return testimonialCount > 0;
+    return isFilled(formData[f]);
+  }).length;
 }
 
 // Tier header color classes
