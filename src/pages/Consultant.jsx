@@ -797,8 +797,8 @@ export default function Consultant() {
           setFeedbackPromptShown(true);
         }
         // Reorder schools to match the order mentioned in AI response
-        const aiResponse = response.data?.message;
-       const orderedSchools = [...(response.data.schools || [])];
+         const aiResponse = response.data?.message;
+         const orderedSchools = [...(response.data?.schools || [])];
 
         const mentionedSchools = [];
         const remainingSchools = [];
