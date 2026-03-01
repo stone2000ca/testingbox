@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -6,7 +7,7 @@ import Navbar from '@/components/navigation/Navbar';
 import ChatSessionCard from '@/components/dashboard/ChatSessionCard.jsx';
 import SchoolSearchProfile from '@/components/dashboard/SchoolSearchProfile.jsx';
 import UpgradePaywallModal from '@/components/dialogs/UpgradePaywallModal';
-import { Plus, Settings, X, AlertCircle, Crown } from 'lucide-react';
+import { Plus, Settings, X, AlertCircle, Crown, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
@@ -24,6 +25,17 @@ export default function Dashboard() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showArchivedTab, setShowArchivedTab] = useState(false);
   const [reactivateError, setReactivateError] = useState(null);
+  const [showUpgradeSuccess, setShowUpgradeSuccess] = useState(false);
+
+  useEffect(() => {
+    // WC15: Check for upgrade success param
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('upgrade') === 'success') {
+      setShowUpgradeSuccess(true);
+      // Clean up URL param
+      window.history.replaceState({}, document.title, createPageUrl('Dashboard'));
+    }
+  }, []);
 
   useEffect(() => {
     checkAuthAndLoadSessions();
@@ -233,6 +245,25 @@ export default function Dashboard() {
   return (
     <div className="h-screen flex flex-col bg-[#1E1E2E]">
       <Navbar />
+
+      {/* WC15: Upgrade Success Banner */}
+      {showUpgradeSuccess && (
+        <div className="bg-gradient-to-r from-teal-600/20 to-emerald-600/20 border-b border-teal-500/50 px-6 py-4 flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-teal-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-white">Welcome to Premium!</h3>
+              <p className="text-teal-200 text-sm mt-0.5">You now have access to 5 profiles, sharing, and more.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowUpgradeSuccess(false)}
+            className="text-white/60 hover:text-white flex-shrink-0"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
 
       {/* Top Bar */}
       <div className="bg-[#2A2A3D] border-b border-white/10 px-6 py-4 flex items-center justify-between">
