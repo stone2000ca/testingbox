@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { STATES, BRIEF_STATUS } from './stateMachineConfig';
+import { restoreGuestSession } from '@/components/chat/SessionRestorer';
 import { Button } from "@/components/ui/button";
 import { Plus, Heart, FileText, Sparkles, Trash2, Star, ClipboardList } from "lucide-react";
 import IconRail from '@/components/navigation/IconRail';
@@ -392,7 +393,6 @@ export default function Consultant() {
 
     checkAuth();
     loadUserLocation();
-    restoreGuestSession();
 
     // Track session start
     base44.functions.invoke('trackSessionEvent', {
@@ -401,12 +401,16 @@ export default function Consultant() {
     }).catch(err => console.error('Failed to track session:', err));
   }, [sessionId]);
 
-  // Load family profile for Brief panel
+  // Load family profile for Brief panel and restore guest session after login
   useEffect(() => {
     if (user?.id && currentConversation?.id) {
       loadFamilyProfile();
     }
-  }, [user?.id, currentConversation?.id, messages]);
+    // Restore guest session when user becomes authenticated
+    if (isAuthenticated && user) {
+      handleRestoreGuestSession();
+    }
+  }, [isAuthenticated, user?.id]);
 
 
 
