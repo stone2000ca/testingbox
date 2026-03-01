@@ -898,13 +898,7 @@ export default function Consultant() {
       if (!isViewingSchoolDetail && response.data.state) {
         // Only update view if NOT viewing a school detail
         // CRITICAL: Do NOT call setSelectedSchool(null) here - it defeats the single source of truth
-        if ([STATES.WELCOME, STATES.DISCOVERY, STATES.BRIEF].includes(response.data.state)) {
-          setCurrentView('chat');
-        } else if (response.data.state === STATES.RESULTS) {
-          setCurrentView('schools');
-        } else if (response.data.state === STATES.DEEP_DIVE) {
-          setCurrentView('detail');
-        }
+        setCurrentView(stateToView(response.data.state));
       } else if (isViewingSchoolDetail) {
         console.log('[BUG-DD-001] Maintaining detail view - school selected:', selectedSchool?.name);
         // Keep view locked to detail as long as selectedSchool is set
