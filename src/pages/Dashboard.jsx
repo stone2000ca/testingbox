@@ -5,7 +5,8 @@ import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
 import ChatSessionCard from '@/components/dashboard/ChatSessionCard.jsx';
 import SchoolSearchProfile from '@/components/dashboard/SchoolSearchProfile.jsx';
-import { Plus, Settings, X, AlertCircle } from 'lucide-react';
+import UpgradePaywallModal from '@/components/dialogs/UpgradePaywallModal';
+import { Plus, Settings, X, AlertCircle, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
@@ -19,6 +20,7 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [showNewSearchModal, setShowNewSearchModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     checkAuthAndLoadSessions();
@@ -107,7 +109,24 @@ export default function Dashboard() {
       return;
     }
 
-    // WC8: Case 2 (free user with 1+ session) - show modal
+    // WC12: Case 2 (free user with 1+ session) - show upgrade paywall instead
+    const isPaid = user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise';
+    if (!isPaid) {
+      // Show upgrade modal for free users
+      const activeSession = sessions.find(s => s.status === 'active');
+      const matchedCount = activeSession ? (() => {
+        try {
+          return activeSession.matchedSchools ? JSON.parse(activeSession.matchedSchools).length : 0;
+        } catch {
+          return 0;
+        }
+      })() : 0;
+      
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    // Paid users can start over without modal
     setShowNewSearchModal(true);
   };
 
@@ -161,9 +180,22 @@ export default function Dashboard() {
 
       {/* Top Bar */}
       <div className="bg-[#2A2A3D] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">
-          Welcome back, {user.full_name || 'User'}
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-white">
+            Welcome back, {user.full_name || 'User'}
+          </h1>
+          {/* WC12: Tier badge */}
+          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+            user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise'
+              ? 'bg-amber-500/20 text-amber-300'
+              : 'bg-slate-500/20 text-slate-300'
+          }`}>
+            {(user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise') && (
+              <Crown className="w-3 h-3" />
+            )}
+            {user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise' ? 'Premium' : 'Free Plan'}
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           <Button
             onClick={handleNewSearch}
@@ -263,7 +295,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* WC8: New Search Confirmation Modal (Free Users) */}
+      {/* WC8: New Search Confirmation Modal (Paid Users) */}
       {showNewSearchModal && sessions.length > 0 && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-[#2A2A3D] rounded-lg max-w-md w-full p-6 border border-white/10">
@@ -306,6 +338,26 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* WC12: Upgrade Paywall Modal for Free Users */}
+      <UpgradePaywallModal
+        isOpen={showUpgradeModal}
+        variant="NEW_SEARCH"
+        onClose={() => setShowUpgradeModal(false)}
+        onStartOver={handleStartOver}
+        profileData={{
+          matchedSchoolsCount: (() => {
+            const activeSession = sessions.find(s => s.status === 'active');
+            if (!activeSession) return 0;
+            try {
+              return activeSession.matchedSchools ? JSON.parse(activeSession.matchedSchools).length : 0;
+            } catch {
+              return 0;
+            }
+          })(),
+          shortlistedCount: sessions.find(s => s.status === 'active')?.shortlistedCount || 0
+        }}
+      />
     </div>
   );
 }
