@@ -166,7 +166,7 @@ export default function Portal() {
                 <p className="text-slate-600 mb-4">
                   We couldn't find <span className="font-semibold text-slate-900">"{query}"</span> in our directory.
                 </p>
-                <Link to={createPageUrl("ClaimSchool")}>
+                <Link to={createPageUrl("SubmitSchool") + `?name=${encodeURIComponent(query)}`}>
                   <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
                     <Plus className="h-4 w-4" />
                     Add Your School
