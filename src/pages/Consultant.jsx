@@ -808,7 +808,11 @@ export default function Consultant() {
       localStorage.setItem('guestConversationData', JSON.stringify({
         messages,
         consultant: selectedConsultant,
-        conversationContext: currentConversation?.conversationContext || {}
+        conversationContext: currentConversation?.conversationContext || {},
+        familyProfile: familyProfile || {},
+        briefStatus: briefStatus || null,
+        extractedEntitiesData: extractedEntitiesData || {},
+        sessionId
       }));
       
       setShowLoginGate(true);
