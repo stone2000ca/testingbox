@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import UpgradePaywallModal from '@/components/dialogs/UpgradePaywallModal';
 import {
   MapPin,
   DollarSign,
@@ -49,6 +50,7 @@ export default function SchoolSearchProfile({
   const [isArchiving, setIsArchiving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showShareUpgrade, setShowShareUpgrade] = useState(false);
   const [editData, setEditData] = useState({
     childGrade: session.childGrade,
     maxTuition: session.maxTuition,
@@ -333,8 +335,17 @@ export default function SchoolSearchProfile({
             <Edit className="w-4 h-4" />
             Edit
           </Button>
-          {isPaid && (
+          {isPaid ? (
             <Button
+              variant="outline"
+              className="flex-1 border-white/20 text-white hover:bg-white/10 gap-2 text-sm"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setShowShareUpgrade(true)}
               variant="outline"
               className="flex-1 border-white/20 text-white hover:bg-white/10 gap-2 text-sm"
             >
@@ -477,6 +488,13 @@ export default function SchoolSearchProfile({
           </div>
         </div>
       )}
+
+      {/* WC12: Share Upgrade Modal */}
+      <UpgradePaywallModal
+        isOpen={showShareUpgrade}
+        variant="SHARE"
+        onClose={() => setShowShareUpgrade(false)}
+      />
     </div>
   );
 }
