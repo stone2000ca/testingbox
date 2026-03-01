@@ -164,10 +164,7 @@ export default function SchoolAdmin() {
             {tierIcons[school.subscriptionTier || 'free']}
             <span className="uppercase">{school.subscriptionTier || 'free'}</span>
           </div>
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
+
         </div>
       </header>
 
