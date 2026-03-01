@@ -1650,8 +1650,9 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
       });
 
     } catch (error) {
-      console.error('orchestrateConversation FATAL:', error);
-      return Response.json({ error: error.message || String(error) }, { status: 500 });
+      console.error('orchestrateConversation FATAL:', error.message);
+      console.error('Stack:', error.stack);
+      return Response.json({ error: error.message || 'Something went wrong. Please try again.' }, { status: 500 });
     }
   };
 
