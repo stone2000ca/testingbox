@@ -426,13 +426,16 @@ async function performSearch(req) {
     lowestGrade: s.lowestGrade,
     highestGrade: s.highestGrade,
     tuition: s.tuition,
+    dayTuition: s.dayTuition,
     currency: s.currency,
     curriculumType: s.curriculumType,
+    genderPolicy: s.genderPolicy,
     region: s.region,
     specializations: s.specializations,
     distanceKm: s.distanceKm,
     schoolType: s.schoolType,
-    headerPhotoUrl: s.headerPhotoUrl
+    headerPhotoUrl: s.headerPhotoUrl,
+    logoUrl: s.logoUrl
   }));
 
   try {
