@@ -317,6 +317,7 @@ export default function Consultant() {
   const restoreSessionFromParam = async () => {
     if (!sessionIdParam) return;
     
+    setRestoringSession(true);
     try {
       // Fetch ChatSession
       const chatSession = await base44.entities.ChatSession.get(sessionIdParam);
