@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import School from '@/entities/School';
 import { STATES, BRIEF_STATUS } from './stateMachineConfig';
