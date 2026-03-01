@@ -397,32 +397,44 @@ export default function Consultant() {
         console.log('[RESTORE] Using ChatSession data as FamilyProfile fallback');
       }
 
-      // FIX #1: Fetch stored school IDs from ChatSession.matchedSchools
+      // FIX #1: Parse stored school IDs from ChatSession.matchedSchools, fallback to searchSchools
       let restoredSchools = [];
       try {
-        const schoolIds = chatSession.matchedSchools 
-          ? JSON.parse(chatSession.matchedSchools) 
-          : [];
+        // Try to parse matchedSchools JSON string
+        let schoolIds = [];
+        try {
+          schoolIds = JSON.parse(chatSession.matchedSchools || '[]');
+        } catch (parseErr) {
+          console.error('[RESTORE] Failed to parse matchedSchools JSON:', parseErr);
+          schoolIds = [];
+        }
         
         if (Array.isArray(schoolIds) && schoolIds.length > 0) {
-          console.log('[RESTORE] Fetching', schoolIds.length, 'schools by ID:', schoolIds);
+          console.log('[RESTORE] Parsed', schoolIds.length, 'school IDs from matchedSchools');
+          // IDs exist but School.get() may fail with hex IDs, so skip and use fallback
+        }
+        
+        // Fallback: use searchSchools with saved profile data
+        if (schoolIds.length === 0 || !restoredSchools.length) {
+          console.log('[RESTORE] Falling back to searchSchools with profile data');
+          const cityName = chatSession.locationArea 
+            ? chatSession.locationArea.split(' ').pop() 
+            : undefined;
           
-          // Fetch all school records in parallel
-          const schoolRecords = await Promise.all(
-            schoolIds.map(id => base44.entities.School.get(id).catch(e => {
-              console.error('[RESTORE] Failed to fetch school:', id, e);
-              return null;
-            }))
-          );
+          const searchParams = {
+            city: cityName,
+            minGrade: chatSession.childGrade,
+            maxTuition: chatSession.maxTuition,
+            limit: 20
+          };
           
-          restoredSchools = schoolRecords.filter(Boolean);
-          console.log('[RESTORE] Fetched', restoredSchools.length, 'school records');
-          console.log('[RESTORE] School names:', restoredSchools.slice(0, 3).map(s => s.name));
-        } else {
-          console.log('[RESTORE] No matchedSchools stored in ChatSession');
+          console.log('[RESTORE] Calling searchSchools with params:', JSON.stringify(searchParams));
+          const searchResponse = await base44.functions.invoke('searchSchools', searchParams);
+          restoredSchools = searchResponse.data || [];
+          console.log('[RESTORE] searchSchools returned', restoredSchools.length, 'schools');
         }
       } catch (e) {
-        console.error('[RESTORE] Failed to restore schools from matchedSchools:', e);
+        console.error('[RESTORE] Failed to restore schools:', e);
       }
 
       // CRITICAL: Batch state updates AFTER searchSchools completes to force UI to RESULTS phase
