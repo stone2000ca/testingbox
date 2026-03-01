@@ -183,6 +183,10 @@ export default function SchoolGrid({
   onNarrateComparison = null,
   onOpenComparison = null,
 }) {
+  // Guard: ensure schools is always an array
+  if (!schools || !Array.isArray(schools)) {
+    schools = [];
+  }
   const [tier3Expanded, setTier3Expanded] = useState(false);
   // T-SL-002: track newly backfilled IDs to animate them in
   const prevShortlistedRef = useRef(shortlistedIds);
