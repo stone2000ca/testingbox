@@ -19,6 +19,7 @@ import { validateBriefContent, generateProgrammaticBrief } from '../components/u
 import { buildTiers } from '../components/utils/tierEngine';
 import { useUserLocation } from '../components/hooks/useUserLocation';
 import { getShortlistNudge } from '../components/utils/shortlistNudges';
+import { extractAndSaveMemories } from '../components/utils/memoryManager';
 import LoginGateModal from '@/components/dialogs/LoginGateModal';
 import FamilyBriefPanel from '@/components/chat/FamilyBriefPanel';
 import ChatPanel from '@/components/chat/ChatPanel';
@@ -813,62 +814,9 @@ export default function Consultant() {
          await base44.auth.updateMe({ tokenBalance: newTokenBalance });
        }
 
-       // Save AI memories - IMPROVED VERSION with deduplication and filtering
+       // Save AI memories with deduplication and filtering
        if (isAuthenticated && user) {
-         try {
-           // Extract memory from conversation message only, not schools
-           const memoryPrompt = `Extract ONLY verified facts that the user explicitly stated about themselves or their family. 
-DO NOT infer from schools shown, locations searched, or school details.
-DO NOT store negative statements like "not mentioned" or "unknown".
-Return a JSON array of facts ONLY if user said them directly.
-
-User message: "${messageText}"
-AI response: "${response.data.message}"
-
-Facts to extract (only if user said them):
-- Child's name, age, grade level
-- Parent/family location/address  
-- Budget they mentioned
-- School preferences they stated
-- Academic/non-academic priorities they mentioned
-
-Return empty array if user didn't provide any of these facts.`;
-           
-           const memoryResult = await base44.integrations.Core.InvokeLLM({
-             prompt: memoryPrompt,
-             response_json_schema: {
-               type: "object",
-               properties: {
-                 facts: {
-                   type: "array",
-                   items: { type: "string" }
-                 }
-               }
-             }
-           });
-
-           // Only update if we got new facts
-           if (memoryResult.facts && memoryResult.facts.length > 0) {
-             const existingMemories = await base44.entities.UserMemory.filter({ userId: user.id });
-             if (existingMemories.length > 0) {
-               const existingMem = existingMemories[0];
-               // Use Set to deduplicate, then convert back to array
-               const dedupedMemories = [...new Set([...existingMem.memories, ...memoryResult.facts])];
-               await base44.entities.UserMemory.update(existingMem.id, {
-                 memories: dedupedMemories,
-                 lastUpdated: new Date().toISOString()
-               });
-             } else {
-               await base44.entities.UserMemory.create({
-                 userId: user.id,
-                 memories: memoryResult.facts,
-                 lastUpdated: new Date().toISOString()
-               });
-             }
-           }
-         } catch (e) {
-           console.error('Failed to save memories:', e);
-         }
+         await extractAndSaveMemories(messageText, response.data.message, user, base44);
        }
 
        // Update conversation if authenticated
@@ -1146,8 +1094,30 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
     setSchools(sorted);
   };
 
-
-
+  // Shared ChatPanel props for intake + results phases
+  const chatPanelProps = {
+    ref: inputRef,
+    messages,
+    schools,
+    selectedConsultant,
+    currentState,
+    briefStatus,
+    isTyping,
+    tokenBalance,
+    isPremium,
+    loadingStage,
+    loadingStages,
+    feedbackPromptShown,
+    showResponseChips,
+    familyProfile,
+    onSendMessage: handleSendMessage,
+    onViewSchoolDetail: (school) => {
+      setSelectedSchool(school);
+      setCurrentView('detail');
+    },
+    onConfirmDeepDive: handleConfirmDeepDive,
+    onCancelDeepDive: handleCancelDeepDive,
+  };
 
 
   // Detect if user is scrolled up, show new message indicator on new messages
@@ -1224,27 +1194,8 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
           <div className="flex-1 flex items-center justify-center p-2 sm:p-4">
             <div className="w-full max-w-2xl h-full max-h-[95vh] sm:max-h-[90vh] bg-[#2A2A3D] rounded-xl sm:rounded-2xl shadow-2xl flex flex-col transition-all duration-400">
               <ChatPanel
-                ref={inputRef}
+                {...chatPanelProps}
                 variant="intake"
-                messages={messages}
-                schools={schools}
-                selectedConsultant={selectedConsultant}
-                currentState={currentState}
-                briefStatus={briefStatus}
-                isTyping={isTyping}
-                tokenBalance={tokenBalance}
-                isPremium={isPremium}
-                loadingStage={loadingStage}
-                loadingStages={loadingStages}
-                feedbackPromptShown={feedbackPromptShown}
-                showResponseChips={showResponseChips}
-                onSendMessage={handleSendMessage}
-                onViewSchoolDetail={(school) => {
-                  setSelectedSchool(school);
-                  setCurrentView('detail');
-                }}
-                onConfirmDeepDive={handleConfirmDeepDive}
-                onCancelDeepDive={handleCancelDeepDive}
                 heroContent={
                   currentState === STATES.WELCOME ? (
                     <div className="text-center space-y-6 py-8">
@@ -1494,31 +1445,11 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
           }}
         >
           <ChatPanel
-            ref={inputRef}
+            {...chatPanelProps}
             variant="sidebar"
-            messages={messages}
-            schools={schools}
-            selectedConsultant={selectedConsultant}
-            currentState={currentState}
-            briefStatus={briefStatus}
-            isTyping={isTyping}
-            tokenBalance={tokenBalance}
-            isPremium={isPremium}
-            loadingStage={loadingStage}
-            loadingStages={loadingStages}
-            feedbackPromptShown={feedbackPromptShown}
-            showResponseChips={showResponseChips}
             confirmingSchool={confirmingSchool}
-            familyProfile={familyProfile}
             showNewMessageIndicator={showNewMessageIndicator}
             onScrollDownClick={handleScrollDownClick}
-            onSendMessage={handleSendMessage}
-            onViewSchoolDetail={(school) => {
-              setSelectedSchool(school);
-              setCurrentView('detail');
-            }}
-            onConfirmDeepDive={handleConfirmDeepDive}
-            onCancelDeepDive={handleCancelDeepDive}
           />
         </aside>
         </div>
