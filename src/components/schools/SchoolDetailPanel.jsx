@@ -145,15 +145,15 @@ function HeroTier({ school, familyProfile, matchScore, matchReasons }) {
 // TIER 2: Data Grid
 function DataGridTier({ school, familyProfile }) {
   const gridItems = [
-    { label: 'Enrollment', value: school.enrollment?.toLocaleString() || 'N/A', key: 'enrollment' },
-    { label: 'Class Size', value: school.avgClassSize || 'N/A', key: 'classSize' },
-    { label: 'Student-Teacher Ratio', value: school.studentTeacherRatio || 'N/A', key: 'ratio' },
-    { label: 'Tuition (Day)', value: school.dayTuition ? `$${school.dayTuition.toLocaleString()}` : 'N/A', key: 'dayTuition', priority: familyProfile?.maxTuition },
-    { label: 'Tuition (Boarding)', value: school.boardingTuition ? `$${school.boardingTuition.toLocaleString()}` : 'N/A', key: 'boardingTuition' },
-    { label: 'Boarding', value: school.boardingAvailable ? 'Available' : 'Day Only', key: 'boarding', priority: familyProfile?.boardingPreference },
+    { label: 'Enrollment', value: school.enrollment?.toLocaleString() || 'Not available', key: 'enrollment' },
+    { label: 'Class Size', value: school.avgClassSize ? String(school.avgClassSize) : 'Not available', key: 'classSize' },
+    { label: 'Student-Teacher Ratio', value: school.studentTeacherRatio || 'Not available', key: 'ratio' },
+    { label: 'Tuition (Day)', value: school.dayTuition ? `$${school.dayTuition.toLocaleString()}` : 'Not available', key: 'dayTuition' },
+    { label: 'Tuition (Boarding)', value: school.boardingTuition ? `$${school.boardingTuition.toLocaleString()}` : 'Not available', key: 'boardingTuition' },
+    { label: 'Boarding', value: school.boardingAvailable ? 'Available' : 'Day Only', key: 'boarding' },
     { label: 'Religion', value: school.religiousAffiliation || 'Non-religious', key: 'religion' },
     { label: 'Language', value: school.languageOfInstruction || 'English', key: 'language' },
-    { label: 'Founded', value: school.founded || 'N/A', key: 'founded' },
+    { label: 'Founded', value: school.founded ? String(school.founded) : 'Not available', key: 'founded' },
   ];
   
   const isPriority = (key) => {
@@ -164,10 +164,10 @@ function DataGridTier({ school, familyProfile }) {
   
   return (
     <div className="grid grid-cols-2 gap-4 p-6 border-b border-slate-700">
-      {gridItems.filter(item => item.value !== 'N/A').map((item) => (
+      {gridItems.map((item) => (
         <div key={item.key} className={`p-4 rounded-lg ${isPriority(item.key) ? 'bg-teal-500/10 border border-teal-500/30' : 'bg-slate-800/50'}`}>
           <p className={`text-xs ${isPriority(item.key) ? 'text-teal-400' : 'text-slate-400'}`}>{item.label}</p>
-          <p className={`text-lg font-semibold mt-1 ${isPriority(item.key) ? 'text-teal-300' : 'text-white'}`}>{item.value}</p>
+          <p className={`text-lg font-semibold mt-1 ${isPriority(item.key) ? 'text-teal-300' : item.value === 'Not available' ? 'text-slate-500 text-sm' : 'text-white'}`}>{item.value}</p>
         </div>
       ))}
     </div>
