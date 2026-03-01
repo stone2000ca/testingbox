@@ -50,7 +50,7 @@ function calculateMatchScore(school, familyProfile) {
   
   if (score >= 8) return 'Strong';
   if (score >= 5) return 'Good';
-  return 'Explore';
+  return 'Good'; // default to Good Match so badge always shows positively
 }
 
 function getMatchReasons(school, familyProfile) {
