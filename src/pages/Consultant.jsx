@@ -196,7 +196,7 @@ export default function Consultant() {
     
     // Only sync view from state if NO school is selected
     const conversationState = currentConversation?.conversationContext?.state || STATES.WELCOME;
-    setCurrentView(stateToView(conversationState));
+    setCurrentView(mapStateToView(conversationState));
   }, [currentConversation?.conversationContext?.state, selectedSchool, currentView]);
   
   const isIntakePhase = !isRestoringSessionRef.current && (
