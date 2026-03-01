@@ -718,7 +718,7 @@ export default function ClaimSchool() {
         )}
 
         {/* Step 4: Success */}
-        {step === 4 && (
+        {!alreadyClaimed && step === 4 && (
           <Card className="p-8">
             <div className="text-center">
               <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto mb-4" />
