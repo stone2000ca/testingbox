@@ -76,7 +76,7 @@ const TIERS = [
     label: 'Tier 2 — Important',
     color: 'amber',
     weight: 0.3,
-    motivational: 'Families actively filter by these. Completing them boosts your match rate.',
+    motivational: 'Schools with these fields completed appear in 3x more results.',
     fields: ['description', 'website', 'boardingAvailable', 'religiousAffiliation', 'languageOfInstruction', 'avgClassSize', 'studentTeacherRatio'],
   },
   {
