@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
-import ChatSessionCard from '@/components/dashboard/ChatSessionCard';
+import ChatSessionCard from '@/components/dashboard/ChatSessionCard.jsx';
 import { Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
