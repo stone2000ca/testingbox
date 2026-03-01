@@ -455,43 +455,50 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
           <FieldLabel required aiEnriched={isAI('name')}>School Name</FieldLabel>
-          <Input value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} className={isAI('name') ? 'bg-blue-50 border-blue-200' : ''} />
+          <Input value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} className={`${isAI('name') ? 'bg-blue-50' : ''} ${v('name') ? 'border-red-500' : ''}`} />
+          {v('name') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
         </div>
         <div>
           <FieldLabel required>City</FieldLabel>
-          <Input value={formData.city || ''} onChange={(e) => handleChange('city', e.target.value)} />
+          <Input value={formData.city || ''} onChange={(e) => handleChange('city', e.target.value)} className={v('city') ? 'border-red-500' : ''} />
+          {v('city') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
         </div>
         <div>
           <FieldLabel required>Province/State</FieldLabel>
-          <Input value={formData.provinceState || ''} onChange={(e) => handleChange('provinceState', e.target.value)} />
+          <Input value={formData.provinceState || ''} onChange={(e) => handleChange('provinceState', e.target.value)} className={v('provinceState') ? 'border-red-500' : ''} />
+          {v('provinceState') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
         </div>
         <div>
           <FieldLabel required>Country</FieldLabel>
-          <Input value={formData.country || ''} onChange={(e) => handleChange('country', e.target.value)} />
+          <Input value={formData.country || ''} onChange={(e) => handleChange('country', e.target.value)} className={v('country') ? 'border-red-500' : ''} />
+          {v('country') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
         </div>
         <div>
           <FieldLabel required>School Type</FieldLabel>
           <Select value={formData.schoolType || ''} onValueChange={(val) => handleChange('schoolType', val)}>
-            <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+            <SelectTrigger className={v('schoolType') ? 'border-red-500' : ''}><SelectValue placeholder="Select type" /></SelectTrigger>
             <SelectContent>
               {['Day School','Boarding School','Private','Special Needs','All-Girls','General','Religious','Arts-Focused','Military','Online','All-Boys'].map(t => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {v('schoolType') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
         </div>
         <div>
           <FieldLabel required>Lowest Grade</FieldLabel>
-          <Input type="number" value={formData.lowestGrade ?? ''} onChange={(e) => handleChange('lowestGrade', parseInt(e.target.value))} placeholder="-2 = PK, -1 = JK, 0 = K" />
+          <Input type="number" value={formData.lowestGrade ?? ''} onChange={(e) => handleChange('lowestGrade', parseInt(e.target.value))} placeholder="-2 = PK, -1 = JK, 0 = K" className={v('lowestGrade') ? 'border-red-500' : ''} />
+          {v('lowestGrade') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
         </div>
         <div>
           <FieldLabel required>Highest Grade</FieldLabel>
-          <Input type="number" value={formData.highestGrade ?? ''} onChange={(e) => handleChange('highestGrade', parseInt(e.target.value))} />
+          <Input type="number" value={formData.highestGrade ?? ''} onChange={(e) => handleChange('highestGrade', parseInt(e.target.value))} className={v('highestGrade') ? 'border-red-500' : ''} />
+          {v('highestGrade') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
         </div>
         <div>
           <FieldLabel required>Gender Policy</FieldLabel>
           <Select value={formData.genderPolicy || ''} onValueChange={(val) => handleChange('genderPolicy', val)}>
-            <SelectTrigger><SelectValue placeholder="Select policy" /></SelectTrigger>
+            <SelectTrigger className={v('genderPolicy') ? 'border-red-500' : ''}><SelectValue placeholder="Select policy" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="Co-ed">Co-ed</SelectItem>
               <SelectItem value="All-Boys">All-Boys</SelectItem>
@@ -499,10 +506,12 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
               <SelectItem value="Co-ed with single-gender classes">Co-ed with single-gender classes</SelectItem>
             </SelectContent>
           </Select>
+          {v('genderPolicy') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
         </div>
         <div>
           <FieldLabel required>Day Tuition (Annual)</FieldLabel>
-          <Input type="number" value={formData.dayTuition || ''} onChange={(e) => handleChange('dayTuition', parseFloat(e.target.value))} placeholder="e.g. 25000" />
+          <Input type="number" value={formData.dayTuition || ''} onChange={(e) => handleChange('dayTuition', parseFloat(e.target.value))} placeholder="e.g. 25000" className={v('dayTuition') ? 'border-red-500' : ''} />
+          {v('dayTuition') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
         </div>
         <div>
           <Label>Currency</Label>
