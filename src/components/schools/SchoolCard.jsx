@@ -23,7 +23,7 @@ function mapDealbreakersToRows(dealbreakers) {
   const rowIds = new Set();
   const text = dealbreakers.join(' ').toLowerCase();
   if (/class size|small class/.test(text)) rowIds.add('classSize');
-  if (/co-ed|coed|boys|girls|all-boys|all-girls|gender/.test(text)) rowIds.add('gender');
+
   if (/french|immersion|bilingual|language/.test(text)) rowIds.add('language');
   if (/close|commute|distance|nearby/.test(text)) rowIds.add('distance');
   if (/religious|catholic|christian|jewish|muslim|faith/.test(text)) rowIds.add('religious');
