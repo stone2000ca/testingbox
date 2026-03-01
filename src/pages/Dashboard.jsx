@@ -210,12 +210,15 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold text-white mb-6">
               Your Search Profiles ({sessions.length})
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
               {sessions.map((session) => (
-                <ChatSessionCard
+                <SchoolSearchProfile
                   key={session.id}
                   session={session}
-                  onSessionArchived={handleSessionArchived}
+                  onViewMatches={() => {}}
+                  onEditProfile={() => {}}
+                  onArchive={handleSessionArchived}
+                  isPaid={user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise'}
                 />
               ))}
             </div>
