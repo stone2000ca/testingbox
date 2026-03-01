@@ -35,7 +35,7 @@ export default function Navbar({ variant = "default" }) {
             <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699717aa28903550c09d4d26/c6c11cc4b_logo_NextSchool_full.png" alt="NextSchool" className="h-8" />
           </Link>
           {isAuthenticated && user ? (
-            <Link to={createPageUrl('ParentDashboard')}>
+            <Link to={createPageUrl('Dashboard')}>
               <Button variant="ghost" size="sm" className="gap-2">
                 <User className="h-4 w-4" />
                 Dashboard
