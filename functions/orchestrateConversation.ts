@@ -1254,8 +1254,8 @@ Extract:
               });
 
               const analysisData = {
-                userId: conversationFamilyProfile?.created_by || userId,
-                schoolId: selectedSchool.id,
+               userId: conversationFamilyProfile?.userId || userId,
+               schoolId: selectedSchool.id,
                 conversationId: context?.conversationId || null,
                 fitLabel: deepDiveAnalysis.fitLabel,
                 fitScore: deepDiveAnalysis.fitScore,
