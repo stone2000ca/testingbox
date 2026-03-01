@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
 import ChatSessionCard from '@/components/dashboard/ChatSessionCard.jsx';
-import { Plus, Settings, X } from 'lucide-react';
+import { Plus, Settings, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
@@ -16,6 +16,8 @@ export default function Dashboard() {
   const [shortlistedSchools, setShortlistedSchools] = useState([]);
   const [sessionMap, setSessionMap] = useState({});
   const [error, setError] = useState(null);
+  const [showNewSearchModal, setShowNewSearchModal] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
     checkAuthAndLoadSessions();
@@ -97,6 +99,49 @@ export default function Dashboard() {
     }
   };
 
+  const handleNewSearch = () => {
+    // WC8: Case 1 (free user with 0 sessions) - navigate directly
+    if (sessions.length === 0) {
+      navigate(createPageUrl('Consultant'));
+      return;
+    }
+
+    // WC8: Case 2 (free user with 1+ session) - show modal
+    setShowNewSearchModal(true);
+  };
+
+  const handleStartOver = async () => {
+    if (sessions.length === 0) {
+      navigate(createPageUrl('Consultant'));
+      return;
+    }
+
+    // Archive the first (most recent) active session
+    const activeSession = sessions.find(s => s.status === 'active');
+    if (!activeSession) {
+      navigate(createPageUrl('Consultant'));
+      return;
+    }
+
+    setModalLoading(true);
+    try {
+      await base44.entities.ChatSession.update(activeSession.id, { status: 'archived' });
+      setShowNewSearchModal(false);
+      // Refresh sessions
+      await checkAuthAndLoadSessions();
+      navigate(createPageUrl('Consultant'));
+    } catch (err) {
+      console.error('Failed to archive session:', err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleSessionArchived = async () => {
+    // Refresh sessions when one is archived
+    await checkAuthAndLoadSessions();
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#1E1E2E]">
@@ -120,7 +165,7 @@ export default function Dashboard() {
         </h1>
         <div className="flex items-center gap-3">
           <Button
-            onClick={() => navigate(createPageUrl('Consultant'))}
+            onClick={handleNewSearch}
             className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
           >
             <Plus className="w-4 h-4" />
@@ -150,7 +195,7 @@ export default function Dashboard() {
                 Start your first school search to see your profiles here.
               </p>
               <Button
-                onClick={() => navigate(createPageUrl('Consultant'))}
+                onClick={handleNewSearch}
                 className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 text-lg font-semibold gap-2"
               >
                 <Plus className="w-5 h-5" />
@@ -166,7 +211,11 @@ export default function Dashboard() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
               {sessions.map((session) => (
-                <ChatSessionCard key={session.id} session={session} />
+                <ChatSessionCard
+                  key={session.id}
+                  session={session}
+                  onSessionArchived={handleSessionArchived}
+                />
               ))}
             </div>
 
@@ -209,6 +258,50 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* WC8: New Search Confirmation Modal (Free Users) */}
+      {showNewSearchModal && sessions.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#2A2A3D] rounded-lg max-w-md w-full p-6 border border-white/10">
+            <div className="flex items-start gap-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h2 className="text-xl font-semibold text-white mb-2">Start a New Search?</h2>
+                <p className="text-white/70 text-sm">
+                  Starting a new search will replace <strong>{sessions[0].profileName || 'Untitled Profile'}</strong>, including{' '}
+                  <strong>
+                    {(() => {
+                      try {
+                        return sessions[0].matchedSchools ? JSON.parse(sessions[0].matchedSchools).length : 0;
+                      } catch {
+                        return 0;
+                      }
+                    })()}
+                  </strong>{' '}
+                  matched schools and <strong>{sessions[0].shortlistedCount || 0}</strong> shortlisted schools. Your global shortlist will be preserved.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleStartOver}
+                disabled={modalLoading}
+                className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {modalLoading ? 'Archiving...' : 'Start Over'}
+              </button>
+              <button
+                onClick={() => setShowNewSearchModal(false)}
+                disabled={modalLoading}
+                className="w-full px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Keep Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
