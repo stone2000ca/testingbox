@@ -1226,7 +1226,8 @@ Deno.serve(async (req) => {
       // FIX-C: __CONFIRM_BRIEF__ sentinel goes directly to RESULTS state for immediate school display.
       let context = conversationContext || {};
       let processMessage = message;
-      if (message === '__CONFIRM_BRIEF__') {
+      const isConfirmBrief = message === '__CONFIRM_BRIEF__';
+      if (isConfirmBrief) {
         processMessage = 'show me schools';
         context.state = 'RESULTS';
         context.briefStatus = 'confirmed';
