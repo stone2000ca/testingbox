@@ -136,7 +136,7 @@ function TierSection({ tier, filled, open, onToggle, children }) {
           {isComplete && <CheckCircle2 className="h-4 w-4 text-green-500" />}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500 hidden sm:block">{tier.motivational}</span>
+
           {open ? <ChevronUp className="h-4 w-4 text-slate-500" /> : <ChevronDown className="h-4 w-4 text-slate-500" />}
         </div>
       </button>
