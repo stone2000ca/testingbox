@@ -775,10 +775,10 @@ export default function Consultant() {
       // BUG-DD-001 FIX: selectedSchool is SINGLE SOURCE OF TRUTH - NEVER clear it based on AI state
       const isViewingSchoolDetail = selectedSchool !== null;
       
-      if (!isViewingSchoolDetail && response.data.state) {
+      if (!isViewingSchoolDetail && response.data?.state) {
         // Only update view if NOT viewing a school detail
         // CRITICAL: Do NOT call setSelectedSchool(null) here - it defeats the single source of truth
-        setCurrentView(mapStateToView(response.data.state));
+        setCurrentView(mapStateToView(response.data?.state));
       } else if (isViewingSchoolDetail) {
         console.log('[BUG-DD-001] Maintaining detail view - school selected:', selectedSchool?.name);
         // Keep view locked to detail as long as selectedSchool is set
