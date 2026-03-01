@@ -35,6 +35,14 @@ export default function SchoolProfile() {
   }, [schoolId, sessionId]);
 
   useEffect(() => {
+    if (schoolId) {
+      base44.entities.Testimonial.filter({ school_id: schoolId, is_visible: true })
+        .then(setTestimonials)
+        .catch(() => {});
+    }
+  }, [schoolId]);
+
+  useEffect(() => {
     if (!school) return;
 
     // Set meta tags for SEO
