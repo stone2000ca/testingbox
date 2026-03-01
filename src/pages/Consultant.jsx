@@ -563,7 +563,7 @@ export default function Consultant() {
     const isDeepDiveWithSchool = conversationState === STATES.DEEP_DIVE && selectedSchool !== null;
     
     if (!isDeepDiveWithSchool) {
-      setCurrentView(mapStateToView(conversationState));
+      setCurrentView(stateToView(conversationState));
     }
     setSchools(convo.conversationContext?.schools || []);
     // BUG-DD-001 FIX: Only clear selectedSchool if NOT in DEEP_DIVE state

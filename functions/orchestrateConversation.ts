@@ -1169,8 +1169,6 @@ Generate the DEEPDIVE card for this family-school match.`;
 
   console.log('[DEEPDIVE] Attempting AI-generated card');
 
-  let deepDiveAnalysis = null;
-
   try {
     const aiResponse = await callOpenRouter({
       systemPrompt: deepDiveSystemPrompt,
@@ -1181,108 +1179,6 @@ Generate the DEEPDIVE card for this family-school match.`;
     if (aiResponse) {
       console.log('[DEEPDIVE] AI card generated successfully');
       aiMessage = aiResponse;
-
-      // E10b: Extract structured analysis from prose via second LLM call
-      try {
-        const extractionPrompt = `Analyze this school-family fit narrative and extract structured data. Return ONLY valid JSON.
-
-NARRATIVE:
-"${aiResponse}"
-
-Extract:
-1. fitLabel: "strong_match" | "good_match" | "worth_exploring" (based on tone/recommendation)
-2. fitScore: 0-100 (based on fit strength)
-3. tradeOffs: Array of {dimension, strength, concern, dataSource}
-4. dataGaps: Array of missing/unverified data points mentioned
-5. visitQuestions: Array of 3-5 key questions to ask during visit
-6. financialSummary: {tuition (number or null), aidAvailable (bool), estimatedNetCostMin (number or null), estimatedNetCostMax (number or null), budgetFit (string)}`;
-
-        const extractionSchema = {
-          name: 'deepdive_analysis_extraction',
-          schema: {
-            type: 'object',
-            properties: {
-              fitLabel: { type: 'string', enum: ['strong_match', 'good_match', 'worth_exploring'] },
-              fitScore: { type: 'integer', minimum: 0, maximum: 100 },
-              tradeOffs: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    dimension: { type: 'string' },
-                    strength: { type: 'string' },
-                    concern: { type: 'string' },
-                    dataSource: { type: 'string' }
-                  }
-                }
-              },
-              dataGaps: { type: 'array', items: { type: 'string' } },
-              visitQuestions: { type: 'array', items: { type: 'string' } },
-              financialSummary: {
-                type: 'object',
-                properties: {
-                  tuition: { type: ['number', 'null'] },
-                  aidAvailable: { type: 'boolean' },
-                  estimatedNetCostMin: { type: ['number', 'null'] },
-                  estimatedNetCostMax: { type: ['number', 'null'] },
-                  budgetFit: { type: 'string' }
-                }
-              }
-            },
-            required: ['fitLabel', 'fitScore', 'tradeOffs', 'dataGaps', 'visitQuestions', 'financialSummary']
-          }
-        };
-
-        const extractedAnalysis = await callOpenRouter({
-          systemPrompt: 'Extract structured analysis from the school-fit narrative. Be precise.',
-          userPrompt: extractionPrompt,
-          responseSchema: extractionSchema,
-          maxTokens: 1000,
-          temperature: 0.3
-        });
-
-        if (extractedAnalysis) {
-          deepDiveAnalysis = extractedAnalysis;
-          console.log('[DEEPDIVE] Structured analysis extracted:', { fitLabel: deepDiveAnalysis.fitLabel, fitScore: deepDiveAnalysis.fitScore });
-
-          // E10b: Upsert SchoolAnalysis record
-          if (selectedSchool?.id && conversationFamilyProfile?.id) {
-            try {
-              const existingAnalyses = await base44.entities.SchoolAnalysis.filter({
-                userId: conversationFamilyProfile?.userId || userId,
-                schoolId: selectedSchool.id
-              });
-
-              const analysisData = {
-               userId: conversationFamilyProfile?.userId || userId,
-               schoolId: selectedSchool.id,
-                conversationId: context?.conversationId || null,
-                fitLabel: deepDiveAnalysis.fitLabel,
-                fitScore: deepDiveAnalysis.fitScore,
-                tradeOffs: deepDiveAnalysis.tradeOffs,
-                dataGaps: deepDiveAnalysis.dataGaps,
-                visitQuestions: deepDiveAnalysis.visitQuestions,
-                financialSummary: deepDiveAnalysis.financialSummary,
-                lastAnalyzedAt: new Date().toISOString()
-              };
-
-              if (existingAnalyses.length > 0) {
-                // Update existing
-                await base44.entities.SchoolAnalysis.update(existingAnalyses[0].id, analysisData);
-                console.log('[DEEPDIVE] SchoolAnalysis updated:', existingAnalyses[0].id);
-              } else {
-                // Create new
-                const created = await base44.entities.SchoolAnalysis.create(analysisData);
-                console.log('[DEEPDIVE] SchoolAnalysis created:', created.id);
-              }
-            } catch (upsertError) {
-              console.error('[DEEPDIVE] SchoolAnalysis upsert failed:', upsertError.message);
-            }
-          }
-        }
-      } catch (extractionError) {
-        console.error('[DEEPDIVE] Analysis extraction failed:', extractionError.message);
-      }
     }
   } catch (llmError) {
     console.error('[DEEPDIVE] OpenRouter failed:', llmError.message);
@@ -1305,8 +1201,7 @@ Extract:
     briefStatus: briefStatus,
     schools: currentSchools || [],
     familyProfile: conversationFamilyProfile,
-    conversationContext: context,
-    deepDiveAnalysis: deepDiveAnalysis
+    conversationContext: context
   };
 }
 
@@ -1314,7 +1209,7 @@ Extract:
 // MAIN: Deno.serve — orchestrateConversation
 // =============================================================================
 Deno.serve(async (req) => {
-  const TIMEOUT_MS = 45000;
+  const TIMEOUT_MS = 25000;
   
   const timeoutPromise = new Promise((_, reject) => 
     setTimeout(() => reject(new Error('TIMEOUT')), TIMEOUT_MS)
@@ -1526,21 +1421,15 @@ Deno.serve(async (req) => {
 
       console.log(`[STATE] ${currentState} | briefStatus: ${briefStatus} | sufficiency: ${context.dataSufficiency} | reason: ${context.transitionReason}`);
 
-      // Track previous state for WC10 narrative generation (BEFORE updating to new state)
-      context.previousState = context.state || STATES.WELCOME;
+      // Track previous state for WC10 narrative generation
+      context.previousState = context.state;
 
       let responseData;
 
       if (currentState === STATES.DISCOVERY) {
-        try {
-          responseData = await handleDiscovery(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentSchools, flags, returningUserContextBlock);
-          responseData.extractedEntities = extractionResult?.extractedEntities || {};
-          console.log('[ORCH] DISCOVERY handler completed, returning response');
-          return Response.json(responseData);
-        } catch (discoveryError) {
-          console.error('[ORCH] DISCOVERY handler failed:', discoveryError.message, discoveryError.stack);
-          throw discoveryError;
-        }
+        responseData = await handleDiscovery(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentSchools, flags, returningUserContextBlock);
+        responseData.extractedEntities = extractionResult?.extractedEntities || {};
+        return Response.json(responseData);
       }
 
       if (currentState === STATES.BRIEF) {
@@ -1650,9 +1539,8 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
       });
 
     } catch (error) {
-      console.error('orchestrateConversation FATAL:', error.message);
-      console.error('Stack:', error.stack);
-      return Response.json({ error: error.message || 'Something went wrong. Please try again.' }, { status: 500 });
+      console.error('orchestrateConversation FATAL:', error);
+      return Response.json({ error: error.message || String(error) }, { status: 500 });
     }
   };
 
