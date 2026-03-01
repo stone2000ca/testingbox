@@ -673,7 +673,7 @@ export default function ClaimSchool() {
         )}
 
         {/* Step 3.5: Document Upload */}
-        {step === 3.5 && (
+        {!alreadyClaimed && step === 3.5 && (
           <Card className="p-8">
             <h2 className="text-2xl font-bold text-slate-900 mb-4">Verify with Document</h2>
             <p className="text-slate-600 mb-6">
