@@ -1140,22 +1140,24 @@ async function handleDeepDive(base44, selectedSchoolId, message, conversationFam
   
   const deepDiveSystemPrompt = `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}You are ${consultantName}, an education consultant. The parent is currently in a deep-dive on a specific school.
 
-CRITICAL STATE RULE — READ THIS FIRST:
-You are in DEEPDIVE state. If the parent updates any preference mid-conversation (e.g. "actually grade 6", "budget changed", "we want boarding"), you MUST:
-1. Acknowledge it in ONE short sentence only. Example: "Got it, noted grade 6 — your matches will update shortly."
-2. STOP. Do not write anything else. NEVER mention a "Refresh Matches" button — it does not exist.
+  CRITICAL STATE RULE — READ THIS FIRST:
+  You are in DEEPDIVE state. If the parent updates any preference mid-conversation (e.g. "actually grade 6", "budget changed", "we want boarding"), you MUST:
+  1. Acknowledge it in ONE short sentence only. Example: "Got it, noted grade 6 — your matches will update shortly."
+  2. STOP. Do not write anything else. NEVER mention a "Refresh Matches" button — it does not exist.
 
-ABSOLUTE PROHIBITIONS when a preference update is detected:
-- Do NOT generate a numbered list of their preferences (Student, Location, Budget, etc.)
-- Do NOT produce a brief summary or profile recap
-- Do NOT ask "Does that look right?" or any confirmation question
-- Do NOT produce more than 2 sentences total for a preference update
+  ABSOLUTE PROHIBITIONS when a preference update is detected:
+  - Do NOT generate a numbered list of their preferences (Student, Location, Budget, etc.)
+  - Do NOT produce a brief summary or profile recap
+  - Do NOT ask "Does that look right?" or any confirmation question
+  - Do NOT produce more than 2 sentences total for a preference update
 
-${consultantName === 'Jackie' 
+  ${consultantName === 'Jackie' 
   ? "JACKIE PERSONA: Warm, empathetic, supportive." 
   : "LIAM PERSONA: Direct, strategic, no-BS."}
 
-Write naturally in conversational prose about why this school fits the family. Cover the student-school alignment, any trade-offs or concerns, and the cost reality. Speak like a consultant would—no headers, labels, or formatting markers. Just natural, helpful conversation. End your response with a brief, clear sentence summarizing whether this school is a strong fit for this family and the primary reason why or why not, based on what they shared in their brief.`;
+  Write naturally in conversational prose about why this school fits the family. Cover the student-school alignment, any trade-offs or concerns, and the cost reality. Speak like a consultant would—no headers, labels, or formatting markers. Just natural, helpful conversation. End your response with a brief, clear sentence summarizing whether this school is a strong fit for this family and the primary reason why or why not, based on what they shared in their brief.
+
+  IMPORTANT: Your response will be returned as JSON with a "prose" field. Write your full narrative in the prose field only.`;
 
   const deepDiveUserPrompt = `FAMILY BRIEF:
 - Child: ${childDisplayName}
@@ -1169,16 +1171,117 @@ Generate the DEEPDIVE card for this family-school match.`;
 
   console.log('[DEEPDIVE] Attempting AI-generated card');
 
+  let deepDiveAnalysis = null;
   try {
     const aiResponse = await callOpenRouter({
       systemPrompt: deepDiveSystemPrompt,
       userPrompt: deepDiveUserPrompt,
       maxTokens: 2000,
-      temperature: 0.6
+      temperature: 0.6,
+      responseSchema: {
+        name: 'deepdive_with_analysis',
+        schema: {
+          type: 'object',
+          properties: {
+            prose: {
+              type: 'string',
+              description: 'Natural conversational narrative about school-family fit'
+            },
+            analysis: {
+              type: 'object',
+              properties: {
+                fitLabel: {
+                  type: 'string',
+                  enum: ['strong_match', 'good_match', 'worth_exploring'],
+                  description: 'Overall fit assessment'
+                },
+                fitScore: {
+                  type: 'integer',
+                  minimum: 0,
+                  maximum: 100,
+                  description: 'Numerical fit score'
+                },
+                tradeOffs: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      dimension: { type: 'string' },
+                      strength: { type: 'string' },
+                      concern: { type: 'string' },
+                      dataSource: { type: 'string' }
+                    }
+                  },
+                  description: 'Trade-offs and key considerations'
+                },
+                dataGaps: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Missing or unverified information'
+                },
+                visitQuestions: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Key questions to ask during a school visit'
+                },
+                financialSummary: {
+                  type: 'object',
+                  properties: {
+                    tuition: { type: 'number' },
+                    aidAvailable: { type: 'boolean' },
+                    estimatedNetCostMin: { type: 'number' },
+                    estimatedNetCostMax: { type: 'number' },
+                    budgetFit: { type: 'string' }
+                  }
+                }
+              },
+              required: ['fitLabel', 'fitScore', 'tradeOffs', 'dataGaps', 'visitQuestions', 'financialSummary']
+            }
+          },
+          required: ['prose', 'analysis']
+        }
+      }
     });
     if (aiResponse) {
       console.log('[DEEPDIVE] AI card generated successfully');
-      aiMessage = aiResponse;
+      aiMessage = aiResponse.prose || aiResponse;
+      deepDiveAnalysis = aiResponse.analysis;
+
+      // Upsert SchoolAnalysis record
+      if (deepDiveAnalysis && selectedSchool?.id && conversationFamilyProfile?.id) {
+        try {
+          const userId = context.userId || null;
+          if (userId) {
+            const existing = await base44.entities.SchoolAnalysis.filter({
+              userId,
+              schoolId: selectedSchool.id
+            });
+
+            const analysisData = {
+              userId,
+              schoolId: selectedSchool.id,
+              conversationId: conversationId || null,
+              fitLabel: deepDiveAnalysis.fitLabel,
+              fitScore: deepDiveAnalysis.fitScore,
+              tradeOffs: deepDiveAnalysis.tradeOffs || [],
+              dataGaps: deepDiveAnalysis.dataGaps || [],
+              visitQuestions: deepDiveAnalysis.visitQuestions || [],
+              financialSummary: deepDiveAnalysis.financialSummary || {},
+              lastAnalyzedAt: new Date().toISOString()
+            };
+
+            if (existing.length > 0) {
+              await base44.entities.SchoolAnalysis.update(existing[0].id, analysisData);
+              console.log('[DEEPDIVE] SchoolAnalysis updated:', existing[0].id);
+            } else {
+              await base44.entities.SchoolAnalysis.create(analysisData);
+              console.log('[DEEPDIVE] SchoolAnalysis created for school:', selectedSchool.id);
+            }
+          }
+        } catch (analysisError) {
+          console.error('[DEEPDIVE] Failed to upsert SchoolAnalysis:', analysisError.message);
+        }
+      }
     }
   } catch (llmError) {
     console.error('[DEEPDIVE] OpenRouter failed:', llmError.message);
