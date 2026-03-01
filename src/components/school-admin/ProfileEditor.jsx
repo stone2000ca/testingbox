@@ -716,7 +716,7 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
           <TierSection
             key={tier.id}
             tier={tier}
-            filled={countFilled(formData, tier.fields, testimonials.length)}
+            filled={countFilled(formData, tier.fields, testimonialCount)}
             open={openTiers[tier.id]}
             onToggle={() => toggleTier(tier.id)}
           >
