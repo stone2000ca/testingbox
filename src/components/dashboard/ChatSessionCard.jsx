@@ -1,15 +1,34 @@
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Calendar } from 'lucide-react';
+import { ArrowRight, Calendar, MoreVertical, Archive } from 'lucide-react';
 import { format } from 'date-fns';
+import { useState } from 'react';
 
-export default function ChatSessionCard({ session }) {
+export default function ChatSessionCard({ session, onSessionArchived }) {
   const navigate = useNavigate();
+  const [showMenu, setShowMenu] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const handleContinue = () => {
     // Navigate to Consultant page with session ID in URL params
     navigate(createPageUrl('Consultant') + '?sessionId=' + session.id);
+  };
+
+  const handleArchive = async () => {
+    setIsArchiving(true);
+    try {
+      await base44.entities.ChatSession.update(session.id, { status: 'archived' });
+      setShowMenu(false);
+      if (onSessionArchived) {
+        onSessionArchived();
+      }
+    } catch (err) {
+      console.error('Failed to archive session:', err);
+    } finally {
+      setIsArchiving(false);
+    }
   };
 
   // Format dates
@@ -49,8 +68,32 @@ export default function ChatSessionCard({ session }) {
               </p>
             )}
           </div>
-          <div className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusColor}`}>
-            {isActive ? 'Active' : 'Archived'}
+          <div className="flex items-center gap-2">
+            <div className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusColor}`}>
+              {isActive ? 'Active' : 'Archived'}
+            </div>
+            {isActive && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <MoreVertical className="w-4 h-4 text-white/60" />
+                </button>
+                {showMenu && (
+                  <div className="absolute right-0 mt-1 bg-[#1E1E2E] border border-white/20 rounded-lg shadow-lg z-10">
+                    <button
+                      onClick={handleArchive}
+                      disabled={isArchiving}
+                      className="w-full px-4 py-2 flex items-center gap-2 text-sm text-white/80 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg"
+                    >
+                      <Archive className="w-4 h-4" />
+                      {isArchiving ? 'Archiving...' : 'Archive'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
