@@ -282,7 +282,7 @@ export default function SchoolGrid({
               {displayedT2.map((school, index) => (
                 <div
                   key={school.id}
-                  className="flex"
+                  className="flex w-full"
                   style={{ animation: `cardFadeIn 350ms cubic-bezier(0.22,1,0.36,1) ${(displayedT1.length + index) * 60}ms both` }}
                 >
                   <AnimatedCard
