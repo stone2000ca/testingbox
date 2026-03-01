@@ -40,6 +40,7 @@ export default function Consultant() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sessionRestored, setSessionRestored] = useState(false);
+  const [restoringSession, setRestoringSession] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [selectedConsultant, setSelectedConsultant] = useState(null);
   const [showResponseChips, setShowResponseChips] = useState(false);
