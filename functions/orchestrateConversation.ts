@@ -1532,9 +1532,15 @@ Deno.serve(async (req) => {
       let responseData;
 
       if (currentState === STATES.DISCOVERY) {
-        responseData = await handleDiscovery(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentSchools, flags, returningUserContextBlock);
-        responseData.extractedEntities = extractionResult?.extractedEntities || {};
-        return Response.json(responseData);
+        try {
+          responseData = await handleDiscovery(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentSchools, flags, returningUserContextBlock);
+          responseData.extractedEntities = extractionResult?.extractedEntities || {};
+          console.log('[ORCH] DISCOVERY handler completed, returning response');
+          return Response.json(responseData);
+        } catch (discoveryError) {
+          console.error('[ORCH] DISCOVERY handler failed:', discoveryError.message, discoveryError.stack);
+          throw discoveryError;
+        }
       }
 
       if (currentState === STATES.BRIEF) {
