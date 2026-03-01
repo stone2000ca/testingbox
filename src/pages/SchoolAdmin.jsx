@@ -128,6 +128,7 @@ export default function SchoolAdmin() {
         { id: 'profile', label: 'Profile Editor', icon: Building2 },
         { id: 'media', label: 'Photos & Media', icon: Image },
         { id: 'testimonials', label: 'Testimonials', icon: MessageSquareQuote },
+        { id: 'events', label: 'Events & Open Houses', icon: Calendar, locked: school.subscriptionTier === 'free' },
       ],
     },
     {
