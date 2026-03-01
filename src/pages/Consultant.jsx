@@ -723,8 +723,13 @@ export default function Consultant() {
         returningUserContext
       });
 
+      // DEFENSIVE CHECK: Ensure response.data exists
+      if (!response?.data) {
+        throw new Error('Orchestration response contained no data');
+      }
+
       // T043: Update familyProfile live from orchestration response
-      if (response.data.familyProfile) {
+      if (response.data?.familyProfile) {
         setFamilyProfile(response.data.familyProfile);
       }
 
