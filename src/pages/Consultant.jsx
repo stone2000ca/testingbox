@@ -25,6 +25,7 @@ import { useUserLocation } from '../components/hooks/useUserLocation';
 import { getShortlistNudge } from '../components/utils/shortlistNudges';
 import { extractAndSaveMemories } from '../components/utils/memoryManager';
 import { restoreSessionFromParam } from '@/components/chat/SessionRestorer';
+import { callOrchestration } from '@/components/utils/orchestrationHelper';
 import LoginGateModal from '@/components/dialogs/LoginGateModal';
 import FamilyBriefPanel from '@/components/chat/FamilyBriefPanel';
 import ChatPanel from '@/components/chat/ChatPanel';
@@ -673,54 +674,24 @@ export default function Consultant() {
         }
       }
 
-      // CRITICAL FIX: When confirming brief, pass empty array to force fresh search
-      const isBriefConfirmingForResults = isBriefConfirmation || 
-                                          (briefStatus === BRIEF_STATUS.PENDING_REVIEW && 
-                                           (messageText.toLowerCase().includes('show') || 
-                                            messageText.toLowerCase().includes('right')));
-      
-      // WC6: Build returning user context if session was restored
-      let returningUserContext = null;
-      if (restoredSessionData && familyProfile) {
-        const shortlistedSchoolNames = shortlistData.map(s => s.name).slice(0, 5);
-        const lastActive = restoredSessionData.updatedDate 
-          ? new Date(restoredSessionData.updatedDate).toLocaleDateString()
-          : null;
-        
-        returningUserContext = {
-          isReturningUser: true,
-          childName: familyProfile.childName,
-          childGrade: familyProfile.childGrade,
-          location: familyProfile.locationArea,
-          budget: familyProfile.maxTuition ? `$${familyProfile.maxTuition.toLocaleString()}` : null,
-          priorities: familyProfile.priorities?.join(', ') || null,
-          matchedSchoolsCount: restoredSessionData.matchedSchoolsCount || 0,
-          shortlistedSchools: shortlistedSchoolNames,
-          lastActive: lastActive,
-          profileName: restoredSessionData.profileName,
-          consultantName: restoredSessionData.consultantName
-        };
-      }
-
-      // Call orchestrateConversation with current schools context and user location
-      const response = await base44.functions.invoke('orchestrateConversation', {
-        message: messageText,
-        conversationHistory: messages,
-        conversationContext: currentConversation?.conversationContext || {},
-        region: user?.profileRegion || 'Canada',
-        userId: user?.id,
-        consultantName: selectedConsultant,
-        currentOnboardingPhase: onboardingPhase,
-        currentSchools: isBriefConfirmingForResults ? [] : schools,
+      // WC3: Call extracted orchestration helper (pure function)
+      const response = await callOrchestration({
+        messageText,
+        messages,
+        currentConversation,
+        user,
+        selectedConsultant,
+        onboardingPhase,
+        briefStatus,
+        schools,
+        userLocation,
+        selectedSchool: explicitSchoolId ? { id: explicitSchoolId } : selectedSchool,
+        isAuthenticated,
+        shortlistData,
+        restoredSessionData,
+        familyProfile,
         userNotes,
         shortlistedSchools,
-        userLocation: userLocation ? {
-          lat: userLocation.lat,
-          lng: userLocation.lng,
-          address: userLocation.address
-        } : null,
-        selectedSchoolId: explicitSchoolId || selectedSchool?.id || null,
-        returningUserContext
       });
 
       // T043: Update familyProfile live from orchestration response
