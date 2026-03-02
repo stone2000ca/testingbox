@@ -795,13 +795,13 @@ Format:
 
     // Liam brief: built programmatically as bullet points for consistent formatting
     const liamBulletLines = [
-      `• ${briefChildDisplayName}: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}`,
-      `• Location: ${locationArea || '(not specified)'}`,
-      `• Budget: ${budgetDisplay}`,
+      `- **${briefChildDisplayName}:** ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}`,
+      `- **Location:** ${locationArea || '(not specified)'}`,
+      `- **Budget:** ${budgetDisplay}`,
     ];
-    if (prioritiesStr) liamBulletLines.push(`• Priorities: ${prioritiesStr}`);
-    if (interestsStr) liamBulletLines.push(`• Interests: ${interestsStr}`);
-    if (dealbreakersStr) liamBulletLines.push(`• Dealbreakers: ${dealbreakersStr}`);
+    if (prioritiesStr) liamBulletLines.push(`- **Priorities:** ${prioritiesStr}`);
+    if (interestsStr) liamBulletLines.push(`- **Interests:** ${interestsStr}`);
+    if (dealbreakersStr) liamBulletLines.push(`- **Dealbreakers:** ${dealbreakersStr}`);
     const liamBriefBuilt = `Here's what I've put together so far:\n\n${liamBulletLines.join('\n')}\n\nDoes that look right, or is there anything you'd like to adjust?`;
 
     const liamBriefSystemPrompt = null; // unused — brief is built programmatically
