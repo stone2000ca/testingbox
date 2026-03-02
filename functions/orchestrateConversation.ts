@@ -372,6 +372,8 @@ CRITICAL: If the user explicitly negates or removes a previously stated preferen
 
 LOCATION SPECIFICITY (BUG-LOC-003): For locationArea, always use the most specific location the user mentioned — city name, NOT province or state. Examples: "Montreal" not "Quebec", "Vancouver" not "British Columbia", "Calgary" not "Alberta". If the user says a region alias like "GTA" or "Greater Toronto Area", preserve that exact term as-is.
 
+LOCATION vs CURRICULUM: locationArea must ONLY contain geographic places. IB, AP, STEM, Montessori, Waldorf, Reggio, IGCSE, French immersion are curriculum types — put them in priorities, never locationArea.
+
 PRIORITY vs INTEREST CLASSIFICATION:
 - PRIORITIES = requirements the SCHOOL must meet (curriculum type, teaching style, class size, gender policy, religious affiliation, boarding, learning support, structured environment, boys-only, STEM focus, French immersion)
 - INTERESTS = things the CHILD enjoys or wants to do (robotics club, art classes, soccer, coding, music, drama, debate)
