@@ -129,7 +129,13 @@ function getPriorityCell(rowId, school, familyProfile) {
   return checks.find(r => r.id === rowId) || null;
 }
 
-export default function ComparisonView({ schools, familyProfile, onBack }) {
+const RELEVANCE_STYLES = {
+  priority:    { bg: 'bg-teal-900/10', border: 'border-l-4 border-l-teal-500', badge: 'bg-teal-100 text-teal-700' },
+  dealbreaker: { bg: 'bg-red-900/10',  border: 'border-l-4 border-l-red-500',  badge: 'bg-red-100 text-red-700' },
+  neutral:     { bg: '',               border: '',                               badge: '' },
+};
+
+export default function ComparisonView({ schools, familyProfile, comparisonMatrix, onBack }) {
   if (!schools || schools.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
