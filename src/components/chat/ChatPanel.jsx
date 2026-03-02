@@ -96,9 +96,12 @@ const ChatPanel = forwardRef(function ChatPanel({
     const lastAIMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
     const isBriefMessage = lastAIMessage?.content && (
       lastAIMessage.content.includes("Does that capture") ||
+      lastAIMessage.content.includes("Does that look right") ||
       lastAIMessage.content.includes("Anything I'm missing") ||
       lastAIMessage.content.includes("Here's what I'm taking away") ||
-      lastAIMessage.content.includes("needs adjustment")
+      lastAIMessage.content.includes("needs adjustment") ||
+      lastAIMessage.content.includes("Anything to adjust") ||
+      lastAIMessage.content.includes("Anything to change")
     );
     return showResponseChips ||
       (currentState === STATES.BRIEF && [BRIEF_STATUS.PENDING_REVIEW, BRIEF_STATUS.EDITING].includes(briefStatus)) ||
