@@ -735,7 +735,7 @@ async function handleBrief(base44, message, conversationFamilyProfile, context, 
        maxTuition = context.extractedEntities.maxTuition;
        console.log('[BRIEF] Using extracted maxTuition:', maxTuition);
      }
-     const interestsStr = interests?.length > 0 ? interests.join(', ') : '';
+     const interestsStr = Array.isArray(interests) && interests.length > 0 ? interests.join(', ') : '';
      const prioritiesStr = priorities?.length > 0 ? priorities.join(', ') : '';
      const dealbreakersStr = dealbreakers?.length > 0 ? dealbreakers.join(', ') : '';
 
