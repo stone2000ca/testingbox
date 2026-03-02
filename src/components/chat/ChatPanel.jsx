@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, forwardRef } from 'react';
+import { Lock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { STATES, BRIEF_STATUS } from '../../pages/stateMachineConfig';
 import { Button } from "@/components/ui/button";
@@ -192,12 +193,16 @@ const ChatPanel = forwardRef(function ChatPanel({
                 <SchoolAnalysisCard analysis={msgAnalysis} />
               )}
               {msgVisitPrepKit && currentState === STATES.DEEP_DIVE && !isTyping && (
-                <VisitPrepCard
-                  schoolName={msgVisitPrepKit.schoolName}
-                  visitQuestions={msgVisitPrepKit.visitQuestions}
-                  observations={msgVisitPrepKit.observations}
-                  redFlags={msgVisitPrepKit.redFlags}
-                />
+                <div className="relative">
+                  <VisitPrepCard
+                    schoolName={msgVisitPrepKit.schoolName}
+                    visitQuestions={msgVisitPrepKit.visitQuestions}
+                    observations={msgVisitPrepKit.observations}
+                    redFlags={msgVisitPrepKit.redFlags}
+                    isPremium={isPremium}
+                    onUpgrade={onUpgrade}
+                  />
+                </div>
               )}
             </div>
           );
