@@ -370,6 +370,8 @@ BUDGET EXTRACTION (BUG-ENT-004): Extract budget/tuition even in conversational f
 
 CRITICAL: If the user explicitly negates or removes a previously stated preference (e.g. "actually, not interested in sports", "remove arts from my priorities", "I changed my mind about boarding"), populate the corresponding remove_* field (remove_interests, remove_priorities, remove_dealbreakers) with the items to remove. Leave additive arrays for new additions only.
 
+CRITICAL: If the user mentions having VISITED, TOURED, or SEEN a school — phrases like "I visited Branksome Hall", "we toured the school", "we went to the open house", "just got back from visiting", "we saw the campus" — set intentSignal to 'visit_debrief'. This takes priority over 'continue' and 'ask-about-school'.
+
 LOCATION SPECIFICITY (BUG-LOC-003): For locationArea, always use the most specific location the user mentioned — city name, NOT province or state. Examples: "Montreal" not "Quebec", "Vancouver" not "British Columbia", "Calgary" not "Alberta". If the user says a region alias like "GTA" or "Greater Toronto Area", preserve that exact term as-is.
 
 LOCATION vs CURRICULUM: locationArea must ONLY contain geographic places. IB, AP, STEM, Montessori, Waldorf, Reggio, IGCSE, French immersion are curriculum types — put them in priorities, never locationArea.
@@ -416,7 +418,7 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
               remove_priorities: { type: 'array', items: { type: 'string' } },
               remove_interests: { type: 'array', items: { type: 'string' } },
               remove_dealbreakers: { type: 'array', items: { type: 'string' } },
-              intentSignal: { type: 'string', enum: ['continue', 'request-brief', 'request-results', 'edit-criteria', 'ask-about-school', 'back-to-results', 'restart', 'off-topic', 'confirm-brief', 'visit_prep_request'] },
+              intentSignal: { type: 'string', enum: ['continue', 'request-brief', 'request-results', 'edit-criteria', 'ask-about-school', 'back-to-results', 'restart', 'off-topic', 'confirm-brief', 'visit_prep_request', 'visit_debrief'] },
               briefDelta: {
                 type: 'object',
                 properties: {
