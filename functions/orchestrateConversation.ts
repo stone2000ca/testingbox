@@ -534,8 +534,8 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
         Object.assign(updatedFamilyProfile, persistedProfile);
         console.log('[EXTRACT] FamilyProfile persisted successfully:', updatedFamilyProfile.id);
       } catch (e) {
-        console.error('[EXTRACT] CRITICAL: FamilyProfile update failed:', e.message);
-        throw new Error(`FamilyProfile persistence failed: ${e.message}`);
+        console.error('[EXTRACT] Non-fatal: FamilyProfile update failed, using stale profile:', e.message);
+        // Return stale profile — AI should still respond
       }
     }
   }
