@@ -1600,6 +1600,73 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
       }
 
       if (currentState === STATES.DEEP_DIVE) {
+        // E11a: Handle Visit Prep Kit request before routing to standard DEEPDIVE
+        if (intentSignal === 'visit_prep_request' && selectedSchoolId) {
+          try {
+            console.log('[E11a] Visit Prep Kit requested for school:', selectedSchoolId);
+            const schoolResults = await base44.entities.School.filter({ id: selectedSchoolId });
+            const school = schoolResults?.[0];
+            const existingAnalysis = await base44.entities.SchoolAnalysis.filter({ userId, schoolId: selectedSchoolId });
+            const analysis = existingAnalysis?.[0] || {};
+            const priorities = conversationFamilyProfile?.priorities || [];
+            const dealbreakers = conversationFamilyProfile?.dealbreakers || [];
+            const tradeOffs = analysis.tradeOffs || [];
+            const dataGaps = analysis.dataGaps || [];
+            const childName = conversationFamilyProfile?.childName || 'your child';
+            const schoolName = school?.name || 'this school';
+
+            const visitPrepPrompt = `You are ${consultantName}, an education consultant. Generate 5-7 personalized visit questions for a family touring ${schoolName}.
+
+Family priorities: ${priorities.join(', ') || 'not specified'}
+Family dealbreakers: ${dealbreakers.join(', ') || 'none'}
+Known trade-offs for this school: ${tradeOffs.map(t => t.dimension + (t.concern ? ': ' + t.concern : '')).join('; ') || 'none'}
+Data gaps (things we don't know): ${dataGaps.join(', ') || 'none'}
+Child: ${childName}
+
+RULES:
+- Every question must be specific to THIS family x THIS school — never generic like "what is your curriculum?"
+- Questions should probe the trade-offs and data gaps above
+- Include at least 1 question about what the parent should OBSERVE (not ask) during the tour
+- Write in ${consultantName === 'Jackie' ? 'a warm, encouraging tone' : 'a direct, practical tone'}
+- Format as a numbered list
+- Start with a 1-sentence intro like "${consultantName === 'Jackie' ? `Here are your personalized questions for the ${schoolName} visit, ${childName}:` : `Visit Prep for ${schoolName}:`}"`;
+
+            const visitPrepResponse = await callOpenRouter({
+              systemPrompt: `You are ${consultantName}, an experienced education consultant helping a family prepare for a school visit.`,
+              userPrompt: visitPrepPrompt,
+              maxTokens: 600,
+              temperature: 0.6
+            });
+
+            // Extract questions from the numbered list and persist to SchoolAnalysis
+            const lines = visitPrepResponse.split('\n').filter(l => /^\d+\./.test(l.trim()));
+            const extractedQuestions = lines.map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
+            if (extractedQuestions.length > 0 && userId && selectedSchoolId) {
+              try {
+                if (existingAnalysis?.length > 0) {
+                  await base44.entities.SchoolAnalysis.update(existingAnalysis[0].id, { visitQuestions: extractedQuestions, lastAnalyzedAt: new Date().toISOString() });
+                  console.log('[E11a] visitQuestions saved to SchoolAnalysis:', existingAnalysis[0].id);
+                }
+              } catch (saveErr) {
+                console.error('[E11a] Failed to save visitQuestions (non-blocking):', saveErr.message);
+              }
+            }
+
+            return Response.json({
+              message: visitPrepResponse,
+              state: STATES.DEEP_DIVE,
+              briefStatus,
+              schools: currentSchools || [],
+              familyProfile: conversationFamilyProfile,
+              conversationContext: context,
+              extractedEntities: extractionResult?.extractedEntities || {}
+            });
+          } catch (visitPrepError) {
+            console.error('[E11a] Visit Prep Kit generation failed:', visitPrepError.message);
+            // Fall through to standard DEEPDIVE handler
+          }
+        }
+
         responseData = await handleDeepDive(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, userId, returningUserContextBlock);
         return Response.json(responseData);
       }
