@@ -14,6 +14,15 @@ Deno.serve(async (req) => {
       schoolIds.map(id => base44.entities.School.filter({ id }).then(arr => arr[0]))
     );
 
+    // Fetch FamilyProfile if provided
+    let familyProfile = null;
+    if (familyProfileId) {
+      try {
+        const profiles = await base44.entities.FamilyProfile.filter({ id: familyProfileId });
+        familyProfile = profiles?.[0] || null;
+      } catch (e) { console.warn('[COMPARISON] FamilyProfile fetch failed:', e.message); }
+    }
+
     // Build comparison structure
     const comparison = {
       schools: schools.map(s => ({
