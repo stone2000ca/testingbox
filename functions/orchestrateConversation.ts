@@ -397,7 +397,7 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
             properties: {
               childName: { type: ['string', 'null'] },
               childGrade: { type: ['number', 'null'] },
-              locationArea: { type: ['string', 'null'] },
+              locationArea: { type: ['string', 'null'], description: 'Geographic location only — city, region, or neighborhood. Never curriculum types (IB, AP, Montessori, Waldorf, Reggio, IGCSE, French immersion).' },
               maxTuition: { type: ['number', 'null'] },
               gender: { type: ['string', 'null'] },
               schoolGenderPreference: { type: ['string', 'null'] },
