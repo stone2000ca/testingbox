@@ -490,7 +490,11 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
   for (const [key, value] of Object.entries(extractedData)) {
     if (value !== null && value !== undefined) {
       if (Array.isArray(value) && Array.isArray(updatedContext.extractedEntities[key]) && updatedContext.extractedEntities[key].length > 0) {
-        updatedContext.extractedEntities[key] = [...new Set([...updatedContext.extractedEntities[key], ...value])];
+        if (Array.isArray(updatedContext.extractedEntities[key]) && Array.isArray(value)) {
+          updatedContext.extractedEntities[key] = [...new Set([...updatedContext.extractedEntities[key], ...value])];
+        } else {
+          updatedContext.extractedEntities[key] = value;
+        }
       } else {
         updatedContext.extractedEntities[key] = value;
       }
