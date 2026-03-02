@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { schoolIds } = await req.json();
+    const { schoolIds, familyProfileId } = await req.json();
 
     if (!schoolIds || schoolIds.length < 2 || schoolIds.length > 3) {
       return Response.json({ error: 'Provide 2-3 school IDs' }, { status: 400 });
