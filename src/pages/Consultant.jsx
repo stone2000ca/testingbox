@@ -770,6 +770,12 @@ export default function Consultant() {
         throw new Error('Orchestration response contained no data');
       }
 
+      // Clear schools when criteria are being edited so re-matching happens on next BRIEF->RESULTS transition
+      if (response.data?.briefStatus === 'editing' || response.data?.conversationContext?.transitionReason === 'edit_criteria_from_results') {
+        console.log('[P0-BUG-FIX] Clearing schools for edit-criteria intent');
+        setSchools([]);
+      }
+
       console.log('[CARD DEBUG]', Object.keys(response.data || {}), response.data?.deepDiveAnalysis, response.data?.visitPrepKit);
 
       // T043: Update familyProfile live from orchestration response
