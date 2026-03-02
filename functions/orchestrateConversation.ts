@@ -1264,8 +1264,21 @@ Generate the DEEPDIVE card for this family-school match.`;
       }
     }
   } catch (analysisError) {
-    console.error('[E10b] Structured analysis failed (non-blocking):', analysisError.message);
-    deepDiveAnalysis = null;
+    console.error('[E10b] deepDiveAnalysis generation failed:', analysisError.message, 'Raw response:', rawAnalysisResponse);
+    // Fallback: try stripping markdown and re-parsing raw response
+    if (rawAnalysisResponse && typeof rawAnalysisResponse === 'string') {
+      try {
+        const stripped = rawAnalysisResponse.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+        deepDiveAnalysis = JSON.parse(stripped);
+        console.log('[E10b] Fallback JSON.parse succeeded');
+      } catch (parseError) {
+        console.error('[E10b] Fallback JSON.parse also failed:', parseError.message);
+        // Minimal valid object so the card still renders
+        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null };
+      }
+    } else {
+      deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null };
+    }
   }
 
   const sanitizedMessage = aiMessage
