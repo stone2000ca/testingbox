@@ -13,17 +13,23 @@ async function handleVisitDebrief(base44, selectedSchoolId, processMessage, conv
   try {
     console.log('[E13a] Debrief mode active for school:', selectedSchoolId);
     
-    // Load school and prior analysis
-    const [schoolResults, artifacts] = await Promise.all([
+    // Load school and prior analysis (including deep_dive_analysis for fit re-evaluation)
+    const [schoolResults, artifacts, deepDiveArtifacts] = await Promise.all([
       base44.entities.School.filter({ id: selectedSchoolId }),
       base44.entities.GeneratedArtifact.filter({ 
         conversationId: context.conversationId,
         schoolId: selectedSchoolId,
         artifactType: 'visit_prep'
+      }),
+      base44.entities.GeneratedArtifact.filter({ 
+        conversationId: context.conversationId,
+        schoolId: selectedSchoolId,
+        artifactType: 'deep_dive_analysis'
       })
     ]);
     const school = schoolResults?.[0];
     const priorAnalysis = artifacts?.[0];
+    const deepDiveAnalysis = deepDiveArtifacts?.[0];
     
     if (!school) return null;
     
