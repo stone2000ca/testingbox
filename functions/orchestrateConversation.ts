@@ -330,7 +330,13 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
     let extractedLocation = null;
     const locationMatch = message.match(/\b(?:in|near|around|from)\s+([A-Z][a-zA-Z]+(?:[\s-][A-Z][a-zA-Z]+)?(?:,\s*[A-Za-z]{2,})?)/);
     if (locationMatch && locationMatch[1]) {
-      extractedLocation = cleanLocation(locationMatch[1].trim());
+      // BUG-LOCATION-S46: Reject curriculum terms misclassified as locations
+      const CURRICULUM_TERMS = /^(IB|AP|STEM|IGCSE|Montessori|Waldorf|Reggio|French|Catholic)$/i;
+      if (!CURRICULUM_TERMS.test(locationMatch[1].trim())) {
+        extractedLocation = cleanLocation(locationMatch[1].trim());
+      } else {
+        console.log('[BUG-LOCATION-S46] Rejected curriculum term as location:', locationMatch[1].trim());
+      }
     }
 
     // BUG-ENT-004: Budget extraction with ALWAYS-RUN regex fallback
