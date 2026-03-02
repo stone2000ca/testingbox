@@ -1425,9 +1425,9 @@ Deno.serve(async (req) => {
       }
       
       const profileData = {
-        location: conversationFamilyProfile?.locationArea || null,
-        gradeLevel: conversationFamilyProfile?.childGrade || null,
-        budget: conversationFamilyProfile?.maxTuition || null,
+        locationArea: conversationFamilyProfile?.locationArea || null,
+        childGrade: conversationFamilyProfile?.childGrade ?? null,
+        maxTuition: conversationFamilyProfile?.maxTuition || null,
         priorities: conversationFamilyProfile?.priorities || [],
         dealbreakers: conversationFamilyProfile?.dealbreakers || [],
         curriculum: conversationFamilyProfile?.curriculumPreference || [],
