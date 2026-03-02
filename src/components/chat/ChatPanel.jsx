@@ -22,8 +22,8 @@ const CONSULTANT_AVATARS = {
  */
 const ChatPanel = forwardRef(function ChatPanel({
   // Data
-  messages,
-  schools,
+  messages = [],
+  schools = [],
   selectedConsultant,
   currentState,
   briefStatus,
