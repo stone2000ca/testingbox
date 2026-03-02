@@ -1269,6 +1269,24 @@ Generate the DEEPDIVE card for this family-school match.`;
     .join('\n')
     .trim();
 
+  // Generate visitPrepKit from deepDiveAnalysis for immediate card rendering
+  let generatedVisitPrepKit = null;
+  if (deepDiveAnalysis && selectedSchool) {
+    const schoolName = selectedSchool.name;
+    const derivedObservations = (deepDiveAnalysis.dataGaps || []).map(gap => `Observe how the school addresses: ${gap}`);
+    const derivedRedFlags = (deepDiveAnalysis.tradeOffs || [])
+      .filter(t => t.concern)
+      .map(t => `Watch for concerns around ${t.dimension}.`);
+    generatedVisitPrepKit = {
+      schoolName,
+      visitQuestions: (deepDiveAnalysis.visitQuestions || []).map(q => ({ question: q, priorityTag: 'medium' })),
+      observations: derivedObservations,
+      redFlags: derivedRedFlags,
+      intro: `Here's your personalized Visit Prep Kit for ${schoolName}.`
+    };
+    console.log('[DEEPDIVE] Generated visitPrepKit with', generatedVisitPrepKit.visitQuestions.length, 'questions');
+  }
+
   console.log('[DEEPDIVE] Returning aiMessage length:', sanitizedMessage?.length);
   return {
     message: sanitizedMessage,
@@ -1277,7 +1295,8 @@ Generate the DEEPDIVE card for this family-school match.`;
     schools: currentSchools || [],
     familyProfile: conversationFamilyProfile,
     conversationContext: context,
-    deepDiveAnalysis: deepDiveAnalysis
+    deepDiveAnalysis: deepDiveAnalysis,
+    visitPrepKit: generatedVisitPrepKit
   };
 }
 
