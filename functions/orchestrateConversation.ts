@@ -1631,20 +1631,52 @@ RULES:
 - Format as a numbered list
 - Start with a 1-sentence intro like "${consultantName === 'Jackie' ? `Here are your personalized questions for the ${schoolName} visit, ${childName}:` : `Visit Prep for ${schoolName}:`}"`;
 
-            const visitPrepResponse = await callOpenRouter({
+            const visitPrepStructuredResponse = await callOpenRouter({
               systemPrompt: `You are ${consultantName}, an experienced education consultant helping a family prepare for a school visit.`,
-              userPrompt: visitPrepPrompt,
-              maxTokens: 600,
-              temperature: 0.6
+              userPrompt: visitPrepPrompt + `\n\nReturn a JSON object with:
+- visitQuestions: array of objects with { question: string, priorityTag: "high"|"medium"|"low" }
+- observations: array of strings (things to observe during the tour, not questions to ask)
+- redFlags: array of strings (warning signs to watch for)
+- intro: string (1-sentence warm intro for the kit)`,
+              maxTokens: 900,
+              temperature: 0.6,
+              responseSchema: {
+                name: 'visit_prep_kit',
+                schema: {
+                  type: 'object',
+                  properties: {
+                    intro: { type: 'string' },
+                    visitQuestions: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          question: { type: 'string' },
+                          priorityTag: { type: 'string', enum: ['high', 'medium', 'low'] }
+                        },
+                        required: ['question', 'priorityTag'],
+                        additionalProperties: false
+                      }
+                    },
+                    observations: { type: 'array', items: { type: 'string' } },
+                    redFlags: { type: 'array', items: { type: 'string' } }
+                  },
+                  required: ['intro', 'visitQuestions', 'observations', 'redFlags'],
+                  additionalProperties: false
+                }
+              }
             });
 
-            // Extract questions from the numbered list and persist to SchoolAnalysis
-            const lines = visitPrepResponse.split('\n').filter(l => /^\d+\./.test(l.trim()));
-            const extractedQuestions = lines.map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
-            if (extractedQuestions.length > 0 && userId && selectedSchoolId) {
+            const kitData = typeof visitPrepStructuredResponse === 'string'
+              ? JSON.parse(visitPrepStructuredResponse)
+              : visitPrepStructuredResponse;
+
+            // Persist plain questions to SchoolAnalysis
+            const plainQuestions = (kitData.visitQuestions || []).map(q => q.question);
+            if (plainQuestions.length > 0 && userId && selectedSchoolId) {
               try {
                 if (existingAnalysis?.length > 0) {
-                  await base44.entities.SchoolAnalysis.update(existingAnalysis[0].id, { visitQuestions: extractedQuestions, lastAnalyzedAt: new Date().toISOString() });
+                  await base44.entities.SchoolAnalysis.update(existingAnalysis[0].id, { visitQuestions: plainQuestions, lastAnalyzedAt: new Date().toISOString() });
                   console.log('[E11a] visitQuestions saved to SchoolAnalysis:', existingAnalysis[0].id);
                 }
               } catch (saveErr) {
@@ -1652,14 +1684,22 @@ RULES:
               }
             }
 
+            const visitPrepKit = {
+              schoolName,
+              visitQuestions: kitData.visitQuestions || [],
+              observations: kitData.observations || [],
+              redFlags: kitData.redFlags || []
+            };
+
             return Response.json({
-              message: visitPrepResponse,
+              message: kitData.intro || `Here's your personalized Visit Prep Kit for ${schoolName}.`,
               state: STATES.DEEP_DIVE,
               briefStatus,
               schools: currentSchools || [],
               familyProfile: conversationFamilyProfile,
               conversationContext: context,
-              extractedEntities: extractionResult?.extractedEntities || {}
+              extractedEntities: extractionResult?.extractedEntities || {},
+              visitPrepKit
             });
           } catch (visitPrepError) {
             console.error('[E11a] Visit Prep Kit generation failed:', visitPrepError.message);
