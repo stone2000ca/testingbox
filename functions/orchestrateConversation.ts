@@ -1196,6 +1196,7 @@ Generate the DEEPDIVE card for this family-school match.`;
   }
 
   // E10b: Generate structured analysis in parallel
+  let rawAnalysisResponse = null;
   try {
     const analysisResponse = await callOpenRouter({
       systemPrompt: `You are a school analysis engine. Given a consultant's analysis of a school for a specific family, extract structured data. Return ONLY valid JSON matching the schema.`,
@@ -1218,7 +1219,14 @@ Generate the DEEPDIVE card for this family-school match.`;
         }
       }
     });
-    deepDiveAnalysis = typeof analysisResponse === 'string' ? JSON.parse(analysisResponse) : analysisResponse;
+    rawAnalysisResponse = analysisResponse;
+    if (typeof analysisResponse === 'string') {
+      // Strip markdown backticks if present (e.g. ```json ... ```)
+      const stripped = analysisResponse.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      deepDiveAnalysis = JSON.parse(stripped);
+    } else {
+      deepDiveAnalysis = analysisResponse;
+    }
     console.log('[E10b] Structured analysis extracted successfully');
 
     // Save to SchoolAnalysis entity (non-blocking)
