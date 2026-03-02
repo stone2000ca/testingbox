@@ -195,6 +195,10 @@ function resolveTransition(params) {
     if (selectedSchoolId && selectedSchoolId !== previousSchoolId) {
       return { nextState: STATES.DEEP_DIVE, sufficiency, flags, transitionReason: 'school_selected' };
     }
+    if (currentState === STATES.RESULTS && intentSignal === 'edit-criteria') {
+      console.log('[EDIT-CRITERIA] Allowing transition from RESULTS to BRIEF for edit-criteria');
+      return { nextState: STATES.BRIEF, sufficiency, flags: { ...flags, USER_INTENT_OVERRIDE: true }, briefStatus: 'editing', transitionReason: 'edit_criteria_from_results' };
+    }
     console.log('[HARD GUARD] Blocked regression from', currentState, '— intentSignal was:', intentSignal);
     return { nextState: currentState, sufficiency, flags, transitionReason: 'hard_guard_results_deepdive' };
   }
