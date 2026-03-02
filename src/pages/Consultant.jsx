@@ -782,6 +782,8 @@ export default function Consultant() {
         // Only update view if NOT viewing a school detail
         // CRITICAL: Do NOT call setSelectedSchool(null) here - it defeats the single source of truth
         setCurrentView(mapStateToView(response.data?.state));
+      } else if (!isViewingSchoolDetail && !response.data?.state) {
+        console.warn('[WARN] Missing state from response:', response.data?.state);
       } else if (isViewingSchoolDetail) {
         console.log('[BUG-DD-001] Maintaining detail view - school selected:', selectedSchool?.name);
         // Keep view locked to detail as long as selectedSchool is set
