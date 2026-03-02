@@ -816,6 +816,13 @@ export default function Consultant() {
         setVisitPrepKit(null);
       }
 
+      // Fit Re-Evaluation: only set when returned, only clear when leaving DEEP_DIVE
+      if (response.data?.fitReEvaluation) {
+        setFitReEvaluation(response.data.fitReEvaluation);
+      } else if (response.data?.state !== 'DEEP_DIVE') {
+        setFitReEvaluation(null);
+      }
+
       // Store extractedEntities from response for FamilyBrief fallback display
       if (response.data?.extractedEntities) {
         setExtractedEntitiesData(response.data?.extractedEntities);
