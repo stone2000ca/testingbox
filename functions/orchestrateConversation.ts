@@ -163,7 +163,6 @@ function resolveTransition(params) {
 
   const flags = { SUGGEST_BRIEF: false, OFFER_BRIEF: false, FORCED_TRANSITION: false, USER_INTENT_OVERRIDE: false };
   let nextState = currentState;
-  let briefStatus = null;
   let transitionReason = 'natural';
 
   // Dynamic cap tracking: store turn when Tier 1 first became complete
