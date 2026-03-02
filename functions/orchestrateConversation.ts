@@ -1815,6 +1815,110 @@ RULES:
         }
 
         responseData = await handleDeepDive(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, userId, returningUserContextBlock);
+
+        // E11a-002: Visit-Intent Trigger — fires AFTER handleDeepDive so deepDiveAnalysis is available
+        // Trigger paths (OR): area4Proxy | keyword regex | intentSignal
+        // Does NOT apply when intentSignal === 'visit_prep_request' (already handled above with early return)
+        try {
+          const deepDiveAnalysis = responseData.deepDiveAnalysis;
+          const area4Proxy = Array.isArray(deepDiveAnalysis?.visitQuestions) && deepDiveAnalysis.visitQuestions.length > 0;
+
+          // FALSE-POSITIVE-SAFE regex: matches present/future intent, not past tense ("I visited", "visited last year")
+          const VISIT_INTENT_REGEX = /\b(?:plan(?:ning)?\s+a\s+visit|book(?:ing)?\s+a\s+tour|open\s+house|going\s+to\s+visit|visit\s+the\s+school|schedule\s+a\s+tour|tour(?:ing)?\s+the\s+school|want(?:ing)?\s+to\s+visit|see\s+the\s+campus|visit\s+prep|prepare\s+(?:for\s+)?(?:a\s+)?(?:visit|tour)|help\s+me\s+prepare\s+for\s+a\s+visit)\b/i;
+          const hasVisitIntent = VISIT_INTENT_REGEX.test(processMessage || '');
+
+          const shouldGenerateKit = (area4Proxy || hasVisitIntent) && userId && selectedSchoolId;
+
+          if (shouldGenerateKit) {
+            // DEDUP CHECK: skip generation if artifact already exists for this user+school
+            let cachedArtifact = null;
+            try {
+              const existingArtifacts = await base44.entities.GeneratedArtifact.filter({ userId, artifactType: 'visit_prep' });
+              cachedArtifact = existingArtifacts?.find(a => a.schoolIds?.includes(selectedSchoolId)) || null;
+            } catch (dedupErr) {
+              console.error('[E11a-002] Dedup check failed (non-fatal):', dedupErr.message);
+            }
+
+            if (cachedArtifact) {
+              console.log('[E11a-002] Cache hit — using existing GeneratedArtifact:', cachedArtifact.id);
+              responseData.visitPrepKit = cachedArtifact.content;
+            } else {
+              console.log('[E11a-002] Trigger fired (area4Proxy:', area4Proxy, '| visitIntent:', hasVisitIntent, ') — generating full LLM kit');
+              try {
+                // Load school + prior analysis for context
+                const [schoolResults, existingAnalysis] = await Promise.all([
+                  base44.entities.School.filter({ id: selectedSchoolId }),
+                  base44.entities.SchoolAnalysis.filter({ userId, schoolId: selectedSchoolId })
+                ]);
+                const school = schoolResults?.[0];
+                const analysis = existingAnalysis?.[0] || {};
+                const schoolName = school?.name || 'this school';
+                const childName = conversationFamilyProfile?.childName || 'your child';
+                const priorities = conversationFamilyProfile?.priorities || [];
+                const dealbreakers = conversationFamilyProfile?.dealbreakers || [];
+                const tradeOffs = analysis.tradeOffs || [];
+                const dataGaps = analysis.dataGaps || [];
+
+                const visitPrepPrompt = `You are ${consultantName}, an education consultant. Generate 5-7 personalized visit questions for a family touring ${schoolName}.
+
+Family priorities: ${priorities.join(', ') || 'not specified'}
+Family dealbreakers: ${dealbreakers.join(', ') || 'none'}
+Known trade-offs for this school: ${tradeOffs.map(t => t.dimension + (t.concern ? ': ' + t.concern : '')).join('; ') || 'none'}
+Data gaps (things we don't know): ${dataGaps.join(', ') || 'none'}
+Child: ${childName}
+
+RULES:
+- Every question must be specific to THIS family x THIS school
+- Questions should probe the trade-offs and data gaps above
+- Include at least 1 observation (not a question) for the tour
+- Write in ${consultantName === 'Jackie' ? 'a warm, encouraging tone' : 'a direct, practical tone'}`;
+
+                const visitPrepResponse = await callOpenRouter({
+                  systemPrompt: `You are ${consultantName}, an experienced education consultant helping a family prepare for a school visit.`,
+                  userPrompt: visitPrepPrompt + `\n\nReturn JSON with: visitQuestions (array of { question, priorityTag: "high"|"medium"|"low" }), observations (string[]), redFlags (string[]), intro (string).`,
+                  maxTokens: 900,
+                  temperature: 0.6,
+                  responseSchema: {
+                    name: 'visit_prep_kit',
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        intro: { type: 'string' },
+                        visitQuestions: { type: 'array', items: { type: 'object', properties: { question: { type: 'string' }, priorityTag: { type: 'string', enum: ['high', 'medium', 'low'] } }, required: ['question', 'priorityTag'], additionalProperties: false } },
+                        observations: { type: 'array', items: { type: 'string' } },
+                        redFlags: { type: 'array', items: { type: 'string' } }
+                      },
+                      required: ['intro', 'visitQuestions', 'observations', 'redFlags'],
+                      additionalProperties: false
+                    }
+                  }
+                });
+
+                const kitData = typeof visitPrepResponse === 'string' ? JSON.parse(visitPrepResponse) : visitPrepResponse;
+                const visitPrepKit = { schoolName, visitQuestions: kitData.visitQuestions || [], observations: kitData.observations || [], redFlags: kitData.redFlags || [] };
+
+                // Persist to GeneratedArtifact (non-fatal)
+                try {
+                  const created = await base44.entities.GeneratedArtifact.create({
+                    userId, conversationId, schoolIds: [selectedSchoolId],
+                    artifactType: 'visit_prep', title: 'Visit Prep: ' + schoolName,
+                    content: visitPrepKit, isShared: false, pdfUrl: null, shareToken: null
+                  });
+                  console.log('[E11a-002] GeneratedArtifact created:', created.id);
+                } catch (persistErr) {
+                  console.error('[E11a-002] GeneratedArtifact persist failed (non-fatal):', persistErr.message);
+                }
+
+                responseData.visitPrepKit = visitPrepKit;
+              } catch (genErr) {
+                console.error('[E11a-002] Full kit generation failed (non-fatal):', genErr.message);
+              }
+            }
+          }
+        } catch (e11aErr) {
+          console.error('[E11a-002] Outer trigger check failed (non-fatal):', e11aErr.message);
+        }
+
         return Response.json(responseData);
       }
 
