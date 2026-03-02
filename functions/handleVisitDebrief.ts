@@ -117,6 +117,48 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
       }
     }
 
+    // WC9: Persist debrief Q&A pair (non-blocking)
+    if (nextQuestion && context.userId) {
+      try {
+        const newQAPair = {
+          question: nextQuestion,
+          answer: processMessage,
+          timestamp: new Date().toISOString()
+        };
+
+        const existingArtifacts = await base44.entities.GeneratedArtifact.filter({
+          conversationId: context.conversationId,
+          schoolId: selectedSchoolId,
+          artifactType: 'visit_debrief'
+        });
+
+        if (existingArtifacts && existingArtifacts.length > 0) {
+          const artifact = existingArtifacts[0];
+          const updatedQAPairs = (artifact.content?.qaPairs || []).concat([newQAPair]);
+          await base44.entities.GeneratedArtifact.update(artifact.id, {
+            content: { ...artifact.content, qaPairs: updatedQAPairs }
+          });
+          console.log('[E13a] Debrief Q&A appended to artifact:', artifact.id);
+        } else {
+          const created = await base44.entities.GeneratedArtifact.create({
+            userId: context.userId,
+            conversationId: context.conversationId,
+            schoolId: selectedSchoolId,
+            artifactType: 'visit_debrief',
+            title: 'Visit Debrief - ' + schoolName,
+            content: { qaPairs: [newQAPair], schoolName: schoolName },
+            status: 'ready',
+            isShared: false,
+            pdfUrl: null,
+            shareToken: null
+          });
+          console.log('[E13a] Debrief artifact created:', created.id);
+        }
+      } catch (persistError) {
+        console.error('[E13a] Debrief persistence failed (non-blocking):', persistError.message);
+      }
+    }
+
     return {
       message: debriefMessage,
       deepDiveMode: 'debrief',
