@@ -181,6 +181,7 @@ const ChatPanel = forwardRef(function ChatPanel({
           // Anchor cards to the message that generated them (FIX 2)
           const msgAnalysis = msg.deepDiveAnalysis || null;
           const msgVisitPrepKit = msg.visitPrepKit || null;
+          const msgFitReEval = msg.fitReEvaluation || null;
 
           return (
             <div key={index}>
@@ -205,6 +206,9 @@ const ChatPanel = forwardRef(function ChatPanel({
                     onUpgrade={onUpgrade}
                   />
                 </div>
+              )}
+              {msgFitReEval && currentState === STATES.DEEP_DIVE && !isTyping && (
+                <FitReEvaluationCard fitReEvaluation={msgFitReEval} />
               )}
             </div>
           );
