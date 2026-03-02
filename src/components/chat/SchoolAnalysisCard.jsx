@@ -61,10 +61,10 @@ export default function SchoolAnalysisCard({ analysis }) {
 
       <div className="px-4 py-3 space-y-4">
 
-        {/* Trade-offs */}
-        {validTradeOffs.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">Trade-offs</p>
+        {/* Trade-offs — always shown */}
+        <div>
+          <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">Trade-offs</p>
+          {validTradeOffs.length > 0 ? (
             <div className="space-y-2">
               {validTradeOffs.map((item, i) => (
                 <div key={i} className="space-y-1">
@@ -89,8 +89,10 @@ export default function SchoolAnalysisCard({ analysis }) {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-xs text-white/30 italic">Trade-off analysis will appear after deeper exploration.</p>
+          )}
+        </div>
 
         {/* Financial Summary */}
         {hasFinancial && (
