@@ -845,7 +845,7 @@ export default function Consultant() {
       // Create ChatSession when brief is confirmed and transitioning to RESULTS
       if (response.data?.state === STATES.RESULTS) {
        try {
-          const matchedSchoolIds = (response.data?.schools || []).map(s => s.id);
+          const matchedSchoolIds = (response.data?.schools || []).map(s => s.id).filter(id => id != null);
            const profileForSession = response.data?.familyProfile || familyProfile;
           const profileName = profileForSession?.childName 
             ? `${profileForSession.childName}'s School Search Profile`
