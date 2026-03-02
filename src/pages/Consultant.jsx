@@ -870,10 +870,12 @@ export default function Consultant() {
           });
           
           // Update URL with entity id (not sessionToken)
-          if (chatSession?.id) {
+          if (chatSession?.id && typeof chatSession.id === 'string') {
             const newUrl = createPageUrl(`Consultant?sessionId=${chatSession.id}`);
             window.history.replaceState({}, document.title, newUrl);
             console.log('[SESSION] Created ChatSession with id:', chatSession.id);
+          } else {
+            console.warn('[WARN] Invalid chatSession id — skipping URL update:', chatSession?.id);
           }
         } catch (sessionError) {
           console.error('Failed to create ChatSession:', sessionError);
