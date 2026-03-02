@@ -1209,6 +1209,7 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
     feedbackPromptShown,
     showResponseChips,
     familyProfile,
+    deepDiveAnalysis: deepDiveAnalysis || null,
     onSendMessage: handleSendMessage,
     onViewSchoolDetail: (school) => {
       setSelectedSchool(school);
