@@ -150,6 +150,9 @@ export default function Consultant() {
   // DEEPDIVE analysis card data
   const [deepDiveAnalysis, setDeepDiveAnalysis] = useState(null);
 
+  // Visit Prep Kit data
+  const [visitPrepKit, setVisitPrepKit] = useState(null);
+
   // T047: Auto-refresh animation trigger
   const [schoolsAnimKey, setSchoolsAnimKey] = useState(0);
 
