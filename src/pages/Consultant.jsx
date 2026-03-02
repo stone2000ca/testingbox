@@ -147,6 +147,9 @@ export default function Consultant() {
   // DEEPDIVE confirmation state
   const [confirmingSchool, setConfirmingSchool] = useState(null);
 
+  // DEEPDIVE analysis card data
+  const [deepDiveAnalysis, setDeepDiveAnalysis] = useState(null);
+
   // T047: Auto-refresh animation trigger
   const [schoolsAnimKey, setSchoolsAnimKey] = useState(0);
 
