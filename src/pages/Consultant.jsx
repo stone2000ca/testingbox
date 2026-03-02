@@ -737,6 +737,8 @@ export default function Consultant() {
         throw new Error('Orchestration response contained no data');
       }
 
+      console.log('[CARD DEBUG]', Object.keys(response.data || {}), response.data?.deepDiveAnalysis, response.data?.visitPrepKit);
+
       // T043: Update familyProfile live from orchestration response
       if (response.data?.familyProfile) {
         setFamilyProfile(response.data.familyProfile);
