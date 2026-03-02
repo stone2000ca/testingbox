@@ -1315,6 +1315,7 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
     familyProfile,
     deepDiveAnalysis: deepDiveAnalysis || null,
     visitPrepKit: visitPrepKit || null,
+    fitReEvaluation: fitReEvaluation || null,
     onSendMessage: handleSendMessage,
     onViewSchoolDetail: (school) => {
       setSelectedSchool(school);
