@@ -793,22 +793,19 @@ Format:
   ${dealbreakersStr ? '6. Dealbreakers: ' + dealbreakersStr : ''}
 - End with: "Does that capture it? Anything to adjust?"`;
 
-    const liamBriefSystemPrompt = `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}[STATE: BRIEF] You are Liam, a direct and strategic education consultant. Generate a brief summary of what the family has shared. Use ONLY what was explicitly stated by the parent. Format as a numbered list. End with "Does that look right? Anything to change?"
+    // Liam brief: built programmatically as bullet points for consistent formatting
+    const liamBulletLines = [
+      `• ${briefChildDisplayName}: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}`,
+      `• Location: ${locationArea || '(not specified)'}`,
+      `• Budget: ${budgetDisplay}`,
+    ];
+    if (prioritiesStr) liamBulletLines.push(`• Priorities: ${prioritiesStr}`);
+    if (interestsStr) liamBulletLines.push(`• Interests: ${interestsStr}`);
+    if (dealbreakersStr) liamBulletLines.push(`• Dealbreakers: ${dealbreakersStr}`);
+    const liamBriefBuilt = `Here's what I've put together so far:\n\n${liamBulletLines.join('\n')}\n\nDoes that look right, or is there anything you'd like to adjust?`;
 
-YOU ARE LIAM — direct, strategic.`;
-
-    const liamBriefUserPrompt = `Generate the family brief summary.
-
-FAMILY DATA:
-- CHILD: ${briefChildDisplayName}
-- GRADE: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}
-- LOCATION: ${locationArea || '(not specified)'}
-- BUDGET: ${budgetDisplay}
-- PRIORITIES: ${prioritiesStr || '(not specified)'}
-- INTERESTS: ${interestsStr || '(not specified)'}
-- DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
-
-Format as a numbered list. Start the first item with "${briefChildDisplayName}:" (NOT "Student:" or "Child:"). Example: "1. ${briefChildDisplayName}: Grade 7". Be direct.`;
+    const liamBriefSystemPrompt = null; // unused — brief is built programmatically
+    const liamBriefUserPrompt = null;   // unused — brief is built programmatically
 
     let briefMessageText = "Let me summarize what you've shared.";
     const briefSysPrompt = consultantName === 'Jackie' ? jackieBriefSystemPrompt : liamBriefSystemPrompt;
