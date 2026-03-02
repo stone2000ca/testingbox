@@ -739,6 +739,14 @@ export default function Consultant() {
         setFamilyProfile(response.data.familyProfile);
       }
 
+      // DEEPDIVE: Store structured analysis card data
+      if (response.data?.deepDiveAnalysis) {
+        setDeepDiveAnalysis(response.data.deepDiveAnalysis);
+      } else if (response.data?.state !== 'DEEP_DIVE') {
+        // Clear analysis when leaving DEEPDIVE state
+        setDeepDiveAnalysis(null);
+      }
+
       // Store extractedEntities from response for FamilyBrief fallback display
       if (response.data?.extractedEntities) {
         setExtractedEntitiesData(response.data?.extractedEntities);
