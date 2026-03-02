@@ -80,17 +80,18 @@ async function handleVisitDebrief(base44, selectedSchoolId, processMessage, conv
     const isDebriefComplete = debriefQuestionQueue.length === 0 && debriefQuestionsAsked.length >= 3;
     const debriefQuestionsContext = `${nextQuestion ? `Next focus: "${nextQuestion}"` : 'Wrap up naturally — you've asked your key questions.'}\n\nQuestions asked so far: ${debriefQuestionsAsked.length}/3`;
     
-    // Build debrief prompt
-    const debriefSystemPrompt = `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}You are ${consultantName}, an education consultant. The family just returned from visiting ${schoolName}. 
+    // Build debrief prompt with persona-specific framing
+    const basePrompt = `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}You are ${consultantName}, an education consultant. The family just returned from visiting ${schoolName}.
 
-Your role is to help them process the visit and assess whether this school still fits, based on:
-1. What they saw and experienced during the visit
-2. How it compares to their prior expectations (from the visit prep kit)
-3. Any new concerns or positive surprises
+${debriefQuestionsContext}`;
 
-Ask thoughtful follow-up questions that help them synthesize their experience. Reference specific things from the visit prep kit if they mention them. Be conversational and supportive.
+    const debriefSystemPrompt = consultantName === 'Jackie'
+      ? `${basePrompt}
 
-${consultantName === 'Jackie' ? 'JACKIE TONE: Warm, empathetic, encouraging.' : 'LIAM TONE: Direct, analytical, practical.'}`;
+JACKIE TONE: Warm, empathetic, encouraging. Acknowledge their feelings and experiences before asking next question. Validate emotional responses. Help them feel heard.`
+      : `${basePrompt}
+
+LIAM TONE: Direct, analytical, practical. Acknowledge their observations factually before asking next question. Compare to expectations and data. Focus on fit assessment.`;
 
     const debriefUserPrompt = `Family just visited ${schoolName}. They said: "${processMessage}"
 
