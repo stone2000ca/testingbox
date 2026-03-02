@@ -793,40 +793,46 @@ Format:
   ${dealbreakersStr ? '6. Dealbreakers: ' + dealbreakersStr : ''}
 - End with: "Does that capture it? Anything to adjust?"`;
 
-    // Liam brief: built programmatically as bullet points for consistent formatting
-    const liamBulletLines = [
-      `- **${briefChildDisplayName}:** ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}`,
-      `- **Location:** ${locationArea || '(not specified)'}`,
-      `- **Budget:** ${budgetDisplay}`,
-    ];
-    if (prioritiesStr) liamBulletLines.push(`- **Priorities:** ${prioritiesStr}`);
-    if (interestsStr) liamBulletLines.push(`- **Interests:** ${interestsStr}`);
-    if (dealbreakersStr) liamBulletLines.push(`- **Dealbreakers:** ${dealbreakersStr}`);
-    const liamBriefBuilt = `Here's what I've put together so far:\n\n${liamBulletLines.join('\n')}\n\nDoes that look right, or is there anything you'd like to adjust?`;
+    const liamBriefSystemPrompt = `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}[STATE: BRIEF] You are Liam, a direct and strategic education consultant. Generate a brief summary of what the family has shared. Use ONLY what was explicitly stated by the parent.
 
-    const liamBriefSystemPrompt = null; // unused — brief is built programmatically
-    const liamBriefUserPrompt = null;   // unused — brief is built programmatically
+FORMATTING RULES — CRITICAL:
+- Start with one short direct sentence (e.g. "Here's what I've got so far:")
+- Then format each field as a markdown bullet list using "- " prefix, one field per line
+- Use **bold** for field labels. Example: "- **Child:** Emma, Grade 7"
+- End with: "Does that look right? Anything to change?"
+
+YOU ARE LIAM — direct, strategic, no fluff.`;
+
+    const liamBriefUserPrompt = `Generate the family brief summary.
+
+FAMILY DATA:
+- CHILD: ${briefChildDisplayName}
+- GRADE: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}
+- LOCATION: ${locationArea || '(not specified)'}
+- BUDGET: ${budgetDisplay}
+- PRIORITIES: ${prioritiesStr || '(not specified)'}
+- INTERESTS: ${interestsStr || '(not specified)'}
+- DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
+
+Format as a markdown bullet list with one field per line. Start the child field with "${briefChildDisplayName}:".`;
 
     let briefMessageText = "Let me summarize what you've shared.";
-    if (consultantName === 'Liam') {
-      // Liam uses a deterministic bullet-point format — no LLM call needed
-      briefMessageText = liamBriefBuilt;
-    } else {
+    const briefSysPrompt = consultantName === 'Jackie' ? jackieBriefSystemPrompt : liamBriefSystemPrompt;
+    const briefUsrPrompt = consultantName === 'Jackie' ? jackieBriefUserPrompt : liamBriefUserPrompt;
+    try {
+      const briefResult = await callOpenRouter({
+        systemPrompt: briefSysPrompt,
+        userPrompt: briefUsrPrompt,
+        maxTokens: 800,
+        temperature: 0.5
+      });
+      briefMessageText = briefResult || "Let me summarize what you've shared.";
+    } catch (openrouterError) {
       try {
-        const briefResult = await callOpenRouter({
-          systemPrompt: jackieBriefSystemPrompt,
-          userPrompt: jackieBriefUserPrompt,
-          maxTokens: 800,
-          temperature: 0.5
-        });
-        briefMessageText = briefResult || "Let me summarize what you've shared.";
-      } catch (openrouterError) {
-        try {
-          const briefResult = await base44.integrations.Core.InvokeLLM({ prompt: jackieBriefSystemPrompt + '\n\n' + jackieBriefUserPrompt });
-          briefMessageText = briefResult?.response || briefResult || "Let me summarize what you've shared.";
-        } catch (fallbackError) {
-          console.error('[ERROR] InvokeLLM BRIEF fallback failed:', fallbackError.message);
-        }
+        const briefResult = await base44.integrations.Core.InvokeLLM({ prompt: briefSysPrompt + '\n\n' + briefUsrPrompt });
+        briefMessageText = briefResult?.response || briefResult || "Let me summarize what you've shared.";
+      } catch (fallbackError) {
+        console.error('[ERROR] InvokeLLM BRIEF fallback failed:', fallbackError.message);
       }
     }
 
