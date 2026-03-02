@@ -175,16 +175,30 @@ const ChatPanel = forwardRef(function ChatPanel({
           )
         )}
 
-        {messages.map((msg, index) => (
-          <MessageBubble
-            key={index}
-            message={msg}
-            isUser={msg.role === 'user'}
-            schools={schools}
-            consultantName={selectedConsultant}
-            onViewSchoolProfile={handleViewSchoolProfile}
-          />
-        ))}
+        {messages.map((msg, index) => {
+          const isLastAssistant =
+            msg.role === 'assistant' &&
+            index === messages.map(m => m.role).lastIndexOf('assistant');
+          const showAnalysis =
+            isLastAssistant &&
+            currentState === STATES.DEEP_DIVE &&
+            deepDiveAnalysis != null;
+
+          return (
+            <div key={index}>
+              <MessageBubble
+                message={msg}
+                isUser={msg.role === 'user'}
+                schools={schools}
+                consultantName={selectedConsultant}
+                onViewSchoolProfile={handleViewSchoolProfile}
+              />
+              {showAnalysis && !isTyping && (
+                <SchoolAnalysisCard analysis={deepDiveAnalysis} />
+              )}
+            </div>
+          );
+        })}
 
         {/* DeepDive confirmation (results panel only) */}
         {confirmingSchool && (
