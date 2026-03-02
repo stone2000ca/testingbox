@@ -40,6 +40,7 @@ const ChatPanel = forwardRef(function ChatPanel({
   onViewSchoolDetail,
   onConfirmDeepDive,
   onCancelDeepDive,
+  onUpgrade,
   // Optional props
   confirmingSchool = null,
   familyProfile = null,
