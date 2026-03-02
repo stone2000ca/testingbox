@@ -513,7 +513,7 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     for (const [removeKey, targetField] of Object.entries(REMOVAL_MAP)) {
       const toRemove = extractedData[removeKey];
       if (Array.isArray(toRemove) && toRemove.length > 0 && Array.isArray(updatedFamilyProfile[targetField])) {
-        const removeSet = new Set(toRemove.map((s: string) => s.toLowerCase()));
+        const removeSet = new Set(toRemove.filter(Boolean).map((s: string) => s.toLowerCase()));
         updatedFamilyProfile[targetField] = (updatedFamilyProfile[targetField] as string[]).filter(
           (item: string) => !removeSet.has(item.toLowerCase())
         );
