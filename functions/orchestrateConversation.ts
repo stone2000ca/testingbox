@@ -835,9 +835,9 @@ Format as a markdown bullet list with one field per line. Start the child field 
         const budgetStr = maxTuition === 'unlimited' ? 'Flexible' : `Up to $${Number(maxTuition).toLocaleString()}`;
         briefLines.push(`- **Budget:** ${budgetStr}`);
       }
-      if (priorities?.length > 0) briefLines.push(`- **Priorities:** ${priorities.join(', ')}`);
-      if (interests?.length > 0) briefLines.push(`- **Interests:** ${interests.join(', ')}`);
-      if (dealbreakers?.length > 0) briefLines.push(`- **Dealbreakers:** ${dealbreakers.join(', ')}`);
+      if ((priorities || []).length > 0) briefLines.push(`- **Priorities:** ${(priorities || []).join(', ')}`);
+      if ((interests || []).length > 0) briefLines.push(`- **Interests:** ${(interests || []).join(', ')}`);
+      if ((dealbreakers || []).length > 0) briefLines.push(`- **Dealbreakers:** ${(dealbreakers || []).join(', ')}`);
       briefLines.push("\nDoes that look right? Anything to change?");
       briefMessageText = briefLines.join('\n');
       console.log('[BRIEF] Liam brief built deterministically');
