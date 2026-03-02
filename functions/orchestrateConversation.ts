@@ -1628,6 +1628,13 @@ Deno.serve(async (req) => {
           }
         }
 
+        // E13a: Check if debrief mode is set — if so, route to handleDeepDive with debrief flag
+        if (resolveResult.deepDiveMode === 'debrief') {
+          responseData = await handleDeepDive(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, userId, returningUserContextBlock, resolveResult.flags);
+          responseData.extractedEntities = extractionResult?.extractedEntities || {};
+          return Response.json(responseData);
+        }
+
         // WC10: Generate AI narrative if transitioning from BRIEF to RESULTS for the first time
         if (context.previousState === STATES.BRIEF && briefStatus === 'confirmed' && conversationId) {
           try {
