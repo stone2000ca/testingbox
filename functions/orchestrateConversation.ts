@@ -330,12 +330,12 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
     let extractedLocation = null;
     const locationMatch = message.match(/\b(?:in|near|around|from)\s+([A-Z][a-zA-Z]+(?:[\s-][A-Z][a-zA-Z]+)?(?:,\s*[A-Za-z]{2,})?)/);
     if (locationMatch && locationMatch[1]) {
-      // BUG-LOCATION-S46: Reject curriculum terms misclassified as locations
-      const CURRICULUM_TERMS = /^(IB|AP|STEM|IGCSE|Montessori|Waldorf|Reggio|French|Catholic)$/i;
-      if (!CURRICULUM_TERMS.test(locationMatch[1].trim())) {
+      // BUG-LOCATION-S46: Reject curriculum terms, month names, and temporal words misclassified as locations
+      const NON_LOCATION_TERMS = /^(IB|AP|STEM|IGCSE|Montessori|Waldorf|Reggio|French|Catholic|January|February|March|April|May|June|July|August|September|October|November|December|Fall|Winter|Spring|Summer|Next|This|Early|Late)$/i;
+      if (!NON_LOCATION_TERMS.test(locationMatch[1].trim())) {
         extractedLocation = cleanLocation(locationMatch[1].trim());
       } else {
-        console.log('[BUG-LOCATION-S46] Rejected curriculum term as location:', locationMatch[1].trim());
+        console.log('[BUG-LOCATION-S46] Rejected non-location term:', locationMatch[1].trim());
       }
     }
 
