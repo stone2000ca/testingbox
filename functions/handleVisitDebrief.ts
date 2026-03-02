@@ -7,16 +7,17 @@
 // Note: This is a helper function that should be called from orchestrateConversation
 // It handles the debrief conversation after a family visits a school
 
-async function handleVisitDebrief(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, consultantName, currentSchools, userId, returningUserContextBlock, callOpenRouter) {
-  if (!selectedSchoolId) return null;
+async function handleVisitDebrief(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, consultantName, returningUserContextBlock, callOpenRouter) {
+  if (!selectedSchoolId || !context?.conversationId) return null;
   
   try {
     console.log('[E13a] Debrief mode active for school:', selectedSchoolId);
     
     // Load prior analysis from GeneratedArtifacts
-    const artifacts = await base44.asServiceRole.entities.GeneratedArtifact.filter({ 
-      userId, 
-      schoolIds: { $in: [selectedSchoolId] } 
+    const artifacts = await base44.entities.GeneratedArtifact.filter({ 
+      conversationId: context.conversationId,
+      schoolId: selectedSchoolId,
+      artifactType: 'visit_prep'
     });
     const priorAnalysis = artifacts?.[0];
     
