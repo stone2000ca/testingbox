@@ -1,5 +1,6 @@
-import { ArrowLeft, Check, X, Circle } from 'lucide-react';
+import { ArrowLeft, Check, X, Circle, Lock } from 'lucide-react';
 import { buildPriorityChecks } from './SchoolCard';
+import { Button } from '@/components/ui/button';
 import { HeaderPhotoDisplay } from './HeaderPhotoHelper';
 
 // =============================================================================
@@ -135,7 +136,9 @@ const RELEVANCE_STYLES = {
   neutral:     { bg: '',               border: '',                               badge: '' },
 };
 
-export default function ComparisonView({ schools, familyProfile, comparisonMatrix, onBack }) {
+const FREE_SECTIONS = ['_priorities', 'Basics'];
+
+export default function ComparisonView({ schools, familyProfile, comparisonMatrix, isPremium = false, onUpgrade, onBack }) {
   if (!schools || schools.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">

@@ -1359,6 +1359,8 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
               <ChatPanel
                 {...chatPanelProps}
                 variant="intake"
+                isPremium={isPremium}
+                onUpgrade={() => setShowUpgradeModal(true)}
                 heroContent={
                   currentState === STATES.WELCOME ? (
                     <div className="text-center space-y-6 py-8">
@@ -1463,6 +1465,8 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
               schools={comparisonData}
               familyProfile={familyProfile}
               comparisonMatrix={comparisonMatrix}
+              isPremium={isPremium}
+              onUpgrade={() => setShowUpgradeModal(true)}
               onBack={() => {
                 setComparisonData(null);
                 setCurrentView('schools');
@@ -1611,6 +1615,8 @@ Write a SHORT (3–5 sentence) synthesis paragraph comparing these schools for t
           <ChatPanel
             {...chatPanelProps}
             variant="sidebar"
+            isPremium={isPremium}
+            onUpgrade={() => setShowUpgradeModal(true)}
             confirmingSchool={confirmingSchool}
             showNewMessageIndicator={showNewMessageIndicator}
             onScrollDownClick={handleScrollDownClick}
