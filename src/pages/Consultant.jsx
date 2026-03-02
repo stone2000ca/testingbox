@@ -930,12 +930,16 @@ export default function Consultant() {
 
             // Generate title after first user message
             if (userMessageCount === 1 && currentConversation.title === 'New Conversation') {
-              const titleResult = await base44.functions.invoke('generateConversationTitle', {
-                conversationId: currentConversation.id
-              });
-              if (titleResult.data?.title) {
-                setCurrentConversation(prev => ({ ...prev, title: titleResult.data.title }));
-                await loadConversations(user.id);
+              try {
+                const titleResult = await base44.functions.invoke('generateConversationTitle', {
+                  conversationId: currentConversation.id
+                });
+                if (titleResult.data?.title) {
+                  setCurrentConversation(prev => ({ ...prev, title: titleResult.data.title }));
+                  await loadConversations(user.id);
+                }
+              } catch (titleError) {
+                console.warn('[WARN] Failed to generate conversation title:', titleError);
               }
             }
 
