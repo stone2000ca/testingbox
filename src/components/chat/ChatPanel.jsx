@@ -198,6 +198,14 @@ const ChatPanel = forwardRef(function ChatPanel({
               {showAnalysis && !isTyping && (
                 <SchoolAnalysisCard analysis={deepDiveAnalysis} />
               )}
+              {isLastAssistant && visitPrepKit && !isTyping && (
+                <VisitPrepCard
+                  schoolName={visitPrepKit.schoolName}
+                  visitQuestions={visitPrepKit.visitQuestions}
+                  observations={visitPrepKit.observations}
+                  redFlags={visitPrepKit.redFlags}
+                />
+              )}
             </div>
           );
         })}
