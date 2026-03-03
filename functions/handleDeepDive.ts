@@ -315,6 +315,18 @@ Generate the DEEPDIVE card for this family-school match.`;
     }
     console.log('[DEEPDIVE] deepDiveAnalysis populated:', !!deepDiveAnalysis, 'visitPrepKit populated:', !!generatedVisitPrepKit);
 
+    // Add post-deep-dive follow-up prompt
+    let followUpPrompt = '';
+    if (deepDiveAnalysis && selectedSchool) {
+      const childName = conversationFamilyProfile?.childName || 'your child';
+      if (consultantName === 'Jackie') {
+        followUpPrompt = `\n\n---\n\nSo, what's next? Would you like to **add ${selectedSchool.name} to your shortlist**, or would you prefer to **explore more schools** from the results?`;
+      } else {
+        followUpPrompt = `\n\n---\n\n**Next steps:** Add ${selectedSchool.name} to your shortlist, or explore other options?`;
+      }
+    }
+    const finalMessage = sanitizedMessage + followUpPrompt;
+
     console.log('[DEEPDIVE] Returning aiMessage length:', sanitizedMessage?.length);
     return Response.json({
       message: sanitizedMessage,
