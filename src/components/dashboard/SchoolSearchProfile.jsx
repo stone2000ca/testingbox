@@ -42,8 +42,18 @@ export default function SchoolSearchProfile({
   isPaid = false,
 }) {
   const navigate = useNavigate();
+  const [showMenu, setShowMenu] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [isSaving, setIsSaving] = useState(false);
   const [showShareUpgrade, setShowShareUpgrade] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
