@@ -42,8 +42,9 @@ export default function SchoolAnalysisCard({ analysis }) {
   const hasFinancial = financialSummary && (financialSummary.tuition != null || financialSummary.budgetFit);
   const budgetFitConfig = financialSummary?.budgetFit ? BUDGET_FIT_CONFIG[financialSummary.budgetFit] : null;
 
-  // If nothing to show at all, don't render
-  if (!fitConfig && validTradeOffs.length === 0 && !validDataGaps && !hasFinancial) return null;
+  // Only render if fitConfig exists AND at least one substantive section is present
+  const hasSubstance = validTradeOffs.length > 0 || hasFinancial || validDataGaps;
+  if (!fitConfig || !hasSubstance) return null;
 
   return (
     <div className="mt-2 rounded-xl border border-white/10 bg-[#1A1A2A] overflow-hidden text-sm">
