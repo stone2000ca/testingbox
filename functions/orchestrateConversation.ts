@@ -654,6 +654,7 @@ Deno.serve(async (req) => {
       const isConfirmBrief = message === '__CONFIRM_BRIEF__';
       if (isConfirmBrief) {
         processMessage = 'show me schools';
+        context.previousState = context.state || 'BRIEF';
         context.state = 'RESULTS';
         context.briefStatus = 'confirmed';
         console.log('[FIX-C] __CONFIRM_BRIEF__ sentinel: skipping BRIEF, going directly to RESULTS');
