@@ -30,10 +30,10 @@ export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSch
   return (
     <div className="h-full flex flex-col" style={{ background: '#1E1E30', borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-l-4 border-l-teal-400" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
         <div className="flex items-center gap-2">
           <Heart className="w-4 h-4 text-rose-400" />
-          <h2 className="text-sm font-semibold text-white">Shortlist</h2>
+          <h2 className="text-base font-bold text-white">Shortlist</h2>
           {shortlist.length > 0 && (
             <span className="text-xs font-medium bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded-full">
               {shortlist.length}
