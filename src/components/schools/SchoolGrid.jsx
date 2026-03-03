@@ -95,9 +95,9 @@ function PinnedShortlistSection({ shortlistedSchools, onViewDetails, onToggleSho
 
   return (
     <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      <div className="flex items-center gap-2 mb-3 flex-wrap border-l-4 border-teal-400 pl-3 py-1 bg-teal-900/10 rounded-sm">
         <Pin className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-        <h3 className="text-sm font-semibold text-amber-900">Your Shortlist</h3>
+        <h3 className="text-lg font-bold text-amber-900">Your Shortlist</h3>
         <span className="ml-1 text-xs font-medium bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
           {shortlistedSchools.length} {shortlistedSchools.length === 1 ? 'school' : 'schools'}
         </span>

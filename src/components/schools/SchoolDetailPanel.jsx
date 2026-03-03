@@ -305,9 +305,9 @@ function CtaBar({ school, isShortlisted, onToggleShortlist, onCompare }) {
       <Button
         onClick={() => onToggleShortlist(school.id)}
         variant={isShortlisted ? 'default' : 'outline'}
-        className="flex-1 flex items-center justify-center gap-2"
+        className={`flex-1 flex items-center justify-center gap-2 ${isShortlisted ? 'bg-red-800/70 hover:bg-red-800/90 border-red-700/50 text-white' : ''}`}
       >
-        <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-current' : ''}`} />
+        <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-white' : ''}`} />
         {isShortlisted ? 'Shortlisted' : 'Add to Shortlist'}
       </Button>
       <Button
