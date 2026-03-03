@@ -4,8 +4,9 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { createPageUrl } from '../utils';
 import { Link } from 'react-router-dom';
-import { ArrowRight, MapPin, DollarSign, Heart } from 'lucide-react';
+import { ArrowRight, MapPin, DollarSign, Bookmark } from 'lucide-react';
 import Navbar from '@/components/navigation/Navbar';
+import SchoolCard from '@/components/schools/SchoolCard';
 
 export default function SharedProfile() {
   const [searchParams] = useSearchParams();
