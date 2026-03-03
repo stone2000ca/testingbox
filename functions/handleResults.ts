@@ -196,20 +196,23 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
 
         let aiNarrative = null;
         try {
-          aiNarrative = await callOpenRouter({
-            systemPrompt: 'You are a skilled education consultant writing warm, personalized school profile narratives. Keep it 2-3 sentences max.',
-            userPrompt: narrativePrompt,
-            maxTokens: 300,
-            temperature: 0.7
+          const fastResponse = await base44.integrations.Core.InvokeLLM({ 
+            prompt: 'You are a skilled education consultant writing warm, personalized school profile narratives. Keep it 2-3 sentences max.\n\n' + narrativePrompt
           });
-          console.log('[WC10] Narrative generated via OpenRouter');
-        } catch (openrouterError) {
-          console.log('[WC10] OpenRouter failed, trying InvokeLLM');
+          aiNarrative = fastResponse?.response || fastResponse;
+          console.log('[WC10] Narrative generated via InvokeLLM (fast path)');
+        } catch (invokeLLMError) {
+          console.log('[WC10] InvokeLLM failed, falling back to OpenRouter');
           try {
-            const fallback = await base44.integrations.Core.InvokeLLM({ prompt: narrativePrompt });
-            aiNarrative = fallback?.response || fallback;
-          } catch (fallbackError) {
-            console.error('[WC10] Both narrative generation methods failed:', fallbackError.message);
+            aiNarrative = await callOpenRouter({
+              systemPrompt: 'You are a skilled education consultant writing warm, personalized school profile narratives. Keep it 2-3 sentences max.',
+              userPrompt: narrativePrompt,
+              maxTokens: 300,
+              temperature: 0.7
+            });
+            console.log('[WC10] Narrative generated via OpenRouter (fallback)');
+          } catch (openrouterError) {
+            console.error('[WC10] Both narrative generation methods failed:', openrouterError.message);
           }
         }
 
