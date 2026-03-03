@@ -426,21 +426,24 @@ ${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic, experienced.
 
         let messageWithLinks = 'Here are the schools I found:';
         try {
-          const aiResponse = await callOpenRouter({
-            systemPrompt: resultsSystemPrompt,
-            userPrompt: resultsUserPrompt,
-            maxTokens: 800,
-            temperature: 0.7
+          const fastResponse = await base44.integrations.Core.InvokeLLM({
+            prompt: resultsSystemPrompt + '\n\n' + resultsUserPrompt
           });
-          messageWithLinks = aiResponse || 'Here are the schools I found:';
-        } catch (openrouterError) {
+          messageWithLinks = fastResponse?.response || fastResponse || 'Here are the schools I found:';
+          console.log('[RESULTS] Response via InvokeLLM (fast path)');
+        } catch (invokeLLMError) {
+          console.log('[RESULTS] InvokeLLM failed, falling back to OpenRouter');
           try {
-            const fallbackResponse = await base44.integrations.Core.InvokeLLM({
-              prompt: resultsSystemPrompt + '\n\n' + resultsUserPrompt
+            const aiResponse = await callOpenRouter({
+              systemPrompt: resultsSystemPrompt,
+              userPrompt: resultsUserPrompt,
+              maxTokens: 800,
+              temperature: 0.7
             });
-            messageWithLinks = fallbackResponse?.response || fallbackResponse || 'Here are the schools I found:';
-          } catch (fallbackError) {
-            console.error('[FALLBACK ERROR] RESULTS response failed:', fallbackError.message);
+            messageWithLinks = aiResponse || 'Here are the schools I found:';
+            console.log('[RESULTS] Response via OpenRouter (fallback)');
+          } catch (openrouterError) {
+            console.error('[RESULTS] Both response methods failed:', openrouterError.message);
           }
         }
 
