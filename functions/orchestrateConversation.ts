@@ -559,33 +559,26 @@ Deno.serve(async (req) => {
       }
 
       if (currentState === STATES.BRIEF) {
-        try {
-          const briefResult = await base44.asServiceRole.functions.invoke('handleBrief', {
-            message: processMessage,
-            conversationFamilyProfile,
-            context,
-            conversationHistory,
-            consultantName,
-            briefStatus,
-            flags,
-            returningUserContextBlock
-          });
-          responseData = briefResult.data;
-          if (responseData.briefStatus) {
-            context.briefStatus = responseData.briefStatus;
-          }
-          if (responseData.conversationContext?.briefStatus) {
-            context.briefStatus = responseData.conversationContext.briefStatus;
-          }
-          responseData.conversationContext = { ...context, ...responseData.conversationContext };
-          responseData.extractedEntities = extractionResult?.extractedEntities || {};
-          return Response.json(responseData);
-        } catch (briefError) {
-          console.error('[ORCH] handleBrief FAILED:', briefError?.message || briefError);
-          responseData = await handleBriefFallback(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, flags, returningUserContextBlock);
-          responseData.extractedEntities = extractionResult?.extractedEntities || {};
-          return Response.json(responseData);
+        const briefResult = await base44.asServiceRole.functions.invoke('handleBrief', {
+          message: processMessage,
+          conversationFamilyProfile,
+          context,
+          conversationHistory,
+          consultantName,
+          briefStatus,
+          flags,
+          returningUserContextBlock
+        });
+        responseData = briefResult.data;
+        if (responseData.briefStatus) {
+          context.briefStatus = responseData.briefStatus;
         }
+        if (responseData.conversationContext?.briefStatus) {
+          context.briefStatus = responseData.conversationContext.briefStatus;
+        }
+        responseData.conversationContext = { ...context, ...responseData.conversationContext };
+        responseData.extractedEntities = extractionResult?.extractedEntities || {};
+        return Response.json(responseData);
       }
 
       if (currentState === STATES.RESULTS) {
