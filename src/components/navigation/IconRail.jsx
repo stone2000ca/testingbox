@@ -82,6 +82,7 @@ export default function IconRail({ currentState, activePanel, onTogglePanel }) {
         active={shortlistActive}
         onClick={() => shortlistEnabled && onTogglePanel('shortlist')}
         disabledTip="Available after finding schools"
+        shortlistCount={0}
       />
     </nav>
   );
