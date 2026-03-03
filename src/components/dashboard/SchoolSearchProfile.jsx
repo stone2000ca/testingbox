@@ -76,7 +76,6 @@ export default function SchoolSearchProfile({
     setIsArchiving(true);
     try {
       await base44.entities.ChatSession.update(session.id, { status: 'archived' });
-      setShowMenu(false);
       if (onArchive) onArchive();
     } catch (err) {
       console.error('Failed to archive session:', err);
