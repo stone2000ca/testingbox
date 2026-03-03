@@ -1,5 +1,5 @@
 // Function: deleteSchoolsFromCsv
-// Purpose: Reads a CSV file containing school slugs and removes matching School records from database
+// Purpose: Reads a CSV file containing school IDs and removes matching School records from database
 // Entities: School
 // Last Modified: 2026-03-03
 // Dependencies: Papa Parse
@@ -52,14 +52,14 @@ Deno.serve(async (req) => {
     const data = result.data;
     console.log('[DELETE] Parsed', data.length, 'rows from CSV');
 
-    // Extract slugs from CSV (filter empty/invalid slugs)
-    const slugsToDelete = data
-      .map((row) => row.slug?.trim())
-      .filter((slug) => slug && slug !== '');
+    // Extract IDs from CSV (filter empty/invalid IDs)
+    const idsToDelete = data
+      .map((row) => row.id?.trim())
+      .filter((id) => id && id !== '');
 
-    console.log('[DELETE] Found', slugsToDelete.length, 'valid slugs to delete');
+    console.log('[DELETE] Found', idsToDelete.length, 'valid IDs to delete');
 
-    if (slugsToDelete.length === 0) {
+    if (idsToDelete.length === 0) {
       return Response.json({
         success: true,
         deleted: 0,
@@ -74,28 +74,28 @@ Deno.serve(async (req) => {
     let errors = [];
     const batchSize = 50;
 
-    for (let i = 0; i < slugsToDelete.length; i += batchSize) {
-      const batch = slugsToDelete.slice(i, i + batchSize);
+    for (let i = 0; i < idsToDelete.length; i += batchSize) {
+      const batch = idsToDelete.slice(i, i + batchSize);
       
-      for (const slug of batch) {
+      for (const id of batch) {
         try {
           // Throttle requests (100ms between each)
           await new Promise(resolve => setTimeout(resolve, 100));
 
-          // Check if school exists by slug
-          const existing = await base44.entities.School.filter({ slug });
+          // Check if school exists
+          const existing = await base44.entities.School.filter({ id });
           
           if (existing.length > 0) {
-            await base44.entities.School.delete(existing[0].id);
+            await base44.entities.School.delete(id);
             deleted++;
-            console.log('[DELETE] Deleted school:', slug);
+            console.log('[DELETE] Deleted school:', id);
           } else {
             notFound++;
-            console.log('[DELETE] School not found:', slug);
+            console.log('[DELETE] School not found:', id);
           }
         } catch (e) {
-          console.error('[DELETE ERROR]', slug, e.message);
-          errors.push({ slug, error: e.message });
+          console.error('[DELETE ERROR]', id, e.message);
+          errors.push({ id, error: e.message });
         }
       }
     }
