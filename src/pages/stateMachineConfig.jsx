@@ -165,20 +165,24 @@ export const getSystemPrompt = (state, briefStatus, entities = {}, consultantNam
        return `You are ${consultantName}, continuing to learn about this family. START by asking for the child's first name if not yet provided. Then ask ONE question at a time to understand their needs. Extract: child name, grade, location/area, budget range, curriculum preferences, priorities, and dealbreakers. Do NOT mention specific school names. If the user asks about a specific school, say: "I'd love to tell you about that school — let me first understand what you're looking for so I can give you the best perspective." Current known data: ${JSON.stringify(entities)}`;
 
     case STATES.BRIEF:
-      if (briefStatus === BRIEF_STATUS.GENERATING) {
-        const childRef = entities.childName
-          ? entities.childName
-          : (entities.gender === 'male' ? 'Your son' : entities.gender === 'female' ? 'Your daughter' : 'Your child');
-        return `Generate a Family Brief summarizing everything learned.
+       if (briefStatus === BRIEF_STATUS.GENERATING) {
+         const childRef = entities.childName
+           ? entities.childName
+           : (entities.gender === 'male' ? 'Your son' : entities.gender === 'female' ? 'Your daughter' : 'Your child');
+         return `Generate a Family Brief summarizing everything learned.
 
-⚠️ MANDATORY RULE — NO EXCEPTIONS: NEVER use the word "Child" or "Student" as a label in the brief. The child label MUST be "${childRef}". Example format: "${childRef}: Grade 7 | Location: Toronto | Budget: $30,000/yr". If you write "Child:" or "Student:" anywhere, you have violated this rule.
+    ⚠️ MANDATORY RULE — NO EXCEPTIONS: NEVER use the word "Child" or "Student" as a label in the brief. The child label MUST be "${childRef}". Example format: "${childRef}: Grade 7 | Location: Toronto | Budget: $30,000/yr". If you write "Child:" or "Student:" anywhere, you have violated this rule.
 
-Format the brief clearly with these fields: ${childRef} (name/grade), Location, Budget, Priorities (ranked), Dealbreakers, and any other relevant details. End with: "Does this capture what you're looking for, or would you like to adjust anything?" Do NOT mention specific schools yet.`;
-      } else if (briefStatus === BRIEF_STATUS.PENDING_REVIEW) {
-        return `The Family Brief is displayed above. Wait for the user to confirm or request changes. Do NOT ask new intake questions. Do NOT mention or recommend any schools. If they confirm, acknowledge and prepare to show school matches. If they want changes, ask what they would like to adjust.`;
-      } else if (briefStatus === BRIEF_STATUS.EDITING) {
-        return `The user wants to change their Family Brief. Ask ONE targeted question about what they want to adjust. Do NOT start over with the full intake. You are on edit cycle ${entities.editCount || 1}/3. If editCount reaches 3, say: "I want to make sure we get this right — let's go with this version and we can always adjust after you see some schools."`;
-      }
+    Format the brief clearly with these fields: ${childRef} (name/grade), Location, Budget, Priorities (ranked), Dealbreakers, and any other relevant details. End with: "Does this capture what you're looking for, or would you like to adjust anything?" Do NOT mention specific schools yet.`;
+       } else if (briefStatus === BRIEF_STATUS.PENDING_REVIEW) {
+         return `The Family Brief is displayed above. Wait for the user to confirm or request changes. Do NOT ask new intake questions. Do NOT mention or recommend any schools. 
+
+    KEY BEHAVIOR RULE: If the user says words like "adjust", "change", "update", "modify", "different", or "not quite" — directly ask WHAT they want to change. Do NOT regenerate the entire brief. Example: "What would you like to adjust?" or "What needs to change?"
+
+    If they confirm (e.g. "that looks right", "perfect", "yes"), acknowledge and prepare to show school matches.`;
+       } else if (briefStatus === BRIEF_STATUS.EDITING) {
+         return `The user wants to change their Family Brief. Ask ONE targeted question about what they want to adjust. Do NOT start over with the full intake. You are on edit cycle ${entities.editCount || 1}/3. If editCount reaches 3, say: "I want to make sure we get this right — let's go with this version and we can always adjust after you see some schools."`;
+       }
       break;
 
     case STATES.RESULTS:
