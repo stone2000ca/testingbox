@@ -7,8 +7,7 @@ import UpgradePaywallModal from '@/components/dialogs/UpgradePaywallModal';
 import { CheckCircle, Copy } from 'lucide-react';
 import {
   Zap,
-  Eye,
-  Edit,
+  Edit2,
   Share2,
   Archive,
   Palette,
@@ -18,7 +17,6 @@ import {
   Music,
   Trophy,
   Globe,
-  MoreVertical,
   X,
 } from 'lucide-react';
 
