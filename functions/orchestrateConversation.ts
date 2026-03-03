@@ -536,6 +536,28 @@ Deno.serve(async (req) => {
       
       console.log('[ORCH] resolveTransition:', { nextState: currentState, intentSignal, sufficiency: resolveResult.sufficiency });
       
+      // GIBBERISH DETECTION: Catch nonsensical input before routing to handlers
+      const normalizedMsg = (processMessage || '').toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
+      const vowels = normalizedMsg.match(/[aeiou]/g) || [];
+      const isGibberish = vowels.length === 0 && normalizedMsg.length > 2;
+      
+      if (isGibberish) {
+        const nudgeMessage = consultantName === 'Jackie'
+          ? "I'm not quite catching what you mean — could you rephrase that? I want to make sure I understand your thoughts."
+          : "That didn't parse. Could you say that again in a different way?";
+        
+        console.log('[GIBBERISH] Detected gibberish input:', processMessage);
+        return Response.json({
+          message: nudgeMessage,
+          state: currentState,
+          briefStatus: briefStatus,
+          familyProfile: conversationFamilyProfile,
+          conversationContext: context,
+          extractedEntities: extractionResult?.extractedEntities || {},
+          schools: []
+        });
+      }
+      
       context.state = currentState;
       context.briefStatus = briefStatus;
       context.dataSufficiency = resolveResult.sufficiency;
