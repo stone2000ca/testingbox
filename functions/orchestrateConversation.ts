@@ -16,7 +16,7 @@ async function callOpenRouter(options) {
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: userPrompt });
   
-  const body: any = {
+  const body = {
     models: ['google/gemini-2.5-flash', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash-lite'],
     messages,
     max_tokens: maxTokens,
