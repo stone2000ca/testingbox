@@ -161,7 +161,7 @@ export default function SharedShortlistView() {
       <div className="border-b border-slate-800 bg-slate-900/95 sticky top-0 z-10 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <a href="/Home" className="flex items-center gap-2 group">
-            <span className="text-white font-semibold text-lg tracking-tight">Next<span className="text-teal-400">School</span></span>
+            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699717aa28903550c09d4d26/cfcb6f29d_logo_NextSchool_full_white.png" alt="NextSchool" className="h-8" />
           </a>
           <a
             href="/Home"
