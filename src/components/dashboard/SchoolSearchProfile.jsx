@@ -281,8 +281,8 @@ export default function SchoolSearchProfile({
           </div>
         </>
       ) : (
-        /* Edit Mode */
-        <div className="p-4 border-t border-white/10 bg-white/5 space-y-4">
+        /* Edit Mode — full card replaced */
+        <div className="p-4 bg-white/5 space-y-4" onClick={(e) => e.stopPropagation()}>
           {/* Grade */}
           <div>
             <label className="text-xs text-white/60 mb-2 block">Grade</label>
