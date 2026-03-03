@@ -141,15 +141,22 @@ Deno.serve(async (req) => {
     }
 
     if (context.extractedEntities) {
-      for (const [key, value] of Object.entries(context.extractedEntities)) {
-        if (value !== null && value !== undefined) {
-          if (conversationFamilyProfile[key] === null || conversationFamilyProfile[key] === undefined ||
-              (Array.isArray(conversationFamilyProfile[key]) && conversationFamilyProfile[key].length === 0)) {
-            conversationFamilyProfile[key] = value;
-          }
-        }
-      }
-    }
+       for (const [key, value] of Object.entries(context.extractedEntities)) {
+         if (value !== null && value !== undefined) {
+           const existing = conversationFamilyProfile[key];
+           // Merge/append for arrays; replace only if current is empty
+           if (Array.isArray(value)) {
+             const currentArray = Array.isArray(existing) ? existing : [];
+             // Merge arrays, removing duplicates
+             const merged = [...new Set([...currentArray, ...value])];
+             conversationFamilyProfile[key] = merged;
+           } else if (existing === null || existing === undefined || (Array.isArray(existing) && existing.length === 0)) {
+             // Only replace scalar values if current is empty
+             conversationFamilyProfile[key] = value;
+           }
+         }
+       }
+     }
 
     try {
       const { childName, childGrade, locationArea, interests, priorities, dealbreakers } = conversationFamilyProfile;
