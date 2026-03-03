@@ -1,6 +1,6 @@
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { User, Sparkles, Check } from "lucide-react";
+import { User, Sparkles, Check, X } from "lucide-react";
 
 export default function LoginGateModal({ consultantName, childName = 'your child', onClose }) {
   const handleSignup = () => {

@@ -35,12 +35,22 @@ export default function Navbar({ variant = "default" }) {
             <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699717aa28903550c09d4d26/c6c11cc4b_logo_NextSchool_full.png" alt="NextSchool" className="h-8" />
           </Link>
           {isAuthenticated && user ? (
-            <Link to={createPageUrl('Dashboard')}>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <User className="h-4 w-4" />
-                Dashboard
+            <div className="flex items-center gap-1">
+              <Link to={createPageUrl('Dashboard')}>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <User className="h-4 w-4" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => base44.auth.logout()}
+                className="gap-1 text-slate-500 hover:text-red-600"
+              >
+                <LogOut className="h-4 w-4" />
               </Button>
-            </Link>
+            </div>
           ) : (
             <Button 
               variant="ghost" 
@@ -73,12 +83,23 @@ export default function Navbar({ variant = "default" }) {
           <Link to={createPageUrl('About')} className="text-slate-600 hover:text-teal-600 text-sm">About</Link>
         </nav>
         {isAuthenticated && user ? (
-          <Link to={createPageUrl('Dashboard')}>
-            <Button variant="outline" className="gap-2">
-              <User className="h-4 w-4" />
-              Dashboard
+          <div className="flex items-center gap-2">
+            <Link to={createPageUrl('Dashboard')}>
+              <Button variant="outline" className="gap-2">
+                <User className="h-4 w-4" />
+                Dashboard
+              </Button>
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-slate-600 hover:text-red-600"
+              onClick={() => base44.auth.logout()}
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
             </Button>
-          </Link>
+          </div>
         ) : (
           <Button 
             className="bg-teal-600 hover:bg-teal-700"
