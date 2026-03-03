@@ -527,10 +527,17 @@ export default function Consultant() {
     const limit = getConversationLimits(plan);
 
     if (activeCount >= limit) {
-      setLimitReachedOpen(true);
+      // Show archive confirmation instead of limit reached modal
+      setPendingNewConversation(true);
+      setArchiveConfirmOpen(true);
       return;
     }
 
+    // Proceed with creating new conversation
+    await proceedWithNewConversation();
+  };
+
+  const proceedWithNewConversation = async () => {
     try {
       const newConvo = {
         userId: user?.id,
@@ -549,6 +556,33 @@ export default function Consultant() {
       selectConversation(created);
     } catch (error) {
       console.error('Failed to create conversation:', error);
+    }
+  };
+
+  const handleArchiveOldestConversation = async () => {
+    try {
+      // Find oldest active conversation
+      const oldestConvo = conversations
+        .filter(c => c.isActive)
+        .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))[0];
+      
+      if (oldestConvo) {
+        // Archive it
+        await base44.entities.ChatHistory.update(oldestConvo.id, {
+          isActive: false
+        });
+        
+        // Reload conversations
+        await loadConversations(user.id);
+      }
+      
+      // Now create the new conversation
+      await proceedWithNewConversation();
+    } catch (error) {
+      console.error('Failed to archive conversation:', error);
+    } finally {
+      setArchiveConfirmOpen(false);
+      setPendingNewConversation(false);
     }
   };
 
