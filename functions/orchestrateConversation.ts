@@ -619,14 +619,6 @@ Based on what the family shared during their visit, provide a fit re-evaluation.
 // MAIN: Deno.serve — orchestrateConversation
 // =============================================================================
 Deno.serve(async (req) => {
-  // Dynamic timeout: increase to 45s for first results, 25s otherwise
-  let isFirstResults = false;
-  let TIMEOUT_MS = 25000;
-  
-  const timeoutPromise = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('TIMEOUT')), TIMEOUT_MS)
-  );
-
   const processRequest = async () => {
     var currentState;
     var briefStatus;
