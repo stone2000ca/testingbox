@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Heart, ExternalLink, Zap, Check, X } from "lucide-react";
+import { ArrowLeft, Heart, ExternalLink, CheckCircle, Check, X } from "lucide-react";
 
 function gradeLabel(grade) {
   if (grade === null || grade === undefined) return '?';
@@ -280,7 +280,7 @@ function ReviewsTier() {
   return (
     <div className="p-6 border-b border-slate-700">
       <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-        <Zap className="h-5 w-5 text-amber-400" />
+        <CheckCircle className="h-5 w-5 text-amber-400" />
         Student & Family Reviews
       </h3>
       <div className="bg-slate-800/50 rounded-lg p-8 text-center">
