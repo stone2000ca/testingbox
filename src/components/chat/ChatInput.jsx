@@ -29,7 +29,7 @@ const ChatInput = forwardRef(({ onSend, disabled, tokenBalance, isPremium }, ref
   };
 
   return (
-    <div className="border-t p-3 sm:p-4" style={{ background: '#1E1E2E' }}>
+    <div className="border-t p-3 sm:p-4" style={{ background: '#2a2a3d' }}>
       {/* Token Counter */}
       <div className="flex justify-between items-center mb-2 text-xs">
         <span className="text-white/50">
