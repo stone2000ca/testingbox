@@ -179,86 +179,107 @@ export default function SchoolSearchProfile({
   const bestMatchSchool = matchedSchools[0];
 
   return (
-    <div className="bg-[#2A2A3D] border border-white/10 border-l-4 border-l-teal-500 rounded-xl overflow-hidden hover:border-l-teal-400 transition-all duration-200 hover:shadow-xl flex flex-col">
-      {/* Vertical Card — non-edit mode */}
+    <div
+      className="group w-[240px] min-w-[240px] max-w-[240px] bg-[#2A2A3E] border border-white/5 rounded-xl flex flex-col hover:shadow-lg hover:border-teal-500/20 transition-all duration-200 overflow-hidden cursor-pointer"
+      onClick={!isEditMode ? handleViewMatches : undefined}
+    >
       {!isEditMode ? (
-        <div className="p-5 flex flex-col gap-4 flex-1">
-          {/* TOP ROW: Name + Grade + Status dot */}
-          <div className="flex items-center gap-2 min-w-0">
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-teal-400' : 'bg-slate-500'}`} />
-            <span className="font-bold text-white truncate">{session.childName || 'Student'}</span>
-            {session.childGrade != null && (
-              <span className="text-sm text-white/50 flex-shrink-0">· Grade {session.childGrade}</span>
-            )}
-          </div>
-
-          {/* Priority chips */}
-          {priorities.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {priorities.slice(0, 3).map((priority, idx) => {
-                const IconComponent = PRIORITY_ICONS[priority] || Zap;
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-1 px-2 py-1 bg-teal-500/10 border border-teal-500/30 rounded-full"
+        <>
+          {/* HEADER */}
+          <div className="p-3 pb-0 flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                {initial}
+              </div>
+              <span className="font-semibold text-white text-sm truncate">{session.childName || 'Student'}</span>
+            </div>
+            {/* Three-dot menu */}
+            <div className="relative flex-shrink-0" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-1 rounded-lg hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <MoreVertical className="w-4 h-4 text-white/60" />
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-7 bg-[#1E1E2E] border border-white/20 rounded-lg shadow-xl z-20 w-40 py-1">
+                  <button
+                    onClick={() => { setIsEditMode(true); setShowMenu(false); }}
+                    className="w-full px-3 py-2 flex items-center gap-2 text-sm text-white/80 hover:bg-white/10 transition-colors"
                   >
-                    <IconComponent className="w-3 h-3 text-teal-400" />
-                    <span className="text-xs text-white/80">{priority}</span>
-                  </div>
-                );
-              })}
-              {priorities.length > 3 && (
-                <div className="flex items-center px-2 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-white/50">
-                  +{priorities.length - 3} more
+                    <Edit className="w-3.5 h-3.5" /> Edit Profile
+                  </button>
+                  <button
+                    onClick={() => { isPaid ? handleShare() : setShowShareUpgrade(true); setShowMenu(false); }}
+                    className="w-full px-3 py-2 flex items-center gap-2 text-sm text-white/80 hover:bg-white/10 transition-colors"
+                  >
+                    <Share2 className="w-3.5 h-3.5" /> Share
+                  </button>
+                  <button
+                    onClick={() => { handleArchive(); setShowMenu(false); }}
+                    disabled={isArchiving}
+                    className="w-full px-3 py-2 flex items-center gap-2 text-sm text-red-400 hover:bg-white/10 transition-colors disabled:opacity-50"
+                  >
+                    <Archive className="w-3.5 h-3.5" /> {isArchiving ? 'Archiving…' : 'Archive'}
+                  </button>
                 </div>
               )}
             </div>
+          </div>
+
+          {/* META */}
+          <div className="px-3 pt-2 flex items-center gap-2 flex-wrap">
+            {session.childGrade != null && (
+              <span className="text-xs bg-white/10 rounded-full px-2 py-0.5 text-gray-300">
+                Grade {session.childGrade}
+              </span>
+            )}
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-teal-400' : 'bg-gray-500'}`} />
+              {isActive ? 'Active' : 'Paused'}
+            </span>
+          </div>
+
+          {/* PRIORITIES */}
+          {priorities.length > 0 && (
+            <div className="px-3 pt-3">
+              <p className="text-xs text-gray-500 mb-1.5">Looking for:</p>
+              <div className="flex flex-wrap gap-1">
+                {priorities.slice(0, 3).map((p, idx) => (
+                  <span key={idx} className="text-xs bg-teal-900/50 text-teal-300 rounded-full px-2 py-0.5">{p}</span>
+                ))}
+                {priorities.length > 3 && (
+                  <span className="text-xs bg-white/5 text-white/40 rounded-full px-2 py-0.5">+{priorities.length - 3}</span>
+                )}
+              </div>
+            </div>
           )}
 
-          {/* Stats line */}
-          <p className="text-sm text-white/60">
-            <span className="text-teal-400 font-semibold">{matchedCount}</span> matched
-            {(session.shortlistedCount > 0) && (
-              <> · <span className="text-teal-400 font-semibold">{session.shortlistedCount}</span> shortlisted</>
-            )}
-          </p>
-
-          {/* Action buttons */}
-          <div className="flex flex-col gap-2 mt-auto">
-            <Button
-              onClick={handleViewMatches}
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white gap-2"
-            >
-              <Eye className="w-4 h-4" />
-              View Matches
-            </Button>
-            <Button
-              onClick={() => setIsEditMode(true)}
-              variant="outline"
-              className="w-full border-white/20 text-white hover:bg-white/10 gap-2"
-            >
-              <Edit className="w-4 h-4" />
-              Edit Profile
-            </Button>
-            <div className="flex gap-2">
-              <button
-                onClick={isPaid ? handleShare : () => setShowShareUpgrade(true)}
-                className="flex-1 text-sm text-white/60 hover:text-white flex items-center justify-center gap-1.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                Share
-              </button>
-              <button
-                onClick={handleArchive}
-                disabled={isArchiving}
-                className="flex-1 text-sm text-white/60 hover:text-red-400 flex items-center justify-center gap-1.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors disabled:opacity-50"
-              >
-                <Archive className="w-3.5 h-3.5" />
-                {isArchiving ? 'Archiving…' : 'Archive'}
-              </button>
-            </div>
+          {/* MATCH COUNT */}
+          <div className="px-3 pt-3">
+            <p className="text-sm">
+              <span className="text-teal-400 font-semibold">{matchedCount}</span>
+              <span className="text-white/50"> matches</span>
+              {session.shortlistedCount > 0 && (
+                <>
+                  <span className="text-white/30"> · </span>
+                  <span className="text-teal-400 font-semibold">{session.shortlistedCount}</span>
+                  <span className="text-white/50"> shortlisted</span>
+                </>
+              )}
+            </p>
           </div>
-        </div>
+
+          {/* ACTION */}
+          <div className="p-3 mt-auto pt-4" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleViewMatches}
+              className="w-full bg-teal-600 hover:bg-teal-500 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+            >
+              View Matches
+            </button>
+          </div>
+        </>
       ) : (
         /* Edit Mode */
         <div className="p-4 border-t border-white/10 bg-white/5 space-y-4">
