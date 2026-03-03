@@ -331,7 +331,8 @@ YOU ARE LIAM - Senior education strategist, 10+ years in private school placemen
 // INLINED: handleVisitDebrief
 // =============================================================================
 async function handleVisitDebrief(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, consultantName, returningUserContextBlock, callOpenRouter) {
-  if (!selectedSchoolId) return null;
+   if (!selectedSchoolId) return null;
+   // NOTE: conversationId may be missing; artifact lookups will be guarded
   
   try {
     console.log('[E13a] Debrief mode active for school:', selectedSchoolId);
@@ -451,7 +452,7 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
     }
 
     // WC9: Persist debrief Q&A pair (non-blocking)
-    if (nextQuestion && context.userId) {
+    if (nextQuestion && context.userId && context.conversationId) {
       try {
         const newQAPair = {
           question: nextQuestion,
@@ -493,7 +494,7 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
     }
 
     // E13a-WC3: Fit re-evaluation after debrief complete (non-blocking)
-    if (isDebriefComplete && deepDiveAnalysis && context.userId) {
+    if (isDebriefComplete && deepDiveAnalysis && context.userId && context.conversationId) {
       try {
         console.log('[E13a-WC3] Debrief complete — initiating fit re-evaluation');
         
