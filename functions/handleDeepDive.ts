@@ -354,7 +354,7 @@ Generate the DEEPDIVE card for this family-school match.`;
       briefStatus: briefStatus,
       schools: currentSchools || [],
       familyProfile: conversationFamilyProfile,
-      conversationContext: context,
+      conversationContext: { ...context, [deepDiveFollowUpKey]: true },
       deepDiveAnalysis: deepDiveAnalysis,
       visitPrepKit: generatedVisitPrepKit
     });
