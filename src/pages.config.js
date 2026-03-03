@@ -54,7 +54,6 @@ import BlogPost from './pages/BlogPost';
 import ClaimSchool from './pages/ClaimSchool';
 import Consultant from './pages/Consultant';
 import Contact from './pages/Contact';
-import Dashboard from './pages/Dashboard';
 import Feedback from './pages/Feedback';
 import ForSchools from './pages/ForSchools';
 import Guides from './pages/Guides';
@@ -73,6 +72,7 @@ import SharedShortlistView from './pages/SharedShortlistView';
 import SubmitSchool from './pages/SubmitSchool';
 import Terms from './pages/Terms';
 import stateMachineConfig from './pages/stateMachineConfig';
+import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -84,7 +84,6 @@ export const PAGES = {
     "ClaimSchool": ClaimSchool,
     "Consultant": Consultant,
     "Contact": Contact,
-    "Dashboard": Dashboard,
     "Feedback": Feedback,
     "ForSchools": ForSchools,
     "Guides": Guides,
@@ -103,6 +102,7 @@ export const PAGES = {
     "SubmitSchool": SubmitSchool,
     "Terms": Terms,
     "stateMachineConfig": stateMachineConfig,
+    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {

@@ -352,7 +352,7 @@ export default function Dashboard() {
             {/* Active Sessions */}
             {!showArchivedTab && (
               <div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
                   {sessions.filter(s => s.status === 'active').map((session) => (
                     <SchoolSearchProfile
                       key={session.id}
