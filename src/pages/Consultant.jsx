@@ -1070,6 +1070,8 @@ export default function Consultant() {
       setSelectedSchool(school);
       setCurrentView('detail');
       setConfirmingSchool(school);
+      // Auto-scroll chat to bottom so user sees the deep-dive prompt
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   };
 

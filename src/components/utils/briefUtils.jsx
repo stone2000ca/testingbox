@@ -45,5 +45,5 @@ export function generateProgrammaticBrief(profile) {
 
   if (lines.length < 2) return null; // Not enough data for a meaningful brief
 
-  return `Here's what I've put together so far:\n\n${lines.join('\n')}\n\nDoes this look right, or is there anything you'd like to adjust?`;
+  return `Here's what I've put together so far:\n\n${lines.map(l => `- ${l}`).join('\n')}\n\nDoes this look right, or is there anything you'd like to adjust?`;
 }
