@@ -95,6 +95,10 @@ export default function Consultant() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState(null);
   
+  // Archive confirmation for profile limit
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
+  const [pendingNewConversation, setPendingNewConversation] = useState(false);
+  
   // Mobile toggle
   const [mobileView, setMobileView] = useState('chat');
   
