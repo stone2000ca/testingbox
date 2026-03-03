@@ -788,7 +788,7 @@ export default function Consultant() {
       // Call orchestrateConversation with current schools context and user location
       const response = await base44.functions.invoke('orchestrateConversation', {
         message: messageText,
-        conversationHistory: messages,
+        conversationHistory: messages.slice(-10),
         conversationContext: currentConversation?.conversationContext || {},
         region: user?.profileRegion || 'Canada',
         userId: user?.id,
