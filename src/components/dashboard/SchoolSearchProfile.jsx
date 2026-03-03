@@ -383,58 +383,20 @@ export default function SchoolSearchProfile({
           {/* Priorities */}
           <div>
             <label className="text-xs text-white/60 mb-2 block">Priorities</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {editData.priorities.map((p, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-1 px-2 py-1 bg-white/10 border border-white/20 rounded-full text-xs text-white"
-                >
-                  {p}
-                  <button
-                    onClick={() => setEditData({
-                      ...editData,
-                      priorities: editData.priorities.filter((_, i) => i !== idx)
-                    })}
-                    className="ml-1"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <select
-              onChange={(e) => {
-                if (e.target.value && !editData.priorities.includes(e.target.value)) {
-                  setEditData({
-                    ...editData,
-                    priorities: [...editData.priorities, e.target.value]
-                  });
-                }
-                e.target.value = '';
-              }}
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm"
-            >
-              <option value="">+ Add Priority</option>
-              {AVAILABLE_PRIORITIES.map(p => (
-                <option key={p} value={p} disabled={editData.priorities.includes(p)}>
-                  {p}
-                </option>
-              ))}
-            </select>
+            <ChipInput
+              chips={editData.priorities}
+              onChange={(chips) => setEditData({ ...editData, priorities: chips })}
+              placeholder="Type a priority and press Enter"
+            />
           </div>
 
           {/* Special Needs */}
           <div>
             <label className="text-xs text-white/60 mb-2 block">Special Needs</label>
-            <input
-              type="text"
-              value={editData.learningDifferences?.join(', ') || ''}
-              onChange={(e) => setEditData({
-                ...editData,
-                learningDifferences: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-              })}
-              placeholder="E.g., dyslexia support, gifted program"
-              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm placeholder:text-white/40"
+            <ChipInput
+              chips={Array.isArray(editData.learningDifferences) ? editData.learningDifferences : (editData.learningDifferences ? editData.learningDifferences.split(',').map(s => s.trim()).filter(Boolean) : [])}
+              onChange={(chips) => setEditData({ ...editData, learningDifferences: chips })}
+              placeholder="Type and press Enter"
             />
           </div>
 
