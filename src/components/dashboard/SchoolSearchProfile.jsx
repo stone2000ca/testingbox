@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import { base44 } from '@/api/base44Client';
@@ -6,10 +6,6 @@ import { Button } from '@/components/ui/button';
 import UpgradePaywallModal from '@/components/dialogs/UpgradePaywallModal';
 import { CheckCircle, Copy } from 'lucide-react';
 import {
-  MapPin,
-  DollarSign,
-  Calendar,
-  Navigation,
   Zap,
   Eye,
   Edit,
@@ -22,7 +18,7 @@ import {
   Music,
   Trophy,
   Globe,
-  Plus,
+  MoreVertical,
   X,
 } from 'lucide-react';
 
