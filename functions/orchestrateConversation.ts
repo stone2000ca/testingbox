@@ -1105,72 +1105,23 @@ Deno.serve(async (req) => {
           return Response.json(responseData);
         }
 
-        // WC10: Generate AI narrative if transitioning from BRIEF to RESULTS for the first time
-        if (context.previousState === STATES.BRIEF && briefStatus === 'confirmed' && conversationId) {
-          try {
-            console.log('[WC10] Generating AI narrative for ChatSession');
-            
-            const { childName, childGrade, childAge, locationArea, maxTuition, priorities, learningDifferences, commuteToleranceMinutes } = conversationFamilyProfile;
-            
-            const budgetDisplay = maxTuition 
-              ? `$${(maxTuition / 1000).toFixed(0)}K/year`
-              : 'not specified';
-            
-            const prioritiesDisplay = priorities?.length > 0 ? priorities.join(', ') : 'none specified';
-            const specialNeedsDisplay = learningDifferences?.length > 0 ? learningDifferences.join(', ') : 'none';
-            const commuteDisplay = commuteToleranceMinutes ? `${commuteToleranceMinutes} minutes` : 'flexible';
-            
-            const narrativePrompt = `Write a 2-3 sentence narrative about this child for their School Search Profile. Be warm, professional, and personal. Feel free to reference the specific data provided.
-
-Child: ${childName || 'Not named yet'}
-Grade: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : 'not specified'}
-Age: ${childAge || 'not specified'}
-Location: ${locationArea || 'not specified'}
-Budget: ${budgetDisplay}
-Priorities: ${prioritiesDisplay}
-Special needs: ${specialNeedsDisplay}
-Commute preference: ${commuteDisplay}
-
-Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurturing environments. Her family values strong arts programming alongside rigorous academics, with a preference for schools within a 30-minute commute of downtown Toronto."`;
-            
-            let aiNarrative = null;
-            try {
-              aiNarrative = await callOpenRouter({
-                systemPrompt: 'You are a skilled education consultant writing warm, personalized school profile narratives. Keep it 2-3 sentences max.',
-                userPrompt: narrativePrompt,
-                maxTokens: 300,
-                temperature: 0.7
-              });
-              console.log('[WC10] Narrative generated via OpenRouter');
-            } catch (openrouterError) {
-              console.log('[WC10] OpenRouter failed, trying InvokeLLM');
-              try {
-                const fallback = await base44.integrations.Core.InvokeLLM({ prompt: narrativePrompt });
-                aiNarrative = fallback?.response || fallback;
-              } catch (fallbackError) {
-                console.error('[WC10] Both narrative generation methods failed:', fallbackError.message);
-              }
-            }
-            
-            // Update ChatSession with narrative if generated
-            if (aiNarrative) {
-              try {
-                const chatSessions = await base44.entities.ChatSession.filter({ id: conversationId });
-                if (chatSessions.length > 0) {
-                  await base44.entities.ChatSession.update(conversationId, { aiNarrative });
-                  console.log('[WC10] ChatSession updated with aiNarrative');
-                }
-              } catch (updateError) {
-                console.error('[WC10] Failed to update ChatSession with narrative:', updateError.message);
-              }
-            }
-          } catch (e) {
-            console.error('[WC10] Narrative generation failed:', e.message);
-          }
-        }
-
         const autoRefresh = context.autoRefreshed === true;
-        responseData = await handleResults(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, selectedSchoolId, conversationId, userId, userLocation, autoRefresh, extractionResult?.extractedEntities || {}, returningUserContextBlock);
+        const resultsResult = await base44.asServiceRole.functions.invoke('handleResultsV2', {
+          message: processMessage,
+          conversationFamilyProfile,
+          context,
+          conversationHistory,
+          consultantName,
+          briefStatus,
+          selectedSchoolId,
+          conversationId,
+          userId,
+          userLocation,
+          autoRefresh,
+          extractedEntities: extractionResult?.extractedEntities || {},
+          returningUserContextBlock
+        });
+        responseData = resultsResult.data;
         responseData.conversationContext = { ...(responseData.conversationContext || {}), autoRefreshed: autoRefresh };
         responseData.extractedEntities = extractionResult?.extractedEntities || {};
         return Response.json(responseData);
