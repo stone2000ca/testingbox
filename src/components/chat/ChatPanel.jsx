@@ -298,7 +298,7 @@ const ChatPanel = forwardRef(function ChatPanel({
       )}
 
       {/* Chat Input */}
-      <div className={variant === 'sidebar' ? "sticky bottom-0 z-40 bg-[#2A2A3D] border-t border-white/10" : ""}>
+      <div className={variant === 'sidebar' ? "sticky bottom-0 z-40 bg-[#2A2A3E] border-t border-white/10" : ""}>
         <ChatInput
           ref={inputRef}
           onSend={onSendMessage}
