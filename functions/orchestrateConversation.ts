@@ -740,17 +740,7 @@ Deno.serve(async (req) => {
       }
 
       if (currentState === STATES.BRIEF) {
-        const briefResult = await base44.asServiceRole.functions.invoke('handleBriefV2', {
-          message: processMessage,
-          conversationFamilyProfile,
-          context,
-          conversationHistory,
-          consultantName,
-          briefStatus,
-          flags,
-          returningUserContextBlock
-        });
-        responseData = briefResult.data;
+        responseData = await handleBrief(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, flags, returningUserContextBlock);
         responseData.extractedEntities = extractionResult?.extractedEntities || {};
         return Response.json(responseData);
       }
