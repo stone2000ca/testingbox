@@ -608,7 +608,7 @@ Based on what the family shared during their visit, provide a fit re-evaluation.
       message: debriefMessage,
       deepDiveMode: 'debrief',
       visitPrepKit: priorAnalysis?.content || null,
-      fitReEvaluation: null,
+      fitReEvaluation: reevalResult || null,
       updatedContext: {
         debriefQuestionQueue,
         debriefQuestionsAsked,
