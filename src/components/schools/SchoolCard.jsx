@@ -364,7 +364,7 @@ export default function SchoolCard({ school, onViewDetails, onToggleShortlist, i
           {tuitionBand.label ? (
             <span className="inline-flex items-center gap-0.5">
               {Array.from({ length: tuitionBand.label.length }).map((_, i) => (
-                <DollarSign key={i} className="h-3.5 w-3.5" style={{ color: '#B8860B' }} />
+                <DollarSign key={i} className="h-2.5 w-2.5" style={{ color: '#B7860C' }} />
               ))}
             </span>
           ) : (
