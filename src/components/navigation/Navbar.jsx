@@ -70,7 +70,7 @@ export default function Navbar({ variant = "default" }) {
     <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <Link to={createPageUrl('Home')} className="flex items-center gap-2">
-          <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699717aa28903550c09d4d26/cfcb6f29d_logo_NextSchool_full_white.png" alt="NextSchool" className="h-10" />
+          <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699717aa28903550c09d4d26/c65068e60_logo_NextSchool_full.png" alt="NextSchool" className="h-10" />
         </Link>
         <nav className="hidden md:flex gap-8 items-center">
           <Link to={createPageUrl('HowItWorks')} className="text-slate-600 hover:text-teal-600 text-sm">How it Works</Link>
