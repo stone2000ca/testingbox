@@ -13,7 +13,7 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
       <div className={`max-w-[85%] ${isUser && 'flex flex-col items-end'}`}>
         <div className={`rounded-2xl px-3 sm:px-4 py-2 sm:py-3 ${
           isUser 
-            ? 'bg-[#f1f5f9] text-slate-900' 
+            ? 'bg-[#2D2D40] text-[#E8E8ED]' 
             : 'bg-[#334155] text-white'
         }`}>
           {isUser ? (
