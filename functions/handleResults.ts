@@ -230,6 +230,96 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
     }
 
     // =========================================================================
+    // E17-002: CACHE READ — Check if we can skip searchSchools invoke
+    // =========================================================================
+    const briefFingerprint = JSON.stringify({
+      locationArea: conversationFamilyProfile?.locationArea,
+      childGrade: conversationFamilyProfile?.childGrade,
+      maxTuition: conversationFamilyProfile?.maxTuition,
+      priorities: conversationFamilyProfile?.priorities,
+      learningDifferences: conversationFamilyProfile?.learningDifferences,
+      commuteToleranceMinutes: conversationFamilyProfile?.commuteToleranceMinutes,
+      schoolType: conversationFamilyProfile?.schoolType,
+      boardingPreference: conversationFamilyProfile?.boardingPreference,
+      genderPreference: conversationFamilyProfile?.genderPreference,
+      faithPreference: conversationFamilyProfile?.faithPreference,
+      curriculumPreference: conversationFamilyProfile?.curriculumPreference
+    });
+
+    if (context.cachedMatchResults && 
+        context.cachedMatchResults.briefFingerprint === briefFingerprint && 
+        !autoRefresh && 
+        !selectedSchoolId) {
+      console.log('[E17-002] CACHE HIT: Using cached schools, running fresh narration');
+      const matchingSchools = context.cachedMatchResults.schools;
+
+      // Still run narration LLM with fresh user message
+      let aiMessage = 'Here are your schools:';
+      try {
+        if (matchingSchools && matchingSchools.length > 0) {
+          const history = conversationHistory || [];
+          const recentMessages = history.slice(-10);
+          const conversationSummary = recentMessages
+            .map(msg => `${msg.role === 'user' ? 'Parent' : 'Consultant'}: ${msg.content}`)
+            .join('\n');
+
+          const schoolContext = `\n\nSCHOOLS (${matchingSchools.length}):\n` +
+            matchingSchools.map(s => {
+              const tuitionStr = s.tuition ? `$${s.tuition}` : 'N/A';
+              return `${s.name} | ${s.city} | Grade ${s.lowestGrade}-${s.highestGrade} | Tuition: ${tuitionStr}`;
+            }).join('\n');
+
+          const resultsSystemPrompt = `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}[STATE: RESULTS] You are currently showing school results to the parent.
+
+Keep your response brief and natural. Max 150 words.
+
+${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic, experienced.' : 'YOU ARE LIAM - Direct, strategic, no-BS.'}`;
+
+          const resultsUserPrompt = `Recent chat:\n${conversationSummary}\n${schoolContext}\n\nParent: "${message}"\n\nRespond as ${consultantName}.`;
+
+          try {
+            const aiResponse = await callOpenRouter({
+              systemPrompt: resultsSystemPrompt,
+              userPrompt: resultsUserPrompt,
+              maxTokens: 500,
+              temperature: 0.7
+            });
+            aiMessage = aiResponse || 'Here are the schools:';
+          } catch (openrouterError) {
+            try {
+              const fallbackResponse = await base44.integrations.Core.InvokeLLM({
+                prompt: resultsSystemPrompt + '\n\n' + resultsUserPrompt
+              });
+              aiMessage = fallbackResponse?.response || fallbackResponse || 'Here are the schools:';
+            } catch (fallbackError) {
+              console.error('[CACHE] Fallback narration failed:', fallbackError.message);
+            }
+          }
+
+          matchingSchools.forEach(school => {
+            const escapedName = school.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const schoolNameRegex = new RegExp(`(?<!\\[)\\b${escapedName}\\b(?!\\]\\()`, 'gi');
+            aiMessage = aiMessage.replace(
+              schoolNameRegex,
+              `[${school.name}](school:${school.slug})`
+            );
+          });
+        }
+      } catch (e) {
+        console.error('[CACHE] Narration generation failed:', e.message);
+      }
+
+      return Response.json({
+        message: aiMessage,
+        state: STATES.RESULTS,
+        briefStatus: 'confirmed',
+        schools: matchingSchools,
+        familyProfile: conversationFamilyProfile,
+        conversationContext: context
+      });
+    }
+
+    // =========================================================================
     // handleResults logic
     // =========================================================================
     if (selectedSchoolId) {
