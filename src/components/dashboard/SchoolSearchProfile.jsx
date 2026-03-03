@@ -176,61 +176,22 @@ export default function SchoolSearchProfile({
   const bestMatchSchool = matchedSchools[0];
 
   return (
-    <div className="bg-[#2A2A3D] border border-white/10 border-l-4 border-l-teal-500 rounded-xl overflow-hidden hover:border-white/20 hover:border-l-teal-400 transition-all duration-200 hover:shadow-xl group">
-      {/* Compact Card — non-edit mode */}
+    <div className="bg-[#2A2A3D] border border-white/10 border-l-4 border-l-teal-500 rounded-xl overflow-hidden hover:border-l-teal-400 transition-all duration-200 hover:shadow-xl flex flex-col">
+      {/* Vertical Card — non-edit mode */}
       {!isEditMode ? (
-        <div className="p-4">
+        <div className="p-5 flex flex-col gap-4 flex-1">
           {/* TOP ROW: Name + Grade + Status dot */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="font-bold text-white truncate">{session.childName || 'Student'}</span>
-              {session.childGrade != null && (
-                <span className="text-sm text-white/50 flex-shrink-0">· Grade {session.childGrade}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-              <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-teal-400' : 'bg-slate-500'}`} />
-              {/* Three-dot menu */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <MoreVertical className="w-4 h-4 text-white/50" />
-                </button>
-                {showMenu && (
-                  <div className="absolute right-0 mt-1 bg-[#1E1E2E] border border-white/20 rounded-lg shadow-lg z-10 w-40">
-                    <button
-                      onClick={() => { setIsEditMode(true); setShowMenu(false); }}
-                      className="w-full px-4 py-2 flex items-center gap-2 text-sm text-white/80 hover:bg-white/10 transition-colors"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit Profile
-                    </button>
-                    <button
-                      onClick={isPaid ? handleShare : () => { setShowShareUpgrade(true); setShowMenu(false); }}
-                      className="w-full px-4 py-2 flex items-center gap-2 text-sm text-white/80 hover:bg-white/10 transition-colors"
-                    >
-                      <Share2 className="w-4 h-4" />
-                      Share Profile
-                    </button>
-                    <button
-                      onClick={handleArchive}
-                      disabled={isArchiving}
-                      className="w-full px-4 py-2 flex items-center gap-2 text-sm text-white/80 hover:bg-white/10 transition-colors disabled:opacity-50"
-                    >
-                      <Archive className="w-4 h-4" />
-                      {isArchiving ? 'Archiving...' : 'Archive'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-teal-400' : 'bg-slate-500'}`} />
+            <span className="font-bold text-white truncate">{session.childName || 'Student'}</span>
+            {session.childGrade != null && (
+              <span className="text-sm text-white/50 flex-shrink-0">· Grade {session.childGrade}</span>
+            )}
           </div>
 
-          {/* MIDDLE: Priority chips */}
+          {/* Priority chips */}
           {priorities.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            <div className="flex flex-wrap gap-1.5">
               {priorities.slice(0, 3).map((priority, idx) => {
                 const IconComponent = PRIORITY_ICONS[priority] || Zap;
                 return (
@@ -251,20 +212,48 @@ export default function SchoolSearchProfile({
             </div>
           )}
 
-          {/* BOTTOM ROW: Stats + View Matches button */}
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm text-white/60">
-              <span className="text-teal-400 font-semibold">{matchedCount}</span> matched
-              {' · '}
-              <span className="text-teal-400 font-semibold">{session.shortlistedCount || 0}</span> shortlisted
-            </span>
+          {/* Stats line */}
+          <p className="text-sm text-white/60">
+            <span className="text-teal-400 font-semibold">{matchedCount}</span> matched
+            {(session.shortlistedCount > 0) && (
+              <> · <span className="text-teal-400 font-semibold">{session.shortlistedCount}</span> shortlisted</>
+            )}
+          </p>
+
+          {/* Action buttons */}
+          <div className="flex flex-col gap-2 mt-auto">
             <Button
               onClick={handleViewMatches}
-              className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5 text-sm px-3 py-1.5 h-auto flex-shrink-0"
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white gap-2"
             >
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-4 h-4" />
               View Matches
             </Button>
+            <Button
+              onClick={() => setIsEditMode(true)}
+              variant="outline"
+              className="w-full border-white/20 text-white hover:bg-white/10 gap-2"
+            >
+              <Edit className="w-4 h-4" />
+              Edit Profile
+            </Button>
+            <div className="flex gap-2">
+              <button
+                onClick={isPaid ? handleShare : () => setShowShareUpgrade(true)}
+                className="flex-1 text-sm text-white/60 hover:text-white flex items-center justify-center gap-1.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                Share
+              </button>
+              <button
+                onClick={handleArchive}
+                disabled={isArchiving}
+                className="flex-1 text-sm text-white/60 hover:text-red-400 flex items-center justify-center gap-1.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors disabled:opacity-50"
+              >
+                <Archive className="w-3.5 h-3.5" />
+                {isArchiving ? 'Archiving…' : 'Archive'}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
