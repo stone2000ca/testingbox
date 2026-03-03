@@ -54,7 +54,7 @@ export default function SchoolAnalysisCard({ analysis }) {
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${fitConfig.bg} ${fitConfig.text} ${fitConfig.border}`}>
             {fitConfig.label}
           </span>
-          <span className="text-white/40 text-xs">AI fit assessment</span>
+          <span className="text-white/40 text-xs">Fit Assessment</span>
         </div>
       )}
 

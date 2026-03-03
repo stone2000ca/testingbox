@@ -280,11 +280,7 @@ const ChatPanel = forwardRef(function ChatPanel({
                 variant="outline"
                 onClick={() => onSendMessage(briefConfirmPayload, null, briefConfirmDisplay)}
                 disabled={isTyping}
-                className={`text-sm px-4 py-2 rounded-full border-2 font-medium ${
-                  selectedConsultant === 'Jackie'
-                    ? 'bg-[#C27B8A]/20 border-[#C27B8A] text-[#C27B8A] hover:bg-[#C27B8A]/30'
-                    : 'bg-[#6B9DAD]/20 border-[#6B9DAD] text-[#6B9DAD] hover:bg-[#6B9DAD]/30'
-                }`}
+                className="text-sm px-4 py-2 rounded-full border-2 font-medium bg-teal-600 border-teal-600 text-white hover:bg-teal-700 hover:border-teal-700"
               >
                 {briefConfirmText}
               </Button>
@@ -292,7 +288,7 @@ const ChatPanel = forwardRef(function ChatPanel({
                 variant="outline"
                 onClick={() => onSendMessage(briefAdjustText)}
                 disabled={isTyping}
-                className="text-sm px-4 py-2 rounded-full bg-[#2A2A3D] border-white/20 text-[#E8E8ED] hover:bg-[#2A2A3D]/80 hover:border-white/30"
+                className="text-sm px-4 py-2 rounded-full bg-teal-600 border-teal-600 text-white hover:bg-teal-700 hover:border-teal-700"
               >
                 {briefAdjustText}
               </Button>

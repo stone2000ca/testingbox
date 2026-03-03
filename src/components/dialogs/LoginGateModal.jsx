@@ -16,6 +16,15 @@ export default function LoginGateModal({ consultantName, childName = 'your child
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl relative animate-fadeIn">
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
         {/* Consultant Avatar */}
         <div className="flex justify-center mb-6">
           <div className="h-16 w-16 rounded-full bg-gradient-to-br from-teal-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg">

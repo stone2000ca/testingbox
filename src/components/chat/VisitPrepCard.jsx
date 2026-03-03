@@ -15,8 +15,9 @@ export default function VisitPrepCard({ schoolName, visitQuestions = [], observa
   // Edge case: fewer than 3 questions → don't render
   if (!visitQuestions || visitQuestions.length < 3) return null;
 
-  const firstQuestion = visitQuestions.slice(0, 1);
-  const remainingQuestions = visitQuestions.slice(1);
+  const limitedQuestions = visitQuestions.slice(0, 3);
+  const firstQuestion = limitedQuestions.slice(0, 1);
+  const remainingQuestions = limitedQuestions.slice(1);
   const showBlur = !isPremium && remainingQuestions.length > 0;
 
   return (

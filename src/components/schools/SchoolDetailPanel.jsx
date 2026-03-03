@@ -129,13 +129,7 @@ function HeroTier({ school, familyProfile, matchScore, matchReasons }) {
             )}
           </div>
           
-          <div className={`px-4 py-2 rounded-lg font-semibold text-sm ${
-            matchScore === 'Strong' ? 'bg-emerald-500/90 text-white' :
-            matchScore === 'Good' ? 'bg-amber-500/90 text-white' :
-            'bg-slate-500/90 text-white'
-          }`}>
-            {matchScore} Match
-          </div>
+          
         </div>
       </div>
     </div>
