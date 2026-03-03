@@ -325,9 +325,9 @@ YOU ARE LIAM - Senior education strategist, 10+ years in private school placemen
 }
 
 // =============================================================================
-// INLINED: handleBrief
+// INLINED: handleBriefFallback (used only if handleBrief edge function fails)
 // =============================================================================
-async function handleBrief(base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, flags, returningUserContextBlock) {
+async function handleBriefFallback(base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, flags, returningUserContextBlock) {
   const STATES = { WELCOME: 'WELCOME', DISCOVERY: 'DISCOVERY', BRIEF: 'BRIEF', RESULTS: 'RESULTS', DEEP_DIVE: 'DEEP_DIVE' };
   const BRIEF_STATUS = { GENERATING: 'generating', PENDING_REVIEW: 'pending_review', EDITING: 'editing', CONFIRMED: 'confirmed' };
 
@@ -639,8 +639,8 @@ Deno.serve(async (req) => {
       };
 
       try {
-        console.log('[ORCH] Invoking extractEntitiesV2');
-        const extractResult = await base44.asServiceRole.functions.invoke('extractEntitiesV2', {
+        console.log('[ORCH] Invoking extractEntities');
+        const extractResult = await base44.asServiceRole.functions.invoke('extractEntities', {
           message: processMessage,
           conversationFamilyProfile,
           context,
@@ -650,7 +650,7 @@ Deno.serve(async (req) => {
         intentSignal = extractionResult.intentSignal || 'continue';
         briefDelta = extractionResult.briefDelta;
       } catch (extractError) {
-        console.error('[ORCH] extractEntitiesV2 FAILED:', extractError?.message || extractError);
+        console.error('[ORCH] extractEntities FAILED:', extractError?.message || extractError);
         extractionResult = {
           extractedEntities: {},
           updatedFamilyProfile: conversationFamilyProfile,
@@ -764,7 +764,7 @@ Deno.serve(async (req) => {
 
       if (currentState === STATES.BRIEF) {
         try {
-          const briefResult = await base44.asServiceRole.functions.invoke('handleBriefV2', {
+          const briefResult = await base44.asServiceRole.functions.invoke('handleBrief', {
             message: processMessage,
             conversationFamilyProfile,
             context,
@@ -785,8 +785,8 @@ Deno.serve(async (req) => {
           responseData.extractedEntities = extractionResult?.extractedEntities || {};
           return Response.json(responseData);
         } catch (briefError) {
-          console.error('[ORCH] handleBriefV2 FAILED:', briefError?.message || briefError);
-          responseData = await handleBrief(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, flags, returningUserContextBlock);
+          console.error('[ORCH] handleBrief FAILED:', briefError?.message || briefError);
+          responseData = await handleBriefFallback(base44, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, briefStatus, flags, returningUserContextBlock);
           responseData.extractedEntities = extractionResult?.extractedEntities || {};
           return Response.json(responseData);
         }
@@ -814,7 +814,7 @@ Deno.serve(async (req) => {
         }
 
         const autoRefresh = context.autoRefreshed === true;
-        const resultsResult = await base44.asServiceRole.functions.invoke('handleResultsV2', {
+        const resultsResult = await base44.asServiceRole.functions.invoke('handleResults', {
           message: processMessage,
           conversationFamilyProfile,
           context,
@@ -836,7 +836,7 @@ Deno.serve(async (req) => {
       }
 
       if (currentState === STATES.DEEP_DIVE) {
-        const deepDiveResult = await base44.asServiceRole.functions.invoke('handleDeepDiveV2', {
+        const deepDiveResult = await base44.asServiceRole.functions.invoke('handleDeepDive', {
           selectedSchoolId,
           message: processMessage,
           conversationFamilyProfile,
