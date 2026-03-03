@@ -597,7 +597,22 @@ Deno.serve(async (req) => {
 
         // E13a: Check if debrief mode is set — if so, route to handleDeepDive with debrief flag
         if (resolveResult.deepDiveMode === 'debrief') {
-          responseData = await handleDeepDive(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, conversationHistory, consultantName, currentState, briefStatus, currentSchools, userId, returningUserContextBlock, resolveResult.flags);
+          const deepDiveResult = await base44.asServiceRole.functions.invoke('handleDeepDive', {
+            selectedSchoolId,
+            message: processMessage,
+            conversationFamilyProfile,
+            context,
+            conversationHistory,
+            consultantName,
+            currentState,
+            briefStatus,
+            currentSchools,
+            userId,
+            returningUserContextBlock,
+            flags: resolveResult.flags,
+            conversationId
+          });
+          responseData = deepDiveResult.data;
           responseData.extractedEntities = extractionResult?.extractedEntities || {};
           return Response.json(responseData);
         }
