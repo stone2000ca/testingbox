@@ -239,15 +239,27 @@ Generate the DEEPDIVE card for this family-school match.`;
       }
       console.log('[E10b] Structured analysis extracted successfully');
 
-      // Save to SchoolAnalysis entity (non-blocking)
+      // Save to SchoolAnalysis entity (non-blocking, fire-and-forget)
       if (userId && selectedSchoolId && deepDiveAnalysis) {
-        try {
-          const existing = await base44.entities.SchoolAnalysis.filter({ userId, schoolId: selectedSchoolId });
-          if (existing && existing.length > 0) {
-            await base44.entities.SchoolAnalysis.update(existing[0].id, { ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
-            console.log('[E10b] SchoolAnalysis updated:', existing[0].id);
-            const prevVisitQuestions = existing[0].visitQuestions;
-            if (!prevVisitQuestions || prevVisitQuestions.length === 0) {
+        (async () => {
+          try {
+            const existing = await base44.entities.SchoolAnalysis.filter({ userId, schoolId: selectedSchoolId });
+            if (existing && existing.length > 0) {
+              await base44.entities.SchoolAnalysis.update(existing[0].id, { ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
+              console.log('[E10b] SchoolAnalysis updated:', existing[0].id);
+              const prevVisitQuestions = existing[0].visitQuestions;
+              if (!prevVisitQuestions || prevVisitQuestions.length === 0) {
+                const childName = conversationFamilyProfile?.childName || null;
+                const schoolName = selectedSchool.name;
+                if (consultantName === 'Jackie') {
+                  aiMessage += `\n\nBy the way — I can put together a personalized Visit Prep Kit for ${schoolName}, with specific questions to ask during your tour, things to watch for, and red flags based on everything you've told me about ${childName || 'your child'}. Want me to prepare that?`;
+                } else {
+                  aiMessage += `\n\nI can prepare a Visit Prep Kit for ${schoolName} — targeted questions, observation checklist, and red flags specific to your priorities. Want me to put that together?`;
+                }
+              }
+            } else {
+              const created = await base44.entities.SchoolAnalysis.create({ userId, schoolId: selectedSchoolId, ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
+              console.log('[E10b] SchoolAnalysis created:', created.id);
               const childName = conversationFamilyProfile?.childName || null;
               const schoolName = selectedSchool.name;
               if (consultantName === 'Jackie') {
@@ -256,20 +268,10 @@ Generate the DEEPDIVE card for this family-school match.`;
                 aiMessage += `\n\nI can prepare a Visit Prep Kit for ${schoolName} — targeted questions, observation checklist, and red flags specific to your priorities. Want me to put that together?`;
               }
             }
-          } else {
-            const created = await base44.entities.SchoolAnalysis.create({ userId, schoolId: selectedSchoolId, ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
-            console.log('[E10b] SchoolAnalysis created:', created.id);
-            const childName = conversationFamilyProfile?.childName || null;
-            const schoolName = selectedSchool.name;
-            if (consultantName === 'Jackie') {
-              aiMessage += `\n\nBy the way — I can put together a personalized Visit Prep Kit for ${schoolName}, with specific questions to ask during your tour, things to watch for, and red flags based on everything you've told me about ${childName || 'your child'}. Want me to prepare that?`;
-            } else {
-              aiMessage += `\n\nI can prepare a Visit Prep Kit for ${schoolName} — targeted questions, observation checklist, and red flags specific to your priorities. Want me to put that together?`;
-            }
+          } catch (persistError) {
+            console.warn('[DEEPDIVE] SchoolAnalysis persist failed:', persistError.message);
           }
-        } catch (persistError) {
-          console.error('[E10b] Failed to persist SchoolAnalysis (non-blocking):', persistError.message);
-        }
+        })();
       }
     } catch (analysisError) {
       console.error('[E10b] deepDiveAnalysis generation failed:', analysisError.message, 'Raw response:', rawAnalysisResponse);
