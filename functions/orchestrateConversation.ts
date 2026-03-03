@@ -1008,24 +1008,8 @@ Deno.serve(async (req) => {
     }
   };
 
-  // BUG 1 FIX: Create dynamic timeout inside processRequest after state is known
-  const requestPromise = processRequest();
-  
-  // Determine timeout based on result — peek at context to detect BRIEF->RESULTS
-  const timeoutPromise = (async () => {
-    try {
-      // We'll use a default timeout and let the request finish naturally
-      // The previousState comparison will happen inside processRequest
-      await new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT')), 25000)
-      );
-    } catch (e) {
-      throw e;
-    }
-  })();
-
   try {
-    return await Promise.race([requestPromise, timeoutPromise]);
+    return await processRequest();
   } catch (error) {
     if (error.message === 'TIMEOUT') {
       return Response.json({ error: 'Request timeout', status: 408 }, { status: 408 });
