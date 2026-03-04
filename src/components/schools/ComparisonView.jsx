@@ -2,6 +2,7 @@ import { ArrowLeft, Check, X, Circle, Lock } from 'lucide-react';
 import { buildPriorityChecks } from './SchoolCard';
 import { Button } from '@/components/ui/button';
 import { HeaderPhotoDisplay } from './HeaderPhotoHelper';
+import ComparisonMatrix from './ComparisonMatrix';
 
 // =============================================================================
 // COMPARISON VIEW — Full-screen, all School fields, grouped subheadings
@@ -147,6 +148,30 @@ export default function ComparisonView({ schools, familyProfile, comparisonMatri
     );
   }
 
+  // E11b Phase 2: Render AI-generated ComparisonMatrix if available
+  if (comparisonMatrix?.schools?.length > 0 && comparisonMatrix?.dimensions?.length > 0) {
+    return (
+      <div className="h-full flex flex-col bg-white overflow-auto">
+        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-white z-20">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Results
+          </button>
+        </div>
+        <ComparisonMatrix
+          comparisonMatrix={comparisonMatrix}
+          familyProfile={familyProfile}
+          isPremium={isPremium}
+          onUpgrade={onUpgrade}
+        />
+      </div>
+    );
+  }
+
+  // Fallback: Original buildPriorityChecks view
   const priorityRows = buildPriorityRows(schools, familyProfile);
   const colCount = schools.length;
   const LABEL_W = 160;
