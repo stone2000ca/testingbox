@@ -333,9 +333,35 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
         userId: userId,
         searchQuery: message
       });
+      
+      // Defensive: Handle various response structures
+      if (!searchResult || !searchResult.data) {
+        console.error('[ERROR] searchSchools returned invalid response:', searchResult);
+        return Response.json({
+          message: "I'm having trouble searching for schools right now. Could you tell me a bit more about your preferences?",
+          state: STATES.RESULTS,
+          briefStatus: briefStatus,
+          schools: [],
+          familyProfile: conversationFamilyProfile,
+          conversationContext: context
+        });
+      }
+      
       schools = searchResult.data.schools || [];
+      if (!Array.isArray(schools)) {
+        console.error('[ERROR] searchSchools schools is not an array:', typeof schools);
+        schools = [];
+      }
     } catch (e) {
       console.error('[ERROR] searchSchools failed:', e.message);
+      return Response.json({
+        message: "I'm having trouble searching for schools right now. Could you tell me a bit more about your preferences?",
+        state: STATES.RESULTS,
+        briefStatus: briefStatus,
+        schools: [],
+        familyProfile: conversationFamilyProfile,
+        conversationContext: context
+      });
     }
 
     schools = schools.filter(s => s.schoolType !== 'Special Needs' && s.schoolType !== 'Public');
