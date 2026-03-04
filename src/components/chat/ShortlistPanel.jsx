@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Heart, ExternalLink, CalendarDays, ChevronDown } from 'lucide-react';
+import { X, Heart, ExternalLink, CalendarDays, ChevronDown, Bell, BellRing } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { buildPriorityChecks } from '@/components/schools/SchoolCard';
 import { EVENT_TYPE_LABELS, EVENT_TYPE_COLORS, formatEventDate } from '@/components/utils/eventConstants';
@@ -34,6 +34,21 @@ export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSch
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [eventsLoaded, setEventsLoaded] = useState(false);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
+  // E16a-019: Reminded events loaded from localStorage
+  const [remindedEvents, setRemindedEvents] = useState(new Set());
+
+  // E16a-019: Load reminded events from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('ns_event_reminders');
+      if (stored) {
+        const reminders = JSON.parse(stored);
+        setRemindedEvents(new Set(reminders.map(r => r.eventId)));
+      }
+    } catch (err) {
+      console.error('[E16a-019] Failed to load reminders:', err);
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchEvents() {
@@ -65,6 +80,37 @@ export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSch
     }
     fetchEvents();
   }, [shortlist.map(s => s.id).join(',')]);
+
+  // E16a-019: Handle reminder toggle for event
+  const handleToggleReminder = (event) => {
+    try {
+      let stored = [];
+      const existing = localStorage.getItem('ns_event_reminders');
+      if (existing) {
+        stored = JSON.parse(existing);
+      }
+
+      const isReminded = remindedEvents.has(event.id);
+      if (isReminded) {
+        // Remove reminder
+        stored = stored.filter(r => r.eventId !== event.id);
+      } else {
+        // Add reminder
+        stored.push({
+          eventId: event.id,
+          schoolName: event.schoolName,
+          eventTitle: event.title,
+          eventDate: event.date,
+          savedAt: new Date().toISOString()
+        });
+      }
+
+      localStorage.setItem('ns_event_reminders', JSON.stringify(stored));
+      setRemindedEvents(new Set(stored.map(r => r.eventId)));
+    } catch (err) {
+      console.error('[E16a-019] Failed to toggle reminder:', err);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col" style={{ background: '#1E1E30', borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
@@ -209,8 +255,9 @@ export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSch
                   <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded ${EVENT_TYPE_COLORS[ev.eventType] || 'bg-slate-700 text-slate-300'}`}>
                     {EVENT_TYPE_LABELS[ev.eventType] || ev.eventType}
                   </span>
-                  {(ev.registrationUrl || ev.virtualUrl) && (
-                    <div>
+                  {/* E16a-019: Register link + Remind Me bell button */}
+                  <div className="flex items-center justify-between gap-2">
+                    {(ev.registrationUrl || ev.virtualUrl) ? (
                       <a
                         href={ev.registrationUrl || ev.virtualUrl}
                         target="_blank"
@@ -220,8 +267,19 @@ export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSch
                         {ev.registrationUrl ? 'Register' : 'Join'}
                         <ExternalLink className="w-3 h-3" />
                       </a>
-                    </div>
-                  )}
+                    ) : null}
+                    <button
+                      onClick={() => handleToggleReminder(ev)}
+                      className="p-1 text-slate-400 hover:text-white transition-colors rounded flex-shrink-0"
+                      title={remindedEvents.has(ev.id) ? 'Reminder set' : 'Remind me'}
+                    >
+                      {remindedEvents.has(ev.id) ? (
+                        <BellRing className="w-4 h-4" style={{ color: '#F5A623' }} />
+                      ) : (
+                        <Bell className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
