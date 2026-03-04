@@ -376,6 +376,13 @@ export default function SchoolDetail({ school, onClose, onToggleShortlist, isSho
           onClose={() => setShowContactModal(false)}
         />
       )}
+      {showTourModal && (
+        <TourRequestModal
+          school={school}
+          onClose={() => setShowTourModal(false)}
+          upcomingEvents={events}
+        />
+      )}
     </>
   );
 }
