@@ -57,6 +57,35 @@ function TourRequestCard({ inquiry, onTourStatusChange }) {
     setUpdating(false);
   };
 
+  // E16c: Extract and format family context fields
+  const hasMaxTuition = inquiry.maxTuition != null;
+  const hasPriorities = inquiry.prioritiesSnapshot;
+  const hasBoardingPref = inquiry.boardingPreference;
+  const hasAnyFamilyContext = hasMaxTuition || hasPriorities || hasBoardingPref;
+
+  const formatCurrency = (value) => {
+    if (!value) return null;
+    return new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      minimumFractionDigits: 0
+    }).format(value);
+  };
+
+  const parsedPriorities = (() => {
+    if (!hasPriorities) return null;
+    try {
+      const parsed = JSON.parse(inquiry.prioritiesSnapshot);
+      return Array.isArray(parsed) ? parsed.join(', ') : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const snapshotDateLabel = inquiry.profileSnapshotAt
+    ? `Context from ${new Date(inquiry.profileSnapshotAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}`
+    : null;
+
   return (
     <Card className="overflow-hidden">
       <div className="p-5">
@@ -124,6 +153,25 @@ function TourRequestCard({ inquiry, onTourStatusChange }) {
           <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700 mb-4 border border-slate-100">
             <p className="text-xs font-semibold text-slate-500 mb-1">Special Requests</p>
             <p className="whitespace-pre-wrap">{inquiry.specialRequests}</p>
+          </div>
+        )}
+
+        {/* E16c: Family Context section */}
+        {hasAnyFamilyContext && (
+          <div className="bg-blue-50 rounded-lg p-3 text-sm mb-4 border border-blue-100">
+            <p className="text-xs font-semibold text-blue-700 mb-2">Family Context</p>
+            <div className="space-y-1.5 text-slate-700">
+              {hasMaxTuition && (
+                <div><span className="text-slate-500">Budget:</span> <span className="font-medium">{formatCurrency(inquiry.maxTuition)}</span></div>
+              )}
+              {parsedPriorities && (
+                <div><span className="text-slate-500">Priorities:</span> <span className="font-medium">{parsedPriorities}</span></div>
+              )}
+              {hasBoardingPref && (
+                <div><span className="text-slate-500">Boarding:</span> <span className="font-medium">{inquiry.boardingPreference}</span></div>
+              )}
+            </div>
+            {snapshotDateLabel && <p className="text-xs text-slate-500 mt-2">{snapshotDateLabel}</p>}
           </div>
         )}
 
