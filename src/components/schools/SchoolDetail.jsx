@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { X, Heart, MapPin, Users, DollarSign, Award, Mail, Phone, Globe2, ExternalLink } from "lucide-react";
+import { X, Heart, MapPin, Users, DollarSign, Award, Mail, Phone, Globe2, ExternalLink, CalendarDays } from "lucide-react";
 import { createPageUrl } from "../../utils";
 import ContactSchoolModal from './ContactSchoolModal';
 import { HeaderPhotoDisplay, LogoDisplay, isClearbitUrl } from './HeaderPhotoHelper';
