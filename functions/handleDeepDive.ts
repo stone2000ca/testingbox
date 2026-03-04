@@ -346,6 +346,21 @@ Generate the DEEPDIVE card for this family-school match.${upcomingEvents.length 
           : `\n\n---\n\n**Honest take:** ${schoolName} isn't the strongest match. I'd recommend looking at other options. Want me to pull up alternatives?`;
       }
     }
+    // E16c-015: Append event awareness + tour request offer to followUpPrompt
+    let eventsPrompt = '';
+    if (upcomingEvents.length > 0) {
+      const nextEvent = upcomingEvents[0];
+      const eventDate = new Date(nextEvent.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      const eventTypeLabel = (nextEvent.eventType || '').replace(/_/g, ' ');
+      eventsPrompt = `\n\nUpcoming: ${selectedSchool.name} has a ${eventTypeLabel} on ${eventDate}${nextEvent.title ? ` ("${nextEvent.title}")` : ''}.${nextEvent.registrationUrl ? ' Registration link available.' : ''} ${nextEvent.isConfirmed ? '' : 'Note: this date is estimated and should be verified with the school.'}`.trimEnd();
+    } else {
+      eventsPrompt = `\n\nI don't have upcoming event dates for ${selectedSchool.name}. ${selectedSchool.email ? `Their admissions contact is ${selectedSchool.email}.` : 'Check their website for open house and tour information.'}`;
+    }
+    if (selectedSchool.subscriptionTier === 'premium') {
+      eventsPrompt += ` I can also send a tour request on your behalf if you'd like — they'll receive your priorities and preferences so the visit is productive from the start.`;
+    }
+    followUpPrompt += eventsPrompt;
+
     const finalMessage = sanitizedMessage + followUpPrompt;
 
     console.log('[DEEPDIVE] Returning aiMessage length:', finalMessage?.length);
