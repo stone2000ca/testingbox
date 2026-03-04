@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Send, CheckCircle2 } from 'lucide-react';
+import { X, Send, CheckCircle2, ExternalLink } from 'lucide-react';
 
 export default function ContactSchoolModal({ school, onClose }) {
   const [user, setUser] = useState(null);
@@ -58,6 +58,37 @@ export default function ContactSchoolModal({ school, onClose }) {
       setSending(false);
     }
   };
+
+  // Unclaimed school — show website redirect instead of form
+  if (school.claimStatus !== 'claimed') {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center">
+          <button onClick={onClose} className="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center">
+            <X className="h-5 w-5 text-slate-600" />
+          </button>
+          <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+            <ExternalLink className="h-6 w-6 text-slate-500" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">Contact {school.name}</h3>
+          <p className="text-slate-600 text-sm mb-6">
+            This school hasn't claimed their NextSchool profile yet. Visit their website directly to get in touch.
+          </p>
+          {school.website && (
+            <a
+              href={school.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Visit {school.name}'s Website
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (

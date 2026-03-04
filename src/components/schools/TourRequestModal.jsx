@@ -74,8 +74,8 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
       specialRequests: form.specialRequests || undefined,
     });
 
-    // Fire-and-forget email notification to school admin
-    if (school.email) {
+    // Fire-and-forget email notification to school admin (only for claimed schools)
+    if (school.email && school.claimStatus === 'claimed') {
       const gradeLabel = form.childGrade !== '' ? (() => {
         const n = Number(form.childGrade);
         if (n <= -2) return 'Pre-K'; if (n === -1) return 'JK'; if (n === 0) return 'K';

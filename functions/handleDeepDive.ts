@@ -354,7 +354,8 @@ Generate the DEEPDIVE card for this family-school match.${upcomingEvents.length 
       const eventTypeLabel = (nextEvent.eventType || '').replace(/_/g, ' ');
       eventsPrompt = `\n\nUpcoming: ${selectedSchool.name} has a ${eventTypeLabel} on ${eventDate}${nextEvent.title ? ` ("${nextEvent.title}")` : ''}.${nextEvent.registrationUrl ? ' Registration link available.' : ''} ${nextEvent.isConfirmed ? '' : 'Note: this date is estimated and should be verified with the school.'}`.trimEnd();
     } else {
-      eventsPrompt = `\n\nI don't have upcoming event dates for ${selectedSchool.name}. ${selectedSchool.email ? `Their admissions contact is ${selectedSchool.email}.` : 'Check their website for open house and tour information.'}`;
+      const isClaimed = selectedSchool.claimStatus === 'claimed';
+      eventsPrompt = `\n\nI don't have upcoming event dates for ${selectedSchool.name}. ${isClaimed && selectedSchool.email ? `Their admissions contact is ${selectedSchool.email}.` : 'Check their website for contact information.'}`;
     }
     if (selectedSchool.subscriptionTier === 'premium') {
       eventsPrompt += ` I can also send a tour request on your behalf if you'd like — they'll receive your priorities and preferences so the visit is productive from the start.`;
