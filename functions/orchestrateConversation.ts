@@ -978,6 +978,9 @@ Deno.serve(async (req) => {
       }
 
       if (currentState === STATES.DEEP_DIVE) {
+        // BUG-DEBRIEF-INTENT-S49: Ensure conversationId is in context before debrief handlers
+        if (conversationIdFromPayload && !context.conversationId) context.conversationId = conversationIdFromPayload;
+
         // E13a: Check if debrief mode is set BEFORE falling through to handleDeepDive
         if (resolveResult.deepDiveMode === 'debrief' || resolveResult.flags?.DEBRIEF_MODE) {
           console.log('[E13a] Routing DEEP_DIVE to inlined handleVisitDebrief');
