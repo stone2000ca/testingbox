@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { X, Send, CheckCircle2, ExternalLink } from 'lucide-react';
+import { sendSchoolEmail } from '@/components/utils/sendSchoolEmail';
 
 export default function ContactSchoolModal({ school, onClose }) {
   const [user, setUser] = useState(null);
@@ -41,12 +42,43 @@ export default function ContactSchoolModal({ school, onClose }) {
     setSending(true);
 
     try {
-      await base44.entities.SchoolInquiry.create({
+      const inquiry = await base44.entities.SchoolInquiry.create({
         parentUserId: user.id,
         schoolId: school.id,
         message: `Parent: ${formData.parentName}\nEmail: ${formData.email}\nChild's Grade: ${formData.childGrade}\n\nMessage:\n${formData.message}`,
         status: 'pending'
       });
+
+      // WC4: Send email notification via sendSchoolEmail wrapper
+      const emailBody = `
+<p>Hi,</p>
+<p>A parent has submitted an inquiry for <strong>${school.name}</strong> via NextSchool.</p>
+<table style="border-collapse:collapse;width:100%;max-width:500px;font-family:sans-serif;font-size:14px;">
+  <tr><td style="padding:6px 12px 6px 0;color:#64748b;white-space:nowrap;">Parent Name</td><td style="padding:6px 0;font-weight:600;">${formData.parentName}</td></tr>
+  <tr><td style="padding:6px 12px 6px 0;color:#64748b;">Email</td><td style="padding:6px 0;">${formData.email}</td></tr>
+  <tr><td style="padding:6px 12px 6px 0;color:#64748b;">Child's Grade</td><td style="padding:6px 0;">${formData.childGrade}</td></tr>
+</table>
+<div style="background:#f8fafc;border-left:4px solid #0d9488;padding:16px;margin:24px 0;">
+  <p style="color:#1e293b;font-weight:600;margin:0 0 8px 0;">Message:</p>
+  <p style="color:#475569;margin:0;white-space:pre-wrap;">${formData.message}</p>
+</div>
+<p style="margin-top:24px;">
+  <a href="https://nextschool.ca/SchoolAdmin" style="background:#0d9488;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">View in School Portal → Inquiries</a>
+</p>
+<p style="color:#94a3b8;font-size:12px;margin-top:24px;">This notification was sent by NextSchool. Do not reply to this email — use the portal to manage your inquiries.</p>
+      `.trim();
+
+      if (school.email) {
+        sendSchoolEmail({
+          type: 'contact',
+          school,
+          to: school.email,
+          subject: `New Parent Inquiry from ${formData.parentName} — NextSchool`,
+          body: emailBody,
+          userId: user.id,
+          inquiryId: inquiry.id,
+        }).catch(() => {}); // non-blocking, silent failure
+      }
 
       setSuccess(true);
       setTimeout(() => {
