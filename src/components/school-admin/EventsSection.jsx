@@ -258,6 +258,7 @@ function PremiumEventsManagement({ school }) {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [analytics, setAnalytics] = useState({});
 
   const loadEvents = async () => {
     setLoading(true);
