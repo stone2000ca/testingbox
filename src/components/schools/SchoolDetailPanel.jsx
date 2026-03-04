@@ -293,32 +293,50 @@ function ReviewsTier() {
 }
 
 // TIER 5: Sticky CTA Bar
-function CtaBar({ school, isShortlisted, onToggleShortlist, onCompare }) {
+function CtaBar({ school, isShortlisted, onToggleShortlist, onCompare, isPremium, onRequestTour }) {
   return (
-    <div className="sticky bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 p-4 flex gap-3 z-40">
-      <Button
-        onClick={() => window.open(school.website, '_blank')}
-        variant="outline"
-        className="flex-1 flex items-center justify-center gap-2"
-      >
-        <ExternalLink className="h-4 w-4" />
-        Visit Website
-      </Button>
-      <Button
-        onClick={() => onToggleShortlist(school.id)}
-        variant={isShortlisted ? 'default' : 'outline'}
-        className={`flex-1 flex items-center justify-center gap-2 ${isShortlisted ? 'bg-red-50 border-red-200 text-red-600' : ''}`}
-      >
-        <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-red-500 text-red-500' : ''}`} />
-        {isShortlisted ? 'Shortlisted' : 'Add to Shortlist'}
-      </Button>
-      <Button
-        onClick={() => onCompare?.(school.id)}
-        variant="outline"
-        className="flex-1"
-      >
-        Compare
-      </Button>
+    <div className="sticky bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 p-4 space-y-2 z-40">
+      {/* Tour request row */}
+      {isPremium ? (
+        <Button
+          onClick={onRequestTour}
+          className="w-full bg-teal-600 hover:bg-teal-700 flex items-center justify-center gap-2"
+        >
+          <CalendarDays className="h-4 w-4" />
+          Request a Tour
+        </Button>
+      ) : (
+        school.email ? (
+          <a href={`mailto:${school.email}`} className="block w-full">
+            <Button variant="outline" className="w-full flex items-center justify-center gap-2">
+              <Mail className="h-4 w-4" />
+              Contact School Directly
+            </Button>
+          </a>
+        ) : null
+      )}
+      {/* Standard actions */}
+      <div className="flex gap-3">
+        <Button
+          onClick={() => window.open(school.website, '_blank')}
+          variant="outline"
+          className="flex-1 flex items-center justify-center gap-2"
+        >
+          <ExternalLink className="h-4 w-4" />
+          Website
+        </Button>
+        <Button
+          onClick={() => onToggleShortlist(school.id)}
+          variant={isShortlisted ? 'default' : 'outline'}
+          className={`flex-1 flex items-center justify-center gap-2 ${isShortlisted ? 'bg-red-50 border-red-200 text-red-600' : ''}`}
+        >
+          <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-red-500 text-red-500' : ''}`} />
+          {isShortlisted ? 'Shortlisted' : 'Shortlist'}
+        </Button>
+        <Button onClick={() => onCompare?.(school.id)} variant="outline" className="flex-1">
+          Compare
+        </Button>
+      </div>
     </div>
   );
 }
