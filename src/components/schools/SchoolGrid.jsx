@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import SchoolCard from './SchoolCard';
 import { ChevronDown, ChevronUp, Pin, GitCompareArrows, Share2, Check, Copy, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
