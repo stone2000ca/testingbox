@@ -61,6 +61,21 @@ async function performSearch(req) {
     searchQuery = ''
   } = payload;
 
+  // BUG-SEARCH-003: Validate minimum required search params exist
+  const hasLocation = !!(region || city || provinceState || country || resolvedLat || resolvedLng);
+  const hasGrade = minGrade !== null && minGrade !== undefined;
+  
+  if (!hasLocation && !hasGrade) {
+    console.error('[SEARCH] Both location and grade are missing — cannot perform meaningful search');
+    return Response.json({ 
+      schools: [], 
+      total: 0,
+      returned: 0,
+      edgeCaseMessage: "I need your location and your child's grade to search for schools.",
+      error: 'insufficient_data'
+    });
+  }
+
   const provinceAbbreviations = {
     'BC': 'British Columbia', 'AB': 'Alberta', 'SK': 'Saskatchewan', 'MB': 'Manitoba',
     'ON': 'Ontario', 'QC': 'Quebec', 'NB': 'New Brunswick', 'NS': 'Nova Scotia',

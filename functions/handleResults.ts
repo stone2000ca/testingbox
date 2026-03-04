@@ -248,9 +248,36 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
     }
 
     console.log('[SEARCH] Running fresh school search in RESULTS state');
+    console.log('[SEARCH] conversationFamilyProfile:', JSON.stringify(conversationFamilyProfile, null, 2));
+
+    // Validate that conversationFamilyProfile has minimum required data
+    if (!conversationFamilyProfile || typeof conversationFamilyProfile !== 'object') {
+      console.error('[SEARCH] conversationFamilyProfile is not an object:', conversationFamilyProfile);
+      return Response.json({
+        message: "I need a bit more information to find the right schools. Could you remind me — where are you looking and what grade?",
+        state: STATES.RESULTS,
+        briefStatus: briefStatus,
+        schools: [],
+        familyProfile: conversationFamilyProfile || {},
+        conversationContext: context
+      });
+    }
 
     if (!conversationFamilyProfile?.locationArea && context.extractedEntities?.locationArea) {
       conversationFamilyProfile.locationArea = context.extractedEntities.locationArea;
+    }
+
+    // BUG-FLOW-003: Check for critical missing data before calling searchSchools
+    if (!conversationFamilyProfile?.locationArea && !conversationFamilyProfile?.childGrade) {
+      console.error('[SEARCH] Missing both location and grade — insufficient data for search');
+      return Response.json({
+        message: "I need to know your location and your child's grade to search for schools. Could you tell me both?",
+        state: STATES.RESULTS,
+        briefStatus: briefStatus,
+        schools: [],
+        familyProfile: conversationFamilyProfile,
+        conversationContext: context
+      });
     }
 
     let parsedGrade = null;
