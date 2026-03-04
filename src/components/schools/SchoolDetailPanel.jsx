@@ -331,8 +331,11 @@ export default function SchoolDetailPanel({
   onCompare,
   isShortlisted 
 }) {
+  const [showTourModal, setShowTourModal] = useState(false);
+
   if (!school) return null;
 
+  const isPremium = school.membershipTier === 'premium';
   const matchScore = calculateMatchScore(school, familyProfile);
   const matchReasons = getMatchReasons(school, familyProfile);
 

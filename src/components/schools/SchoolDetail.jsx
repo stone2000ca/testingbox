@@ -13,8 +13,10 @@ import { EVENT_TYPE_LABELS, EVENT_TYPE_COLORS, formatEventDate } from '@/compone
 
 export default function SchoolDetail({ school, onClose, onToggleShortlist, isShortlisted }) {
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showTourModal, setShowTourModal] = useState(false);
   const [events, setEvents] = useState([]);
   const [eventsLoaded, setEventsLoaded] = useState(false);
+  const isPremium = school?.membershipTier === 'premium';
 
   useEffect(() => {
     if (!school?.id) return;
