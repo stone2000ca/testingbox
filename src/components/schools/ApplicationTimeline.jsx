@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Bell, BellRing } from 'lucide-react';
 import { EVENT_TYPE_LABELS } from '@/components/utils/eventConstants';
 
 /**
@@ -9,8 +9,22 @@ import { EVENT_TYPE_LABELS } from '@/components/utils/eventConstants';
  * grouped by month with color-coded event type badges.
  */
 export default function ApplicationTimeline({ shortlist }) {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+   const [events, setEvents] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [remindedEvents, setRemindedEvents] = useState(new Set());
+
+   // E16a-019: Load reminded events from localStorage on mount
+   useEffect(() => {
+     try {
+       const stored = localStorage.getItem('ns_event_reminders');
+       if (stored) {
+         const reminders = JSON.parse(stored);
+         setRemindedEvents(new Set(reminders.map(r => r.eventId)));
+       }
+     } catch (err) {
+       console.error('[E16a-019] Failed to load reminders:', err);
+     }
+   }, []);
 
   useEffect(() => {
     async function fetchEvents() {
@@ -50,6 +64,37 @@ export default function ApplicationTimeline({ shortlist }) {
 
     fetchEvents();
   }, [shortlist.map(s => s.id).join(',')]);
+
+  // E16a-019: Handle reminder toggle for event
+  const handleToggleReminder = (event) => {
+    try {
+      let stored = [];
+      const existing = localStorage.getItem('ns_event_reminders');
+      if (existing) {
+        stored = JSON.parse(existing);
+      }
+
+      const isReminded = remindedEvents.has(event.id);
+      if (isReminded) {
+        // Remove reminder
+        stored = stored.filter(r => r.eventId !== event.id);
+      } else {
+        // Add reminder
+        stored.push({
+          eventId: event.id,
+          schoolName: event.schoolName,
+          eventTitle: event.title,
+          eventDate: event.date,
+          savedAt: new Date().toISOString()
+        });
+      }
+
+      localStorage.setItem('ns_event_reminders', JSON.stringify(stored));
+      setRemindedEvents(new Set(stored.map(r => r.eventId)));
+    } catch (err) {
+      console.error('[E16a-019] Failed to toggle reminder:', err);
+    }
+  };;
 
   // Group events by month
   const groupedByMonth = {};
@@ -137,11 +182,30 @@ export default function ApplicationTimeline({ shortlist }) {
                     className="flex-1 rounded-lg p-3 space-y-1.5"
                     style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
                   >
-                    <p className="text-sm font-semibold text-white">{ev.title}</p>
-                    <p className="text-xs text-slate-400">{ev.schoolName}</p>
-                    <span className={`inline-block text-[10px] font-semibold px-2 py-1 rounded ${colorClass}`}>
-                      {EVENT_TYPE_LABELS[ev.eventType] || ev.eventType}
-                    </span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-white">{ev.title}</p>
+                        <p className="text-xs text-slate-400">{ev.schoolName}</p>
+                        <span className={`inline-block text-[10px] font-semibold px-2 py-1 rounded ${colorClass}`}>
+                          {EVENT_TYPE_LABELS[ev.eventType] || ev.eventType}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleToggleReminder(ev)}
+                        className="p-1.5 rounded flex-shrink-0 transition-colors"
+                        style={{
+                          color: remindedEvents.has(ev.id) ? '#F5A623' : '#8888A0',
+                          background: 'transparent'
+                        }}
+                        title="Remind me (in-app)"
+                      >
+                        {remindedEvents.has(ev.id) ? (
+                          <BellRing className="w-4 h-4" />
+                        ) : (
+                          <Bell className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
