@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Heart, Navigation, Check, AlertTriangle, X, Circle, Lock, Scale, EyeOff, DollarSign } from "lucide-react";
+import { MapPin, Heart, Navigation, Check, AlertTriangle, X, Circle, Lock, Scale, EyeOff, DollarSign, CalendarDays } from "lucide-react";
 import { HeaderPhotoDisplay, LogoDisplay } from '@/components/schools/HeaderPhotoHelper';
 
 // =============================================================================

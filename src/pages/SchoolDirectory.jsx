@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Search, MapPin, DollarSign, Users, Loader2, Heart } from "lucide-react";
+import { Search, MapPin, DollarSign, Users, Loader2, Heart, CalendarDays } from "lucide-react";
 import Navbar from '@/components/navigation/Navbar';
 import Footer from '@/components/navigation/Footer';
 import { Link } from 'react-router-dom';
