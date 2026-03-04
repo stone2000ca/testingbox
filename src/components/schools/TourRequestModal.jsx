@@ -93,6 +93,35 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
         return `Grade ${n}`;
       })() : null;
 
+      // Build Family Snapshot section if FamilyProfile exists
+      const budgetRangeLabel = familyProfile?.maxTuition
+        ? familyProfile.maxTuition > 50000
+          ? '$50k+'
+          : familyProfile.maxTuition > 35000
+          ? '$35k–50k'
+          : familyProfile.maxTuition > 20000
+          ? '$20k–35k'
+          : '<$20k'
+        : null;
+
+      const topPriorities = familyProfile?.priorities
+        ? familyProfile.priorities.slice(0, 3).join(', ')
+        : null;
+
+      const boardingPref = familyProfile?.boardingPreference || null;
+
+      const familySnapshotHtml = familyProfile
+        ? `
+<h3 style="color:#1e293b;font-size:14px;font-weight:600;margin-top:20px;margin-bottom:10px;">Family Snapshot</h3>
+<table style="border-collapse:collapse;width:100%;max-width:500px;font-family:sans-serif;font-size:14px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
+  ${gradeLabel ? `<tr style="background:#f8fafc;"><td style="padding:8px 12px;color:#64748b;border-bottom:1px solid #e2e8f0;">Grade Level</td><td style="padding:8px 12px;font-weight:500;">${gradeLabel}</td></tr>` : ''}
+  ${budgetRangeLabel ? `<tr style="background:#f8fafc;"><td style="padding:8px 12px;color:#64748b;border-bottom:1px solid #e2e8f0;">Budget Range</td><td style="padding:8px 12px;font-weight:500;">${budgetRangeLabel}</td></tr>` : ''}
+  ${topPriorities ? `<tr style="background:#f8fafc;"><td style="padding:8px 12px;color:#64748b;border-bottom:1px solid #e2e8f0;">Top Priorities</td><td style="padding:8px 12px;font-weight:500;">${topPriorities}</td></tr>` : ''}
+  ${boardingPref ? `<tr style="background:#f8fafc;"><td style="padding:8px 12px;color:#64748b;">Boarding Preference</td><td style="padding:8px 12px;font-weight:500;">${boardingPref}</td></tr>` : ''}
+</table>
+        `.trim()
+        : '';
+
       const emailBody = `
 <p>Hi,</p>
 <p>A parent has submitted a tour request for <strong>${school.name}</strong> via NextSchool.</p>
@@ -105,6 +134,7 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
   ${preferredDateAlt ? `<tr><td style="padding:6px 12px 6px 0;color:#64748b;">Alternative Date</td><td style="padding:6px 0;">${new Date(preferredDateAlt).toLocaleString('en-CA')}</td></tr>` : ''}
   ${form.specialRequests ? `<tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top;">Special Requests</td><td style="padding:6px 0;">${form.specialRequests}</td></tr>` : ''}
 </table>
+${familySnapshotHtml}
 <p style="margin-top:24px;">
   <a href="https://nextschool.ca/SchoolAdmin" style="background:#0d9488;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">View in School Portal → Inquiries</a>
 </p>
