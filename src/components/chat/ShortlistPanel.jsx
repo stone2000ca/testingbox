@@ -155,6 +155,29 @@ export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSch
           </div>
         )}
 
+        {/* E13b: Application Timeline — 2+ schools only */}
+        {shortlist.length >= 2 && (
+          <div className="p-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+            <button
+              onClick={() => setTimelineExpanded(!timelineExpanded)}
+              className="flex items-center gap-2 w-full mb-3 transition-colors hover:opacity-80"
+            >
+              <CalendarDays className="w-4 h-4 text-teal-400 flex-shrink-0" />
+              <h3 className="text-sm font-semibold text-white">Application Timeline</h3>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 ml-auto transition-transform flex-shrink-0 ${
+                  timelineExpanded ? 'rotate-0' : '-rotate-90'
+                }`}
+              />
+            </button>
+            {timelineExpanded && (
+              <div className="mb-4">
+                <ApplicationTimeline shortlist={shortlist} />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* E16b-004: Upcoming Events feed */}
         <div className="p-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
           <div className="flex items-center gap-2 mb-3">
