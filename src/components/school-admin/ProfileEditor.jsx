@@ -400,6 +400,18 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
             </SelectContent>
           </Select>
         </div>
+        <div className="col-span-2">
+          <FieldLabel required>Admissions Email</FieldLabel>
+          <Input
+            type="email"
+            value={formData.email || ''}
+            onChange={(e) => handleChange('email', e.target.value)}
+            placeholder="admissions@yourschool.ca"
+            className={v('email') ? 'border-red-500' : ''}
+          />
+          {v('email') && <p className="text-xs text-red-500 mt-1">This field is required</p>}
+          <p className="text-xs text-slate-500 mt-1">Tour requests and parent inquiries will be sent to this email.</p>
+        </div>
       </div>
     </>
   );
