@@ -33,6 +33,7 @@ function StatusDot({ status }) {
 export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSchool, familyProfile }) {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [eventsLoaded, setEventsLoaded] = useState(false);
+  const [timelineExpanded, setTimelineExpanded] = useState(true);
 
   useEffect(() => {
     async function fetchEvents() {
