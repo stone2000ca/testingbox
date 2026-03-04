@@ -336,6 +336,12 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
           }
         }
       }
+      
+      // BUG-FLOW-004: Fallback — if city wasn't set, use locationArea directly
+      if (!searchParams.city && !searchParams.region && locationAreaLower) {
+        searchParams.city = conversationFamilyProfile.locationArea;
+        console.log(`[FALLBACK] Using locationArea directly as city: "${searchParams.city}"`);
+      }
     }
 
     if (resolvedLat && resolvedLng) {
