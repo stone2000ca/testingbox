@@ -102,6 +102,8 @@ export async function sendSchoolEmail({
         conversationId,
         claimStatus,
         status: 'sent',
+        is_test: false,
+        test_scenario: null,
       });
     } catch (logErr) {
       console.error('Failed to log sent email:', logErr);
