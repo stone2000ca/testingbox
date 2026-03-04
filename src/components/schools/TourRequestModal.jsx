@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { X, CheckCircle2, CalendarDays } from 'lucide-react';
 import { EVENT_TYPE_LABELS } from '@/components/utils/eventConstants';
+import { sendSchoolEmail } from '@/components/utils/sendSchoolEmail';
 
 export default function TourRequestModal({ school, onClose, upcomingEvents = [] }) {
   const [user, setUser] = useState(null);
@@ -92,8 +93,8 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
       }),
     });
 
-    // Fire-and-forget email notification to school admin (only for claimed schools)
-    if (school.email && school.claimStatus === 'claimed') {
+    // WC4: Email notification to school admin via sendSchoolEmail wrapper
+    if (school.email) {
       const gradeLabel = form.childGrade !== '' ? (() => {
         const n = Number(form.childGrade);
         if (n <= -2) return 'Pre-K'; if (n === -1) return 'JK'; if (n === 0) return 'K';
@@ -148,10 +149,13 @@ ${familySnapshotHtml}
 <p style="color:#94a3b8;font-size:12px;margin-top:24px;">This notification was sent by NextSchool. Do not reply to this email — use the portal to manage your inquiries.</p>
       `.trim();
 
-      base44.integrations.Core.SendEmail({
+      sendSchoolEmail({
+        type: 'tour_request',
+        school,
         to: school.email,
         subject: `New Tour Request from ${user.full_name || 'a parent'} — NextSchool`,
         body: emailBody,
+        userId: user.id,
       }).catch(() => {}); // non-blocking, silent failure
     }
 
