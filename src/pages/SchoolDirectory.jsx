@@ -12,6 +12,7 @@ import { HeaderPhotoDisplay, LogoDisplay } from '@/components/schools/HeaderPhot
 
 export default function SchoolDirectory() {
   const [allSchools, setAllSchools] = useState([]);
+  const [schoolsWithEvents, setSchoolsWithEvents] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRegion, setFilterRegion] = useState('all');
@@ -125,8 +126,16 @@ export default function SchoolDirectory() {
   const loadSchools = async () => {
     try {
       // Fetch ALL schools without limit
-      const schools = await base44.entities.School.filter({ status: 'active' }, '-updated_date', 1000);
+      const [schools, events] = await Promise.all([
+        base44.entities.School.filter({ status: 'active' }, '-updated_date', 1000),
+        base44.entities.SchoolEvent.filter({ isActive: true }),
+      ]);
       setAllSchools(schools || []);
+      const today = new Date().toISOString();
+      const withEvents = new Set(
+        (events || []).filter(e => e.date && e.date >= today).map(e => e.schoolId)
+      );
+      setSchoolsWithEvents(withEvents);
     } catch (error) {
       console.error('Failed to load schools:', error);
     } finally {
