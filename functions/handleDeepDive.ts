@@ -113,6 +113,20 @@ Deno.serve(async (req) => {
         conversationContext: context
       });
     }
+
+    // Load upcoming SchoolEvents for this school (non-blocking, best-effort)
+    let upcomingEvents = [];
+    try {
+      const allEvents = await base44.entities.SchoolEvent.filter({ schoolId: selectedSchoolId, isActive: true });
+      const now = new Date();
+      upcomingEvents = allEvents
+        .filter(e => e.date && new Date(e.date) >= now)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(0, 5);
+      console.log('[DEEPDIVE] Loaded upcoming events:', upcomingEvents.length);
+    } catch (evErr) {
+      console.warn('[DEEPDIVE] SchoolEvent fetch failed (non-blocking):', evErr.message);
+    }
     
     let childDisplayName = 'your child';
     if (conversationFamilyProfile?.childName) {
