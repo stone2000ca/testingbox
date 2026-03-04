@@ -152,6 +152,56 @@ export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSch
             })}
           </div>
         )}
+
+        {/* E16b-004: Upcoming Events feed */}
+        <div className="p-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <CalendarDays className="w-4 h-4 text-teal-400" />
+            <h3 className="text-sm font-semibold text-white">Upcoming Events</h3>
+          </div>
+          {!eventsLoaded ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin h-4 w-4 border-2 border-teal-400 border-t-transparent rounded-full" />
+            </div>
+          ) : upcomingEvents.length === 0 ? (
+            <p className="text-xs text-slate-500 text-center py-4">
+              No upcoming events for your shortlisted schools.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {upcomingEvents.map(ev => (
+                <div
+                  key={ev.id}
+                  className="rounded-lg p-3 space-y-1.5"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
+                >
+                  <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                    <CalendarDays className="w-3 h-3" />
+                    {formatEventDate(ev.date)}
+                  </p>
+                  <p className="text-sm font-semibold text-white leading-snug">{ev.title}</p>
+                  <p className="text-xs text-slate-400">{ev.schoolName}</p>
+                  <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded ${EVENT_TYPE_COLORS[ev.eventType] || 'bg-slate-700 text-slate-300'}`}>
+                    {EVENT_TYPE_LABELS[ev.eventType] || ev.eventType}
+                  </span>
+                  {(ev.registrationUrl || ev.virtualUrl) && (
+                    <div>
+                      <a
+                        href={ev.registrationUrl || ev.virtualUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-teal-400 hover:underline"
+                      >
+                        {ev.registrationUrl ? 'Register' : 'Join'}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </ScrollArea>
     </div>
   );
