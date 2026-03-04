@@ -125,6 +125,8 @@ export async function sendSchoolEmail({
         claimStatus,
         status: 'failed',
         errorMessage: error.message,
+        is_test: false,
+        test_scenario: null,
       });
     } catch (logErr) {
       console.error('Failed to log failed email:', logErr);
