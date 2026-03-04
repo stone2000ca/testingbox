@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Crown, Plus, Pencil, Trash2, Calendar, Link, Video, Users, RefreshCw, MapPin, Eye, Mouse, MessageSquare } from 'lucide-react';
+import { Crown, Plus, Pencil, Trash2, Calendar, Link, Video, Users, RefreshCw, MapPin } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 const EVENT_TYPE_LABELS = {
@@ -258,29 +258,11 @@ function PremiumEventsManagement({ school }) {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [analytics, setAnalytics] = useState({});
 
   const loadEvents = async () => {
     setLoading(true);
     const data = await base44.entities.SchoolEvent.filter({ schoolId: school.id });
-    const sorted = data.sort((a, b) => new Date(a.date) - new Date(b.date));
-    setEvents(sorted);
-    
-    // Load analytics for all events
-    if (sorted.length > 0) {
-      try {
-        const result = await base44.functions.invoke('getEventAnalytics', {
-          schoolId: school.id,
-          eventIds: sorted.map(e => e.id)
-        });
-        if (result.data?.analytics) {
-          setAnalytics(result.data.analytics);
-        }
-      } catch (err) {
-        console.error('Failed to load analytics:', err);
-      }
-    }
-    
+    setEvents(data.sort((a, b) => new Date(a.date) - new Date(b.date)));
     setLoading(false);
   };
 
@@ -354,27 +336,9 @@ function PremiumEventsManagement({ school }) {
                   <p className="text-sm text-slate-600 mt-1 line-clamp-2">{ev.description}</p>
                 )}
                 {ev.location && (
-                   <p className="text-xs text-slate-400 mt-1 flex items-center gap-1"><MapPin className="h-3 w-3" />{ev.location}</p>
-                 )}
-
-                 {/* E16a-016: Analytics counters */}
-                 {analytics[ev.id] && (
-                   <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
-                     <div className="flex items-center gap-1">
-                       <Eye className="h-3 w-3" />
-                       <span>{analytics[ev.id].views} views</span>
-                     </div>
-                     <div className="flex items-center gap-1">
-                       <Mouse className="h-3 w-3" />
-                       <span>{analytics[ev.id].register_clicks} clicks</span>
-                     </div>
-                     <div className="flex items-center gap-1">
-                       <MessageSquare className="h-3 w-3" />
-                       <span>{analytics[ev.id].tour_requests} requests</span>
-                     </div>
-                   </div>
-                 )}
-                </div>
+                  <p className="text-xs text-slate-400 mt-1 flex items-center gap-1"><MapPin className="h-3 w-3" />{ev.location}</p>
+                )}
+              </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => openEdit(ev)} className="text-slate-500 hover:text-slate-900">
                   <Pencil className="h-4 w-4" />
