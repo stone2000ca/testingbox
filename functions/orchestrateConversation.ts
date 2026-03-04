@@ -284,7 +284,8 @@ YOU ARE LIAM - Senior education strategist, 10+ years in private school placemen
   let discoveryMessageRaw = 'Tell me more about your child.';
   try {
     const fastResponse = await base44.integrations.Core.InvokeLLM({ 
-      prompt: personaInstructions + '\n\nRecent chat:\n' + conversationSummary + '\n\nParent: "' + message + '"\n\nRespond as ' + consultantName + '. ONE question max. No filler.'
+      prompt: personaInstructions + '\n\nRecent chat:\n' + conversationSummary + '\n\nParent: "' + message + '"\n\nRespond as ' + consultantName + '. ONE question max. No filler.',
+      model: 'gpt-5'
     });
     discoveryMessageRaw = fastResponse?.response || fastResponse || 'Tell me more about your child.';
     console.log('[DISCOVERY] Response via InvokeLLM (fast path)');
@@ -443,7 +444,8 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
     } catch (openrouterError) {
       try {
         const fallbackResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: debriefSystemPrompt + '\n\n' + debriefUserPrompt
+          prompt: debriefSystemPrompt + '\n\n' + debriefUserPrompt,
+          model: 'gpt-5'
         });
         debriefMessage = fallbackResponse?.response || fallbackResponse || "Tell me about your visit experience.";
       } catch (fallbackError) {

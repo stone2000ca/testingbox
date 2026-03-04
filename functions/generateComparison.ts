@@ -92,6 +92,7 @@ Return JSON with array of insights (each 1-2 sentences highlighting key differen
 
     const insights = await base44.integrations.Core.InvokeLLM({
       prompt: insightsPrompt,
+      model: 'gpt-5',
       response_json_schema: {
         type: "object",
         properties: {

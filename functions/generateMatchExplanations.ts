@@ -91,6 +91,7 @@ Return ONLY a JSON array with NO additional text:
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
+      model: 'gpt-5',
       response_json_schema: {
         type: "object",
         properties: {

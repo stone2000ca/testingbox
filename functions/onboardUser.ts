@@ -270,7 +270,8 @@ End with a question asking for confirmation.`
 
   try {
     const response = await base44.integrations.Core.InvokeLLM({
-      prompt: prompts[nextPhase] || prompts.open_warm
+      prompt: prompts[nextPhase] || prompts.open_warm,
+      model: 'gpt-5'
     });
 
     return response;
@@ -290,7 +291,8 @@ ${JSON.stringify(profile, null, 2)}`;
 
   try {
     const brief = await base44.integrations.Core.InvokeLLM({
-      prompt
+      prompt,
+      model: 'gpt-5'
     });
     return brief;
   } catch (error) {
