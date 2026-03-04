@@ -397,6 +397,7 @@ export default function SchoolGrid({
               familyProfile={familyProfile}
               accentColor={accentColor}
               hasUpcomingEvent={schoolsWithEvents.has(school.id)}
+              isVisited={visitedSchoolIds.has(school.id)}
             />
           </div>
         ))}
