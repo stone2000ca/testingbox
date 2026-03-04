@@ -185,6 +185,26 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Invalid email type' }, { status: 400 });
     }
 
+    // E18b-002: Test mode check - block email and log as test_blocked
+    if (test_mode) {
+      try {
+        await base44.asServiceRole.entities.EmailLog.create({
+          type: emailType === 'CLAIM_EXPIRED' ? 'claim_expiry' : 'claim_verification',
+          to: claimData.claimantEmail,
+          fromName: 'NextSchool',
+          subject,
+          schoolId: schoolData.id,
+          claimStatus: schoolData.claimStatus,
+          status: 'blocked_test',
+          is_test: true,
+          test_scenario,
+        });
+      } catch (logErr) {
+        console.error('Failed to log test-blocked email:', logErr);
+      }
+      return Response.json({ success: true, reason: 'test_blocked' });
+    }
+
     // Send email
     try {
       await base44.asServiceRole.integrations.Core.SendEmail({
@@ -204,6 +224,8 @@ Deno.serve(async (req) => {
           schoolId: schoolData.id,
           claimStatus: schoolData.claimStatus,
           status: 'sent',
+          is_test: false,
+          test_scenario: null,
         });
       } catch (logErr) {
         console.error('Failed to log email:', logErr);
@@ -222,6 +244,8 @@ Deno.serve(async (req) => {
           claimStatus: schoolData.claimStatus,
           status: 'failed',
           errorMessage: emailErr.message,
+          is_test: false,
+          test_scenario: null,
         });
       } catch (logErr) {
         console.error('Failed to log email error:', logErr);
