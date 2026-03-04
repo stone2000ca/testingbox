@@ -120,8 +120,8 @@ Deno.serve(async (req) => {
       const allEvents = await base44.entities.SchoolEvent.filter({ schoolId: selectedSchoolId, isActive: true });
       const now = new Date();
       upcomingEvents = allEvents
-        .filter(e => e.date && new Date(e.date) >= now)
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .filter(e => e.date && new Date(e.date).getTime() >= now.getTime())
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .slice(0, 5);
       console.log('[DEEPDIVE] Loaded upcoming events:', upcomingEvents.length);
     } catch (evErr) {
@@ -150,7 +150,32 @@ Deno.serve(async (req) => {
       location: `${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country}`,
       genderPolicy: selectedSchool.genderPolicy || 'Co-ed'
     };
-    
+
+    // Build event context string for LLM injection
+    const subscriptionTier = selectedSchool.subscriptionTier || 'free';
+    const schoolContactEmail = selectedSchool.email || null;
+
+    let eventContext = '';
+    if (upcomingEvents.length > 0) {
+      const eventLines = upcomingEvents.map(e => {
+        const confidenceTag = (e.isConfirmed === true) ? '[confirmed]' : '[estimated — verify with school]';
+        const dateStr = new Date(e.date).toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        const typeLabel = (e.eventType || '').replace(/_/g, ' ');
+        const regUrl = e.registrationUrl ? ` | Register: ${e.registrationUrl}` : '';
+        return `- ${e.title || typeLabel} (${typeLabel}) — ${dateStr} ${confidenceTag}${regUrl}`;
+      });
+      eventContext = `UPCOMING EVENTS (${upcomingEvents.length} found):\n${eventLines.join('\n')}`;
+    } else {
+      eventContext = `UPCOMING EVENTS: None found in our system.`;
+    }
+
+    const area4Instructions = `
+AREA 4 — EVENT-AWARE NEXT STEP (include naturally at the end of your response, woven into conversational prose):
+${upcomingEvents.length > 0
+  ? `There are upcoming events at this school. Mention the nearest one naturally in conversation. Use the confidence tag to set expectations: events tagged [confirmed] can be stated as fact; events tagged [estimated — verify with school] should be presented as "I believe they have..." or "there may be a..." and always suggest verifying directly with the school.${subscriptionTier === 'premium' ? ` This school is a premium partner — you may also offer to send a tour request on the parent's behalf, explaining their priorities will be shared in advance.` : ''}`
+  : `No upcoming events are in our system for this school. Use the Honesty Pattern: clearly say you don't have event dates on file, and suggest the parent contact admissions directly.${schoolContactEmail ? ` Their admissions contact is: ${schoolContactEmail}.` : ' Direct them to the school website for contact info.'}`
+}`;
+
     const deepDiveSystemPrompt = `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}You are ${consultantName}, an education consultant. The parent is currently in a deep-dive on a specific school.
 
 CRITICAL STATE RULE — READ THIS FIRST:
@@ -168,13 +193,8 @@ ${consultantName === 'Jackie'
   ? "JACKIE PERSONA: Warm, empathetic, supportive." 
   : "LIAM PERSONA: Direct, strategic, no-BS."}
 
-Write naturally in conversational prose about why this school fits the family. Cover the student-school alignment, any trade-offs or concerns, and the cost reality. Speak like a consultant would—no headers, labels, or formatting markers. Just natural, helpful conversation. End your response with a brief, clear sentence summarizing whether this school is a strong fit for this family and the primary reason why or why not, based on what they shared in their brief.`;
-
-    const eventsBlock = upcomingEvents.length > 0
-      ? `\n\nUPCOMING EVENTS AT THIS SCHOOL:\n` + upcomingEvents.map(e =>
-          `- ${e.title} (${e.eventType?.replace('_', ' ')}) on ${new Date(e.date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}${e.isConfirmed ? '' : ' [unconfirmed]'}`
-        ).join('\n')
-      : '';
+Write naturally in conversational prose about why this school fits the family. Cover the student-school alignment, any trade-offs or concerns, and the cost reality. Speak like a consultant would—no headers, labels, or formatting markers. Just natural, helpful conversation. End your response with a brief, clear sentence summarizing whether this school is a strong fit for this family and the primary reason why or why not, based on what they shared in their brief.
+${area4Instructions}`;
 
     const deepDiveUserPrompt = `FAMILY BRIEF:
 - Child: ${childDisplayName}
@@ -182,9 +202,13 @@ Write naturally in conversational prose about why this school fits the family. C
 - Priorities: ${resolvedPriorities?.join(', ') || 'Not specified'}
 
 SCHOOL DATA:
-${JSON.stringify(compressedSchoolData, null, 2)}${eventsBlock}
+${JSON.stringify(compressedSchoolData, null, 2)}
 
-Generate the DEEPDIVE card for this family-school match.${upcomingEvents.length > 0 ? ' If relevant, briefly mention any upcoming open houses or tours as a natural next step.' : ''}`;
+SCHOOL SUBSCRIPTION TIER: ${subscriptionTier}
+
+${eventContext}
+
+Generate the DEEPDIVE card for this family-school match.`;
 
     console.log('[DEEPDIVE] Attempting AI-generated card');
 
@@ -316,7 +340,7 @@ Generate the DEEPDIVE card for this family-school match.${upcomingEvents.length 
     }
     console.log('[DEEPDIVE] deepDiveAnalysis populated:', !!deepDiveAnalysis, 'visitPrepKit populated:', !!generatedVisitPrepKit);
 
-    // Add post-deep-dive follow-up prompt
+    // Deterministic follow-up prompt (fit-label based, appended after AI prose)
     let followUpPrompt = '';
     const fitLabel = deepDiveAnalysis?.fitLabel || 'worth_exploring';
     const childName = conversationFamilyProfile?.childName || 'your child';
@@ -346,21 +370,6 @@ Generate the DEEPDIVE card for this family-school match.${upcomingEvents.length 
           : `\n\n---\n\n**Honest take:** ${schoolName} isn't the strongest match. I'd recommend looking at other options. Want me to pull up alternatives?`;
       }
     }
-    // E16c-015: Append event awareness + tour request offer to followUpPrompt
-    let eventsPrompt = '';
-    if (upcomingEvents.length > 0) {
-      const nextEvent = upcomingEvents[0];
-      const eventDate = new Date(nextEvent.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-      const eventTypeLabel = (nextEvent.eventType || '').replace(/_/g, ' ');
-      eventsPrompt = `\n\nUpcoming: ${selectedSchool.name} has a ${eventTypeLabel} on ${eventDate}${nextEvent.title ? ` ("${nextEvent.title}")` : ''}.${nextEvent.registrationUrl ? ' Registration link available.' : ''} ${nextEvent.isConfirmed ? '' : 'Note: this date is estimated and should be verified with the school.'}`.trimEnd();
-    } else {
-      const isClaimed = selectedSchool.claimStatus === 'claimed';
-      eventsPrompt = `\n\nI don't have upcoming event dates for ${selectedSchool.name}. ${isClaimed && selectedSchool.email ? `Their admissions contact is ${selectedSchool.email}.` : 'Check their website for contact information.'}`;
-    }
-    if (selectedSchool.subscriptionTier === 'premium') {
-      eventsPrompt += ` I can also send a tour request on your behalf if you'd like — they'll receive your priorities and preferences so the visit is productive from the start.`;
-    }
-    followUpPrompt += eventsPrompt;
 
     const finalMessage = sanitizedMessage + followUpPrompt;
 
