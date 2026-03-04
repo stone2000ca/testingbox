@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Crown, Plus, Pencil, Trash2, Calendar, Link, Video, Users, RefreshCw, MapPin } from 'lucide-react';
+import { Crown, Plus, Pencil, Trash2, Calendar, Link, Video, Users, RefreshCw, MapPin, Eye, Mouse, MessageSquare } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 const EVENT_TYPE_LABELS = {
