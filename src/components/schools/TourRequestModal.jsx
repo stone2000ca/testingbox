@@ -47,6 +47,17 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
     const preferredDateAlt = resolveDate(form.altDateOption, form.altOtherDate);
     const primaryEvent = upcomingEvents.find(e => e.id === form.preferredDateOption);
 
+    // Fetch FamilyProfile for Family Snapshot section in email
+    let familyProfile = null;
+    try {
+      const profiles = await base44.entities.FamilyProfile.filter({ userId: user.id });
+      if (profiles && profiles.length > 0) {
+        familyProfile = profiles[0];
+      }
+    } catch (err) {
+      // Silently fail if no profile found
+    }
+
     const messageParts = [
       `Tour request for ${school.name}`,
       `Tour type: ${form.tourType === 'in_person' ? 'In-Person' : 'Virtual'}`,
