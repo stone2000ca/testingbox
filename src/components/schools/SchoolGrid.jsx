@@ -189,6 +189,31 @@ export default function SchoolGrid({
     schools = [];
   }
   const [tier3Expanded, setTier3Expanded] = useState(false);
+
+  // E16b-005: Bulk fetch upcoming events for all visible schools
+  const [schoolsWithEvents, setSchoolsWithEvents] = useState(new Set());
+  const allSchoolIds = [
+    ...(tieredSchools ? [
+      ...(tieredSchools.topMatches || []),
+      ...(tieredSchools.alsoWorthExploring || []),
+      ...(tieredSchools.seeAll || []),
+    ] : schools),
+    ...shortlistedSchools,
+  ].map(s => s.id);
+  const allSchoolIdsKey = [...new Set(allSchoolIds)].sort().join(',');
+
+  useEffect(() => {
+    if (!allSchoolIdsKey) return;
+    const today = new Date().toISOString();
+    base44.entities.SchoolEvent.filter({ isActive: true })
+      .then(events => {
+        const upcoming = new Set(
+          events.filter(e => e.date && e.date >= today).map(e => e.schoolId)
+        );
+        setSchoolsWithEvents(upcoming);
+      })
+      .catch(() => {});
+  }, [allSchoolIdsKey]);
   // T-SL-002: track newly backfilled IDs to animate them in
   const prevShortlistedRef = useRef(shortlistedIds);
   const [newlyBackfilledIds, setNewlyBackfilledIds] = useState(new Set());
