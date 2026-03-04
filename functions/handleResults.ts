@@ -68,8 +68,11 @@ function resolveLocationCoords(locationArea) {
 // =============================================================================
 // INLINED: callOpenRouter
 // =============================================================================
+const USER_FACING_MODELS = ['openai/gpt-5', 'openai/gpt-4.1-mini'];
+const INTERNAL_MODELS = ['google/gemini-2.5-flash', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash-lite'];
+
 async function callOpenRouter(options) {
-  const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7 } = options;
+  const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7, models } = options;
 
   const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
   if (!OPENROUTER_API_KEY) {
@@ -82,7 +85,7 @@ async function callOpenRouter(options) {
   messages.push({ role: 'user', content: userPrompt });
 
   const body = {
-    models: ['google/gemini-2.5-flash', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash-lite'],
+    models: models || INTERNAL_MODELS,
     messages,
     max_tokens: maxTokens,
     temperature
