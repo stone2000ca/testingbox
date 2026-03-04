@@ -14,6 +14,8 @@ import { base44 } from '@/api/base44Client';
  * @param {string} config.userId - User ID (optional, for logging)
  * @param {string} config.inquiryId - SchoolInquiry ID (optional, for logging)
  * @param {string} config.conversationId - Conversation ID (optional, for logging)
+ * @param {boolean} config.test_mode - Test mode flag (default: false)
+ * @param {string} config.test_scenario - Test scenario identifier (optional, for logging)
  * @returns {Promise<{sent: boolean, reason?: string}>}
  */
 export async function sendSchoolEmail({
@@ -26,6 +28,8 @@ export async function sendSchoolEmail({
   userId,
   inquiryId,
   conversationId,
+  test_mode = false,
+  test_scenario = null,
 }) {
   const schoolId = school?.id;
   const claimStatus = school?.claimStatus;
