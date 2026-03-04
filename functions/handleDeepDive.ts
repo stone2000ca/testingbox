@@ -373,6 +373,10 @@ Generate the DEEPDIVE card for this family-school match.`;
 
     const finalMessage = sanitizedMessage + followUpPrompt;
 
+    // E16a-015: Calculate tourRequestOffered
+    const isPremium = selectedSchool.subscriptionTier === 'premium' || selectedSchool.membershipTier === 'premium';
+    const tourRequestOffered = isPremium && upcomingEvents.length > 0;
+
     console.log('[DEEPDIVE] Returning aiMessage length:', finalMessage?.length);
     return Response.json({
       message: finalMessage,
@@ -382,7 +386,8 @@ Generate the DEEPDIVE card for this family-school match.`;
       familyProfile: conversationFamilyProfile,
       conversationContext: { ...context, [deepDiveFollowUpKey]: true },
       deepDiveAnalysis: deepDiveAnalysis,
-      visitPrepKit: generatedVisitPrepKit
+      visitPrepKit: generatedVisitPrepKit,
+      tourRequestOffered: tourRequestOffered
     });
   } catch (error) {
     console.error('[DEEPDIVE] Fatal error:', error);
