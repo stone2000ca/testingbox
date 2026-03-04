@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
 
     const {
       message,
-      conversationFamilyProfile: rawProfile,
+      localProfile: rawProfile,
       context: rawContext,
       conversationHistory,
       consultantName,
@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
         message: adjustMessage,
         state: STATES.BRIEF,
         briefStatus: BRIEF_STATUS.EDITING,
-        familyProfile: conversationFamilyProfile,
+        familyProfile: localProfile,
         conversationContext: context,
         schools: []
       });
@@ -143,25 +143,25 @@ Deno.serve(async (req) => {
     if (context.extractedEntities) {
        for (const [key, value] of Object.entries(context.extractedEntities)) {
          if (value !== null && value !== undefined) {
-           const existing = conversationFamilyProfile[key];
+           const existing = localProfile[key];
            // Merge/append for arrays; replace only if current is empty
            if (Array.isArray(value)) {
              const currentArray = Array.isArray(existing) ? existing : [];
              // Merge arrays, removing duplicates
              const merged = [...new Set([...currentArray, ...value])];
-             conversationFamilyProfile[key] = merged;
+             localProfile[key] = merged;
            } else if (existing === null || existing === undefined || (Array.isArray(existing) && existing.length === 0)) {
              // Only replace scalar values if current is empty
-             conversationFamilyProfile[key] = value;
+             localProfile[key] = value;
            }
          }
        }
      }
 
     try {
-      const { childName, childGrade, locationArea, interests, priorities, dealbreakers } = conversationFamilyProfile;
+      const { childName, childGrade, locationArea, interests, priorities, dealbreakers } = localProfile;
       // BUG-ENT-005 FIX: Check context.extractedEntities for maxTuition if not in FamilyProfile
-      let maxTuition = conversationFamilyProfile.maxTuition;
+      let maxTuition = localProfile.maxTuition;
       if ((!maxTuition || maxTuition === null || maxTuition === undefined) && context.extractedEntities?.maxTuition) {
         maxTuition = context.extractedEntities.maxTuition;
         console.log('[BRIEF] Using extracted maxTuition:', maxTuition);
@@ -177,9 +177,9 @@ Deno.serve(async (req) => {
         budgetDisplay = `$${maxTuition.toLocaleString()}/year`;
       }
 
-      const briefChildGenderLabel = conversationFamilyProfile?.gender === 'male'
+      const briefChildGenderLabel = localProfile?.gender === 'male'
         ? 'Your son'
-        : conversationFamilyProfile?.gender === 'female'
+        : localProfile?.gender === 'female'
         ? 'Your daughter'
         : 'Your child';
       let briefChildDisplayName = childName ? childName : briefChildGenderLabel;
@@ -244,9 +244,9 @@ Format as a markdown bullet list with one field per line. Start the child field 
       if (consultantName === 'Liam') {
         // DETERMINISTIC brief for Liam — LLM ignores markdown formatting, so build it ourselves
         const briefLines = ["Here's what I've put together so far:\n"];
-        const childLabel = conversationFamilyProfile?.gender === 'male'
+        const childLabel = localProfile?.gender === 'male'
           ? 'Your son'
-          : conversationFamilyProfile?.gender === 'female'
+          : localProfile?.gender === 'female'
           ? 'Your daughter'
           : 'Your child';
         const childDisplay = childName ? childName : childLabel;
@@ -266,9 +266,9 @@ Format as a markdown bullet list with one field per line. Start the child field 
         console.log('[BRIEF] Liam brief built deterministically');
       } else {
         // Jackie: LLM-generated with programmatic fallback
-        const childLabel = conversationFamilyProfile?.gender === 'male'
+        const childLabel = localProfile?.gender === 'male'
           ? 'Your son'
-          : conversationFamilyProfile?.gender === 'female'
+          : localProfile?.gender === 'female'
           ? 'Your daughter'
           : 'Your child';
         const childDisplay = childName ? childName : childLabel;
@@ -313,7 +313,7 @@ Format as a markdown bullet list with one field per line. Start the child field 
       message: briefMessage,
       state: STATES.BRIEF,
       briefStatus: updatedBriefStatus,
-      familyProfile: conversationFamilyProfile,
+      familyProfile: localProfile,
       conversationContext: updatedCtx,
       schools: []
     });
