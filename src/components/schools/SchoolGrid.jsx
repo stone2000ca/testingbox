@@ -393,6 +393,7 @@ export default function SchoolGrid({
               isShortlisted={shortlistedIds.includes(school.id)}
               familyProfile={familyProfile}
               accentColor={accentColor}
+              hasUpcomingEvent={schoolsWithEvents.has(school.id)}
             />
           </div>
         ))}
