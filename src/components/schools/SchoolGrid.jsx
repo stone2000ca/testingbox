@@ -271,6 +271,7 @@ export default function SchoolGrid({
       priorityOverrides,
       onPriorityToggle,
       isVisited: visitedSchoolIds.has(school.id),
+      hasUpcomingEvent: schoolsWithEvents.has(school.id),
     });
 
     return (
