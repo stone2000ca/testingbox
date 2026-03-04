@@ -8,7 +8,7 @@ import { base44 } from '@/api/base44Client';
 // Renders three tiers: Top Matches, Also Worth Exploring, See All Matches
 // =============================================================================
 
-function TierSection({ title, subtitle, schools, onViewDetails, onToggleShortlist, shortlistedIds, familyProfile, accentColor, priorityOverrides, onPriorityToggle }) {
+function TierSection({ title, subtitle, schools, onViewDetails, onToggleShortlist, shortlistedIds, familyProfile, accentColor, priorityOverrides, onPriorityToggle, visitedSchoolIds = new Set() }) {
   if (!schools || schools.length === 0) return null;
   return (
     <div className="mb-6">
@@ -29,6 +29,7 @@ function TierSection({ title, subtitle, schools, onViewDetails, onToggleShortlis
               accentColor={accentColor}
               priorityOverrides={priorityOverrides}
               onPriorityToggle={onPriorityToggle}
+              isVisited={visitedSchoolIds.has(school.id)}
             />
           </div>
         ))}
