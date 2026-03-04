@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
       returningUserContextBlock
     } = await req.json();
 
-    let conversationFamilyProfile = rawProfile || {};
+    const localProfile = JSON.parse(JSON.stringify(rawProfile || {}));
     let context = rawContext || {};
 
     const STATES = { WELCOME: 'WELCOME', DISCOVERY: 'DISCOVERY', BRIEF: 'BRIEF', RESULTS: 'RESULTS', DEEP_DIVE: 'DEEP_DIVE' };
