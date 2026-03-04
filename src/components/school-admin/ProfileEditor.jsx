@@ -69,7 +69,7 @@ const TIERS = [
     color: 'red',
     weight: 0.5,
     motivational: 'Essential information families need to find your school.',
-    fields: ['name', 'city', 'provinceState', 'country', 'lowestGrade', 'highestGrade', 'genderPolicy', 'dayTuition', 'schoolType'],
+    fields: ['name', 'city', 'provinceState', 'country', 'lowestGrade', 'highestGrade', 'genderPolicy', 'dayTuition', 'schoolType', 'email'],
   },
   {
     id: 'tier2',
