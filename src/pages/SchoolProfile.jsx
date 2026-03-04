@@ -4,7 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { MapPin, Users, DollarSign, Calendar, Award, Globe2, Heart, Mail, Phone, ExternalLink } from "lucide-react";
+import { MapPin, Users, DollarSign, Calendar, Award, Globe2, Heart, Mail, Phone, ExternalLink, CheckCircle2, AlertCircle, Eye } from "lucide-react";
+import { EVENT_TYPE_LABELS, EVENT_TYPE_COLORS, formatEventDate } from '@/components/utils/eventConstants';
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import ContactSchoolModal from '@/components/schools/ContactSchoolModal';
@@ -20,6 +21,8 @@ export default function SchoolProfile() {
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [testimonials, setTestimonials] = useState([]);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const [sessionId] = useState(Math.random().toString(36).substring(2, 11));
 
   useEffect(() => {
@@ -39,6 +42,24 @@ export default function SchoolProfile() {
       base44.entities.Testimonial.filter({ school_id: schoolId, is_visible: true })
         .then(setTestimonials)
         .catch(() => {});
+    }
+  }, [schoolId]);
+
+  useEffect(() => {
+    if (schoolId) {
+      setLoadingEvents(true);
+      const now = new Date().toISOString();
+      base44.entities.SchoolEvent.filter({ 
+        schoolId, 
+        isActive: true,
+        date: { $gte: now }
+      })
+        .then(events => {
+          const sorted = (events || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+          setUpcomingEvents(sorted.slice(0, 3));
+        })
+        .catch(() => setUpcomingEvents([]))
+        .finally(() => setLoadingEvents(false));
     }
   }, [schoolId]);
 
@@ -299,21 +320,77 @@ export default function SchoolProfile() {
                 )}
 
                 {school.highlights && school.highlights.length > 0 && (
-                  <Card className="p-6 bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-200">
-                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                      <Award className="h-5 w-5 text-teal-600" />
-                      What Makes This School Special
-                    </h2>
-                    <ul className="space-y-2">
-                      {school.highlights.slice(0, 3).map((highlight, idx) => (
-                        <li key={idx} className="flex gap-3">
-                          <span className="text-teal-600 font-bold">✦</span>
-                          <span className="text-teal-900">{highlight}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </Card>
-                )}
+                   <Card className="p-6 bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-200">
+                     <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                       <Award className="h-5 w-5 text-teal-600" />
+                       What Makes This School Special
+                     </h2>
+                     <ul className="space-y-2">
+                       {school.highlights.slice(0, 3).map((highlight, idx) => (
+                         <li key={idx} className="flex gap-3">
+                           <span className="text-teal-600 font-bold">✦</span>
+                           <span className="text-teal-900">{highlight}</span>
+                         </li>
+                       ))}
+                     </ul>
+                   </Card>
+                 )}
+
+                {!loadingEvents && (upcomingEvents.length > 0 || school.virtualTourUrl) && (
+                   <Card className="p-6 border-teal-200 bg-teal-50">
+                     <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                       <Calendar className="h-5 w-5 text-teal-600" />
+                       Upcoming Events
+                     </h2>
+                     {upcomingEvents.length > 0 ? (
+                       <div className="space-y-3">
+                         {upcomingEvents.map((event) => (
+                           <div key={event.id} className="bg-white rounded-lg p-4 border border-teal-100">
+                             <div className="flex items-start gap-3 mb-2">
+                               <span className={`px-2 py-0.5 rounded text-xs font-semibold ${EVENT_TYPE_COLORS[event.eventType] || 'bg-slate-100 text-slate-600'}`}>
+                                 {EVENT_TYPE_LABELS[event.eventType] || event.eventType}
+                               </span>
+                               {event.source === 'school_portal' ? (
+                                 <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded">
+                                   <CheckCircle2 className="h-3 w-3" /> Confirmed
+                                 </span>
+                               ) : (
+                                 <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                                   <AlertCircle className="h-3 w-3" /> Listed on website
+                                 </span>
+                               )}
+                             </div>
+                             <p className="font-semibold text-slate-900 mb-1">{event.title}</p>
+                             <p className="text-sm text-slate-500 mb-2 flex items-center gap-1">
+                               <Calendar className="h-3 w-3" />
+                               {formatEventDate(event.date)}
+                             </p>
+                             {event.description && (
+                               <p className="text-sm text-slate-600 mb-3 line-clamp-2">{event.description}</p>
+                             )}
+                             {event.registrationUrl && (
+                               <a href={event.registrationUrl} target="_blank" rel="noopener noreferrer">
+                                 <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white">
+                                   Register
+                                 </Button>
+                               </a>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     ) : school.virtualTourUrl ? (
+                       <div className="text-center py-4">
+                         <p className="text-slate-600 mb-3">No upcoming in-person events listed.</p>
+                         <a href={school.virtualTourUrl} target="_blank" rel="noopener noreferrer">
+                           <Button size="sm" variant="outline" className="gap-2">
+                             <Eye className="h-4 w-4" />
+                             Take a Virtual Tour
+                           </Button>
+                         </a>
+                       </div>
+                     ) : null}
+                   </Card>
+                 )}
 
                 {school.missionStatement && (
                   <Card className="p-6">
