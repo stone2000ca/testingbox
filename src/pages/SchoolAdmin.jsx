@@ -23,6 +23,7 @@ export default function SchoolAdmin() {
   const [currentView, setCurrentView] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
   const [newInquiryCount, setNewInquiryCount] = useState(0);
+  const [pendingDiffCount, setPendingDiffCount] = useState(0);
 
   useEffect(() => {
     loadSchoolData();
