@@ -1,5 +1,5 @@
 // Function: calculateCompletenessScore
-// Purpose: Calculate and persist a 4-tier weighted profile completeness score (0-100) for one or more schools
+// Purpose: Calculate and persist a weighted profile completeness score (0-100) for one or more schools
 // Entities: School
 // Last Modified: 2026-03-05
 // Dependencies: none
@@ -7,42 +7,85 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 // =============================================================================
-// Tier definitions — must stay in sync with ProfileCompletenessRing.jsx
-// T1=50%, T2=30%, T3=15%, T4=5%
+// Field weight tiers — per PM spec 2026-03-05
+// CRITICAL (3x), HIGH (2x), STANDARD (1x)
+// System/derived fields are excluded from scoring entirely.
 // =============================================================================
-const TIERS = [
-  {
-    weight: 50,
-    fields: ['name', 'city', 'provinceState', 'country', 'lowestGrade', 'highestGrade', 'genderPolicy', 'dayTuition', 'schoolType'],
-  },
-  {
-    weight: 30,
-    fields: ['description', 'website', 'boardingAvailable', 'religiousAffiliation', 'languageOfInstruction', 'avgClassSize', 'studentTeacherRatio'],
-  },
-  {
-    weight: 15,
-    fields: ['artsPrograms', 'sportsPrograms', 'clubs', 'facilities', 'specialEdPrograms', 'curriculumType', 'accreditations'],
-  },
-  {
-    weight: 5,
-    fields: ['logoUrl', 'headerPhotoUrl', 'photoGallery'],
-  },
+
+const CRITICAL_FIELDS = [
+  'name', 'description', 'dayTuition', 'lowestGrade', 'highestGrade',
+  'provinceState', 'country', 'genderPolicy', 'schoolType',
 ];
 
-function isFilled(value) {
-  if (typeof value === 'boolean') return value !== null && value !== undefined;
+const HIGH_FIELDS = [
+  'enrollment', 'avgClassSize', 'studentTeacherRatio', 'curriculumType',
+  'address', 'city', 'phone', 'email', 'website', 'missionStatement',
+  'headerPhotoUrl',
+];
+
+// Fields that are system-managed, derived, or intentionally excluded from scoring
+const EXCLUDED_FIELDS = new Set([
+  'id', 'created_date', 'updated_date', 'created_by', 'created_by_id',
+  'slug', 'lat', 'lng', 'status', 'verified', 'claimStatus',
+  'membershipTier', 'subscriptionTier', 'completenessScore',
+  'adminUserId', 'is_sample', 'source', 'dataSource', 'governmentId',
+  'aiEnrichedFields', 'verifiedFields', 'lastEnriched', 'importBatchId',
+  // Excluded profile fields per spec
+  'gradeSystem', 'gradesServed', 'heroImage', 'tuition', 'currency',
+  'tuitionMin', 'tuitionMax', 'acceptanceRate', 'internationalStudentPct',
+  'campusFeel',
+]);
+
+const CRITICAL_SET = new Set(CRITICAL_FIELDS);
+const HIGH_SET = new Set(HIGH_FIELDS);
+
+function isPopulated(value, fieldName) {
+  if (value === null || value === undefined) return false;
+  // lowestGrade === 0 is valid (Kindergarten) — must check before falsy check
+  if (fieldName === 'lowestGrade' && value === 0) return true;
   if (Array.isArray(value)) return value.length > 0;
-  if (typeof value === 'string') return value.trim() !== '';
-  return value !== null && value !== undefined;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed !== '' && trimmed !== 'N/A' && trimmed !== 'Not available';
+  }
+  // numbers, booleans: populated if not null/undefined
+  return true;
 }
 
-function calcScore(school) {
-  let total = 0;
-  for (const tier of TIERS) {
-    const filled = tier.fields.filter(f => isFilled(school[f])).length;
-    total += (filled / tier.fields.length) * tier.weight;
+function weightFor(fieldName) {
+  if (CRITICAL_SET.has(fieldName)) return 3;
+  if (HIGH_SET.has(fieldName)) return 2;
+  return 1;
+}
+
+function calculateScore(school) {
+  let earnedWeight = 0;
+  let totalWeight = 0;
+
+  // Score all schema fields that are not excluded
+  const allScoredFields = new Set([
+    ...CRITICAL_FIELDS,
+    ...HIGH_FIELDS,
+  ]);
+
+  // Add any additional fields present on the object that aren't excluded and aren't already scored
+  for (const key of Object.keys(school)) {
+    if (!EXCLUDED_FIELDS.has(key) && !allScoredFields.has(key)) {
+      allScoredFields.add(key);
+    }
   }
-  return Math.round(total);
+
+  for (const fieldName of allScoredFields) {
+    if (EXCLUDED_FIELDS.has(fieldName)) continue;
+    const w = weightFor(fieldName);
+    totalWeight += w;
+    if (isPopulated(school[fieldName], fieldName)) {
+      earnedWeight += w;
+    }
+  }
+
+  if (totalWeight === 0) return 0;
+  return Math.round((earnedWeight / totalWeight) * 100);
 }
 
 Deno.serve(async (req) => {
@@ -62,7 +105,7 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'School not found' }, { status: 404 });
       }
       const school = schools[0];
-      const score = calcScore(school);
+      const score = calculateScore(school);
       await base44.asServiceRole.entities.School.update(school.id, { completenessScore: score });
       return Response.json({ schoolId: school.id, completenessScore: score });
     }
@@ -72,7 +115,6 @@ Deno.serve(async (req) => {
       if (user.role !== 'admin') {
         return Response.json({ error: 'Forbidden: Admin only' }, { status: 403 });
       }
-      // Process in pages of 100
       let skip = 0;
       const limit = 100;
       let processed = 0;
@@ -80,7 +122,7 @@ Deno.serve(async (req) => {
         const batch = await base44.asServiceRole.entities.School.list(null, limit, skip);
         if (!batch || batch.length === 0) break;
         for (const school of batch) {
-          const score = calcScore(school);
+          const score = calculateScore(school);
           await base44.asServiceRole.entities.School.update(school.id, { completenessScore: score });
           processed++;
         }
