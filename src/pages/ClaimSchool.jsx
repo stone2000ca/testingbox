@@ -513,8 +513,80 @@ export default function ClaimSchool() {
       <Navbar />
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Existing claim — Approved */}
+        {existingClaim && existingClaim.status === 'verified' && (
+          <Card className="p-8">
+            <div className="text-center">
+              <div className="h-14 w-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="h-7 w-7 text-green-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">Claim Approved!</h1>
+              <p className="text-lg text-slate-700 font-medium mb-2">{claimSchoolName}</p>
+              <p className="text-slate-600 mb-8">Your school claim has been verified. You can now manage your school's profile.</p>
+              <Button
+                onClick={() => navigate(`${createPageUrl('SchoolAdmin')}?schoolId=${existingClaim.schoolId}`)}
+                className="bg-teal-600 hover:bg-teal-700 px-8"
+              >
+                Go to School Admin
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Existing claim — Pending */}
+        {existingClaim && existingClaim.status !== 'verified' && (
+          <Card className="p-8">
+            <div className="text-center mb-6">
+              <div className="h-14 w-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-7 w-7 text-amber-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">Claim In Progress</h1>
+              <p className="text-lg text-slate-700 font-medium">{claimSchoolName}</p>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-slate-700">Status</span>
+                <span className="text-sm font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                  {STATUS_LABELS[existingClaim.status]}
+                </span>
+              </div>
+              {existingClaim.created_date && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Submitted {new Date(existingClaim.created_date).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+              )}
+              <p className="text-xs text-slate-500 mt-2">Most claims are reviewed within 1–2 business days.</p>
+            </div>
+
+            <div className="text-center space-y-3">
+              {!showCancelConfirm ? (
+                <Button variant="outline" size="sm" onClick={() => setShowCancelConfirm(true)} className="text-slate-600">
+                  Cancel Claim
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-red-700 font-medium">Are you sure you want to cancel this claim?</p>
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="outline" size="sm" onClick={() => setShowCancelConfirm(false)}>Keep It</Button>
+                    <Button size="sm" onClick={handleCancelClaim} disabled={cancellingClaim} className="bg-red-600 hover:bg-red-700 text-white">
+                      {cancellingClaim ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                      Yes, Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div>
+                <a href="mailto:support@nextschool.ca" className="text-xs text-teal-600 hover:underline">
+                  Contact support
+                </a>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Already claimed state */}
-        {alreadyClaimed && !showDisputeForm && (
+        {!existingClaim && alreadyClaimed && !showDisputeForm && (
           <Card className="p-8">
             <div className="text-center">
               <div className="h-14 w-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
