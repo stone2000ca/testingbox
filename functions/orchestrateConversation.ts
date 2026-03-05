@@ -2,10 +2,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // =============================================================================
 // INLINED: callOpenRouter
+// E18c-002: LLM call logging — writes LLMLog entity for every call (fire-and-forget)
 // =============================================================================
 async function callOpenRouter(options) {
-  const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7 } = options;
-  
+  const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7, _logContext } = options;
+  // _logContext = { base44, conversation_id, phase, is_test } — optional, used for LLMLog only
+
   const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
   if (!OPENROUTER_API_KEY) {
     console.warn('[OPENROUTER] OPENROUTER_API_KEY not set');
@@ -35,40 +37,109 @@ async function callOpenRouter(options) {
   }
   
   console.log('[OPENROUTER] Calling with models:', body.models, 'maxTokens:', maxTokens);
-  
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://nextschool.ca',
-      'X-OpenRouter-Title': 'NextSchool'
-    },
-    body: JSON.stringify(body)
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[OPENROUTER] API error:', response.status, errorText);
-    throw new Error(`OpenRouter API error: ${response.status} ${errorText}`);
-  }
-  
-  const data = await response.json();
-  console.log('[OPENROUTER] Response model used:', data.model, 'usage:', data.usage);
-  
-  const content = data.choices?.[0]?.message?.content;
-  if (!content) throw new Error('OpenRouter returned empty content');
-  
-  if (responseSchema) {
-    try {
-      return JSON.parse(content);
-    } catch (e) {
-      console.error('[OPENROUTER] JSON parse failed:', content.substring(0, 200));
-      throw new Error('OpenRouter structured output parse failed');
+
+  // E18c-002: Start timer
+  const startTime = Date.now();
+
+  const fullPromptStr = messages.map(m => `[${m.role}] ${m.content}`).join('\n');
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://nextschool.ca',
+        'X-OpenRouter-Title': 'NextSchool'
+      },
+      body: JSON.stringify(body)
+    });
+
+    const latency_ms = Date.now() - startTime;
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[OPENROUTER] API error:', response.status, errorText);
+
+      // E18c-002: Log error (fire-and-forget)
+      if (_logContext?.base44) {
+        const isTest = _logContext.is_test === true;
+        _logContext.base44.asServiceRole.entities.LLMLog.create({
+          conversation_id: _logContext.conversation_id || 'unknown',
+          phase: _logContext.phase || 'unknown',
+          model: 'unknown',
+          prompt_summary: fullPromptStr.substring(0, 500),
+          response_summary: errorText.substring(0, 500),
+          token_count_in: 0,
+          token_count_out: 0,
+          latency_ms,
+          status: 'error',
+          is_test: isTest,
+          ...(isTest ? { full_prompt: fullPromptStr } : {}),
+          error_message: `HTTP ${response.status}: ${errorText.substring(0, 300)}`
+        }).catch(e => console.error('[E18c-002] LLMLog write failed:', e.message));
+      }
+
+      throw new Error(`OpenRouter API error: ${response.status} ${errorText}`);
     }
+    
+    const data = await response.json();
+    console.log('[OPENROUTER] Response model used:', data.model, 'usage:', data.usage);
+    
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) throw new Error('OpenRouter returned empty content');
+
+    // E18c-002: Log success (fire-and-forget)
+    if (_logContext?.base44) {
+      const isTest = _logContext.is_test === true;
+      _logContext.base44.asServiceRole.entities.LLMLog.create({
+        conversation_id: _logContext.conversation_id || 'unknown',
+        phase: _logContext.phase || 'unknown',
+        model: data.model || 'unknown',
+        prompt_summary: fullPromptStr.substring(0, 500),
+        response_summary: content.substring(0, 500),
+        token_count_in: data.usage?.prompt_tokens || 0,
+        token_count_out: data.usage?.completion_tokens || 0,
+        latency_ms,
+        status: 'success',
+        is_test: isTest,
+        ...(isTest ? { full_prompt: fullPromptStr, full_response: content } : {})
+      }).catch(e => console.error('[E18c-002] LLMLog write failed:', e.message));
+    }
+
+    if (responseSchema) {
+      try {
+        return JSON.parse(content);
+      } catch (e) {
+        console.error('[OPENROUTER] JSON parse failed:', content.substring(0, 200));
+        throw new Error('OpenRouter structured output parse failed');
+      }
+    }
+    
+    return content;
+  } catch (err) {
+    const latency_ms = Date.now() - startTime;
+    // Only log if not already logged above (i.e. network-level errors, not HTTP errors)
+    const isNetworkError = !err.message?.startsWith('OpenRouter API error:') && err.message !== 'OpenRouter returned empty content' && err.message !== 'OpenRouter structured output parse failed';
+    if (isNetworkError && _logContext?.base44) {
+      const isTest = _logContext.is_test === true;
+      _logContext.base44.asServiceRole.entities.LLMLog.create({
+        conversation_id: _logContext.conversation_id || 'unknown',
+        phase: _logContext.phase || 'unknown',
+        model: 'unknown',
+        prompt_summary: fullPromptStr.substring(0, 500),
+        response_summary: '',
+        token_count_in: 0,
+        token_count_out: 0,
+        latency_ms,
+        status: 'timeout',
+        is_test: isTest,
+        ...(isTest ? { full_prompt: fullPromptStr } : {}),
+        error_message: err.message?.substring(0, 300)
+      }).catch(e => console.error('[E18c-002] LLMLog write failed:', e.message));
+    }
+    throw err;
   }
-  
-  return content;
 }
 
 // =============================================================================
