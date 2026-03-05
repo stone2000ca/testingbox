@@ -75,11 +75,21 @@ export default function ClaimSchool() {
   }, [searchTerm, searchSchoolsDebounced]);
 
   useEffect(() => {
-    if (schoolId) {
-      loadSchool();
-    } else {
-      setLoading(false);
-    }
+    const init = async () => {
+      const isAuth = await base44.auth.isAuthenticated();
+      if (!isAuth) {
+        base44.auth.redirectToLogin(location.pathname + location.search);
+        return;
+      }
+      const userData = await base44.auth.me();
+      setUser(userData);
+      if (schoolId) {
+        loadSchool();
+      } else {
+        setLoading(false);
+      }
+    };
+    init();
   }, [schoolId]);
 
   const loadSchool = async () => {
