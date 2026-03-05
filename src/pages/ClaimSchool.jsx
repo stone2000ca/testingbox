@@ -854,7 +854,7 @@ export default function ClaimSchool() {
                   ? 'You can now manage your school profile and access the admin dashboard.'
                   : 'Your verification document has been submitted. Our team will review it within 24-48 hours.'}
               </p>
-              <Link to={`${createPageUrl('SchoolAdminDashboard')}?schoolId=${schoolId}`}>
+              <Link to={`${createPageUrl('SchoolAdmin')}?schoolId=${schoolId}`}>
                 <Button className="bg-teal-600 hover:bg-teal-700 px-8">
                   Go to Admin Dashboard
                 </Button>

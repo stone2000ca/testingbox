@@ -38,12 +38,6 @@ export default function SchoolAdmin() {
       const userData = await base44.auth.me();
       setUser(userData);
 
-      // Check account_type — only "school" or "both" can access this portal
-      if (userData.account_type && userData.account_type === 'family') {
-        setLoading(false);
-        return;
-      }
-
       // Look up SchoolAdmin records for this user (new userId field)
       const adminRecords = await base44.entities.SchoolAdmin.filter({ userId: userData.id, isActive: true });
 
@@ -61,6 +55,28 @@ export default function SchoolAdmin() {
         if (schools && schools.length > 0) {
           resolvedSchool = schools[0];
           setSchool(resolvedSchool);
+        }
+      }
+
+      // URL param fallback: if no admin record found, check if schoolId in URL with verified claim
+      if (!resolvedSchool) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSchoolId = urlParams.get('schoolId');
+        if (urlSchoolId) {
+          // Verify user has an approved SchoolClaim for this school
+          const claims = await base44.entities.SchoolClaim.filter({
+            userId: userData.id,
+            schoolId: urlSchoolId,
+            status: 'verified'
+          });
+          if (claims && claims.length > 0) {
+            // Load school data
+            const schoolData = await base44.entities.School.filter({ id: urlSchoolId });
+            if (schoolData && schoolData.length > 0) {
+              resolvedSchool = schoolData[0];
+              setSchool(resolvedSchool);
+            }
+          }
         }
       }
 
@@ -146,21 +162,6 @@ export default function SchoolAdmin() {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin h-8 w-8 border-4 border-teal-600 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  // Access gate: family-only accounts cannot access school portal
-  if (!loading && user && user.account_type === 'family') {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center max-w-md">
-          <Building2 className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">School Portal Access Required</h2>
-          <p className="text-slate-600 mb-6">
-            Your account is set up as a family account. To access the school portal, please contact support to update your account type.
-          </p>
-        </div>
       </div>
     );
   }
