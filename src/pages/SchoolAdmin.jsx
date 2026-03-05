@@ -173,6 +173,7 @@ export default function SchoolAdmin() {
     {
       label: 'Admin',
       items: [
+        ...(pendingDiffCount > 0 ? [{ id: 'enrichment', label: 'Enrichment Review', icon: FlaskConical, badge: pendingDiffCount }] : []),
         { id: 'csv', label: 'CSV Upload', icon: Upload },
         { id: 'subscription', label: 'Subscription', icon: CreditCard },
         { id: 'account', label: 'Account', icon: User },
