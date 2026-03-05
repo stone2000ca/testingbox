@@ -24,7 +24,7 @@ const TIER_WEIGHTS = [
   { fields: ['name','city','provinceState','country','lowestGrade','highestGrade','genderPolicy','dayTuition','schoolType','email'], weight: 50 },
   { fields: ['description','website','boardingAvailable','religiousAffiliation','languageOfInstruction','avgClassSize','studentTeacherRatio'], weight: 30 },
   { fields: ['artsPrograms','sportsPrograms','clubs','facilities','specialEdPrograms','curriculumType','accreditations','_testimonials'], weight: 15 },
-  { fields: ['logoUrl','headerPhotoUrl','photoGallery'], weight: 5 },
+  { fields: ['logoUrl','headerPhotoUrl','photoGallery'], weight: 5 }, // media fields kept for score only
 ];
 
 function calcWeightedScore(data, testimonialCount = 0) {
