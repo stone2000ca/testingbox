@@ -245,6 +245,13 @@ export default function SchoolAdmin() {
         </div>
       </header>
 
+      {enrichError && (
+        <div className="mx-6 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between text-sm text-red-700">
+          <span>{enrichError}</span>
+          <button onClick={() => setEnrichError(null)} className="text-red-400 hover:text-red-600 ml-2">x</button>
+        </div>
+      )}
+
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar Navigation */}
         <aside className="w-64 bg-white border-r flex flex-col">
