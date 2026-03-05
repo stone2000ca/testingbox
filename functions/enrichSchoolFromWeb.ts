@@ -131,13 +131,13 @@ Deno.serve(async (req) => {
     }
     console.log(`[ENRICH] Page text length after strip: ${pageText.length}`);
 
-    // Step 4: LLM extraction
-    const extracted = await callOpenRouter({
-      systemPrompt: 'You are a school data extraction expert. Extract structured school information from the provided website text. For each field, return an object with "value" and "confidence" (high/medium/low). Return null for fields not found on the page.',
-      userPrompt: `Extract school information from this website content for the school "${school.name}".\n\nFor each field, return { value: <extracted value or null>, confidence: "high"|"medium"|"low" }.\n\nWEBSITE TEXT:\n${pageText}`,
-      responseSchema: buildResponseSchema(),
-      maxTokens: 2000,
-      temperature: 0.1
+    // Step 4: LLM extraction via Base44 InvokeLLM
+    const prompt = `You are a school data extraction expert. Extract structured school information from the provided website text. For each field, return an object with "value" and "confidence" (high/medium/low). Return null for fields not found on the page.\n\nExtract school information from this website content for the school "${school.name}".\n\nFor each field, return { value: <extracted value or null>, confidence: "high"|"medium"|"low" }.\n\nWEBSITE TEXT:\n${pageText}`;
+
+    console.log('[ENRICH] Calling Base44 InvokeLLM');
+    const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt,
+      response_json_schema: buildResponseSchema().schema
     });
 
     // Step 5: Compare and create EnrichmentDiff records
