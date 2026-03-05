@@ -115,21 +115,34 @@ Deno.serve(async (req) => {
       if (user.role !== 'admin') {
         return Response.json({ error: 'Forbidden: Admin only' }, { status: 403 });
       }
+      const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+      const limit = 20;
       let skip = 0;
-      const limit = 100;
-      let processed = 0;
+      let totalProcessed = 0;
+      let totalUpdated = 0;
+      const errors = [];
+
       while (true) {
         const batch = await base44.asServiceRole.entities.School.list(null, limit, skip);
         if (!batch || batch.length === 0) break;
+
         for (const school of batch) {
-          const score = calculateScore(school);
-          await base44.asServiceRole.entities.School.update(school.id, { completenessScore: score });
-          processed++;
+          totalProcessed++;
+          try {
+            const score = calculateScore(school);
+            await base44.asServiceRole.entities.School.update(school.id, { completenessScore: score });
+            totalUpdated++;
+          } catch (err) {
+            errors.push({ schoolId: school.id, error: err.message });
+          }
+          await delay(150);
         }
+
         if (batch.length < limit) break;
         skip += limit;
       }
-      return Response.json({ processed });
+
+      return Response.json({ totalProcessed, totalUpdated, errors });
     }
 
     return Response.json({ error: 'Provide schoolId or backfill:true' }, { status: 400 });
