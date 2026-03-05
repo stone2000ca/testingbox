@@ -21,7 +21,8 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-semibold text-sm mb-4">FOR SCHOOLS</h3>
             <Link to={createPageUrl('ForSchools')} className="block text-sm hover:text-white transition-colors mb-3">For Schools</Link>
-            <Link to={createPageUrl('SchoolDirectory')} className="block text-sm hover:text-white transition-colors">Claim Your School</Link>
+            <Link to={createPageUrl('SchoolDirectory')} className="block text-sm hover:text-white transition-colors mb-3">Claim Your School</Link>
+            <Link to={createPageUrl('SchoolAdmin')} className="block text-sm hover:text-white transition-colors">School Log In</Link>
           </div>
           
           <div>
