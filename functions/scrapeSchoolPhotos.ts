@@ -241,7 +241,7 @@ Deno.serve(async (req) => {
     // Bulk insert in chunks of 20
     const CHUNK = 20;
     for (let i = 0; i < records.length; i += CHUNK) {
-      await base44.entities.PhotoCandidate.bulkCreate(records.slice(i, i + CHUNK));
+      await base44.asServiceRole.entities.PhotoCandidate.bulkCreate(records.slice(i, i + CHUNK));
     }
 
     return Response.json({
