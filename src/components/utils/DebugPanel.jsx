@@ -11,6 +11,33 @@ export default function DebugPanel({ debugState }) {
   const [llmLogs, setLlmLogs] = useState(null);
   const [loadingLlmLogs, setLoadingLlmLogs] = useState(false);
 
+  // E18c-003: In-memory state transition log — tracked client-side by watching conversationContext
+  const [transitionLog, setTransitionLog] = useState([]);
+  const prevStateRef = useRef(null);
+
+  useEffect(() => {
+    const ctx = debugState?.conversationContext;
+    if (!ctx) return;
+    const currentState = ctx.state;
+    const previousState = ctx.previousState;
+    const trigger = ctx.transitionReason;
+    if (!currentState) return;
+    // Only push when state actually changed compared to last recorded
+    if (prevStateRef.current !== currentState) {
+      setTransitionLog(log => {
+        const entry = {
+          from_state: previousState || prevStateRef.current || '—',
+          to_state: currentState,
+          trigger: trigger || '—',
+          timestamp: new Date().toISOString(),
+        };
+        const updated = [entry, ...log].slice(0, 50); // newest first, max 50
+        return updated;
+      });
+      prevStateRef.current = currentState;
+    }
+  }, [debugState?.conversationContext?.state, debugState?.conversationContext?.transitionReason]);
+
   const handleEntityTabSelect = async () => {
     if (emailLogs !== null) return; // already fetched
     setLoadingLogs(true);
