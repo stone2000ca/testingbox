@@ -19,13 +19,16 @@ export default function Navbar({ variant = "default" }) {
       const authenticated = await base44.auth.isAuthenticated();
       setIsAuthenticated(authenticated);
       if (authenticated) {
-        const [userData, adminRecords] = await Promise.all([
-          base44.auth.me(),
-          base44.entities.SchoolAdmin.filter({ userId: userData.id || '', isActive: true })
-        ]);
+        const userData = await base44.auth.me();
         setUser(userData);
-        if (adminRecords && adminRecords.length > 0) {
-          setIsSchoolAdmin(true);
+        
+        try {
+          const adminRecords = await base44.entities.SchoolAdmin.filter({ userId: userData.id, isActive: true });
+          if (adminRecords && adminRecords.length > 0) {
+            setIsSchoolAdmin(true);
+          }
+        } catch (filterError) {
+          // Silently fail - user just won't see the Manage School button
         }
       }
     } catch (error) {
