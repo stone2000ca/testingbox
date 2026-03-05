@@ -220,8 +220,7 @@ export default function SchoolSearchProfile({
 
   return (
     <div
-      className="relative w-[240px] min-w-[240px] max-w-[240px] bg-[#2A2A3E] border border-white/5 rounded-xl flex flex-col hover:shadow-lg hover:border-teal-500/20 transition-all duration-200 overflow-hidden cursor-pointer"
-      onClick={!isEditMode ? handleViewMatches : undefined}
+      className="relative w-[240px] min-w-[240px] max-w-[240px] bg-[#2A2A3E] border border-white/5 rounded-xl flex flex-col hover:shadow-lg hover:border-teal-500/20 transition-all duration-200 overflow-hidden"
     >
       {!isEditMode ? (
         <>
