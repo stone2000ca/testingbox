@@ -87,14 +87,6 @@ const TIERS = [
     motivational: 'Add depth to your profile with testimonials and details that set you apart.',
     fields: ['artsPrograms', 'sportsPrograms', 'clubs', 'facilities', 'specialEdPrograms', 'curriculumType', 'accreditations', '_testimonials'],
   },
-  {
-    id: 'tier4',
-    label: 'Tier 4 — Media',
-    color: 'indigo',
-    weight: 0.05,
-    motivational: "Visual content helps families connect with your school's story.",
-    fields: ['logoUrl', 'headerPhotoUrl', 'photoGallery'],
-  },
 ];
 
 function countFilled(formData, fields, testimonialCount = 0) {
