@@ -94,6 +94,18 @@ export default function ClaimSchool() {
       }
       const userData = await base44.auth.me();
       setUser(userData);
+
+      // Check if user already has an active claim
+      const claims = await base44.entities.SchoolClaim.filter({ userId: userData.id });
+      const activeClaim = claims.find(c => ['pending_email', 'pending_review', 'verified'].includes(c.status));
+      if (activeClaim) {
+        const schools = await base44.entities.School.filter({ id: activeClaim.schoolId });
+        setClaimSchoolName(schools[0]?.name || '');
+        setExistingClaim(activeClaim);
+        setLoading(false);
+        return;
+      }
+
       if (schoolId) {
         loadSchool();
       } else {
