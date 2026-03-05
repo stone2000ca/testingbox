@@ -204,6 +204,7 @@ Deno.serve(async (req) => {
           allCandidates.push(img);
         }
       }
+      await new Promise(r => setTimeout(r, 500));
     }
 
     // Filter, HEAD-check, and build records
