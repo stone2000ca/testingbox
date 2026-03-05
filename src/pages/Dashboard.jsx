@@ -266,7 +266,7 @@ export default function Dashboard() {
 
       {/* Top Bar */}
       <div className="bg-[#2A2A3D] border-b border-white/10 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
           <h1 className="text-2xl font-bold text-white">
             Welcome back, {user.full_name || 'User'}
           </h1>
