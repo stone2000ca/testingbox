@@ -64,7 +64,6 @@ import ParentDashboard from './pages/ParentDashboard';
 import Portal from './pages/Portal';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
-import SchoolAdmin from './pages/SchoolAdmin';
 import SchoolDirectory from './pages/SchoolDirectory';
 import SchoolProfile from './pages/SchoolProfile';
 import SharedProfile from './pages/SharedProfile';
@@ -72,6 +71,7 @@ import SharedShortlistView from './pages/SharedShortlistView';
 import SubmitSchool from './pages/SubmitSchool';
 import Terms from './pages/Terms';
 import stateMachineConfig from './pages/stateMachineConfig';
+import SchoolAdmin from './pages/SchoolAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -93,7 +93,6 @@ export const PAGES = {
     "Portal": Portal,
     "Pricing": Pricing,
     "Privacy": Privacy,
-    "SchoolAdmin": SchoolAdmin,
     "SchoolDirectory": SchoolDirectory,
     "SchoolProfile": SchoolProfile,
     "SharedProfile": SharedProfile,
@@ -101,6 +100,7 @@ export const PAGES = {
     "SubmitSchool": SubmitSchool,
     "Terms": Terms,
     "stateMachineConfig": stateMachineConfig,
+    "SchoolAdmin": SchoolAdmin,
 }
 
 export const pagesConfig = {

@@ -265,7 +265,7 @@ export default function Dashboard() {
       )}
 
       {/* Top Bar */}
-      <div className="bg-[#2A2A3D] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+      <div className="bg-[#2A2A3D] border-b border-white/10 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-white">
             Welcome back, {user.full_name || 'User'}
@@ -297,7 +297,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         {error && (
           <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
             {error}
