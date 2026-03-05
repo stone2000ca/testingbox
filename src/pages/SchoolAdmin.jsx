@@ -236,6 +236,12 @@ export default function SchoolAdmin() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
+          {currentView === 'overview' && (
+            <div className="p-8 space-y-8">
+              <h2 className="text-2xl font-bold text-slate-900">Overview</h2>
+              <ProfileCompletenessRing school={school} />
+            </div>
+          )}
           {currentView === 'profile' && (
             <ProfileEditor school={school} onSave={handleSaveSchool} isSaving={isSaving} />
           )}
