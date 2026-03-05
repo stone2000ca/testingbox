@@ -289,6 +289,7 @@ export default function ClaimSchool() {
       // Create SchoolAdmin record
       await base44.entities.SchoolAdmin.create({
         schoolId,
+        userId: user?.id,
         claimId,
         role: 'owner',
         isActive: true
