@@ -295,6 +295,8 @@ export default function Consultant() {
 
   // Dev mode bypass for login gate
   const isDevMode = new URLSearchParams(window.location.search).get('dev') === 'true';
+  // E18c-001: Debug panel
+  const isDebugMode = new URLSearchParams(window.location.search).get('debug') === 'true';
 
   useEffect(() => {
     // Set meta tags for SEO
