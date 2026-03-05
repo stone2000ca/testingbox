@@ -100,6 +100,27 @@ export default function DebugPanel({ debugState }) {
               {sections.map(({ label, data }) => (
                 <CollapsibleSection key={label} label={label} data={data} />
               ))}
+              {/* E18c-003: State Transitions */}
+              <div className="border border-amber-300 rounded overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-1.5 bg-amber-200 text-amber-900 font-mono text-xs font-semibold">
+                  <span>stateTransitions ({transitionLog.length})</span>
+                </div>
+                {transitionLog.length === 0 ? (
+                  <p className="px-3 py-2 text-xs text-amber-700 font-mono">No transitions yet — waiting for state changes.</p>
+                ) : (
+                  <div className="overflow-y-auto" style={{ maxHeight: 180 }}>
+                    {transitionLog.map((entry, i) => (
+                      <div key={i} className="flex items-center gap-2 px-3 py-1 border-b border-amber-100 font-mono text-xs hover:bg-amber-50">
+                        <span className="text-blue-700 font-bold">{entry.from_state}</span>
+                        <span className="text-amber-600">→</span>
+                        <span className="text-green-700 font-bold">{entry.to_state}</span>
+                        <span className="text-amber-500">({entry.trigger})</span>
+                        <span className="ml-auto text-amber-400">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             {/* Tab 2: Entity Viewer */}
