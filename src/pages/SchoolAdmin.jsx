@@ -130,6 +130,10 @@ export default function SchoolAdmin() {
         const diffs = await base44.entities.EnrichmentDiff.filter({ schoolId: school.id, status: 'pending' });
         setPendingDiffCount(diffs.length);
       } catch {}
+      try {
+        const photos = await base44.entities.PhotoCandidate.filter({ schoolId: school.id, status: 'pending' });
+        setPendingPhotoCount(photos.length);
+      } catch {}
       setCurrentView('enrichment');
     } catch (err) {
       setEnrichError('Something went wrong. Please try again.');
