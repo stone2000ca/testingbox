@@ -12,6 +12,11 @@ export default function PhotosMediaSection({ school, onUpdate }) {
     virtualTourUrl: school?.virtualTourUrl || '',
   });
 
+  const recalculateScore = () => {
+    base44.functions.invoke('calculateCompletenessScore', { schoolId: school.id })
+      .catch(e => console.warn('completenessScore update failed:', e));
+  };
+
   const handleFileUpload = async (field, file) => {
     if (!file) return;
 
@@ -27,6 +32,7 @@ export default function PhotosMediaSection({ school, onUpdate }) {
       
       onUpdate && onUpdate(field, file_url);
       toast.success('Photo uploaded successfully');
+      recalculateScore();
     } catch (error) {
       console.error('Upload failed:', error);
       toast.error('Failed to upload photo');
@@ -45,6 +51,7 @@ export default function PhotosMediaSection({ school, onUpdate }) {
       await base44.entities.School.update(school.id, { photoGallery: newGallery });
       onUpdate && onUpdate('photoGallery', newGallery);
       toast.success('Photo added to gallery');
+      recalculateScore();
     } catch (error) {
       console.error('Upload failed:', error);
       toast.error('Failed to upload photo');
@@ -67,6 +74,7 @@ export default function PhotosMediaSection({ school, onUpdate }) {
         onUpdate && onUpdate('photoGallery', newGallery);
       }
       toast.success('Photo removed');
+      recalculateScore();
     } catch (error) {
       console.error('Failed to remove photo:', error);
       toast.error('Failed to remove photo');
@@ -85,6 +93,7 @@ export default function PhotosMediaSection({ school, onUpdate }) {
 
     try {
       await base44.entities.School.update(school.id, updateData);
+      recalculateScore();
     } catch (error) {
       console.error('Failed to save:', error);
       toast.error('Failed to save changes');
