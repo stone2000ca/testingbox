@@ -269,7 +269,7 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
   const [dirtyFields, setDirtyFields] = useState({});
   const [autoSaved, setAutoSaved] = useState(false);
   const [verifiedFields, setVerifiedFields] = useState(school?.verifiedFields || {});
-  const [openTiers, setOpenTiers] = useState({ tier1: true, tier2: false, tier3: false, tier4: false });
+  const [openTiers, setOpenTiers] = useState({ tier1: true, tier2: false, tier3: false });
   const [testimonialCount, setTestimonialCount] = useState(0);
 
   useEffect(() => {
