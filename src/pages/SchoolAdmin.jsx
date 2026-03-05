@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Building2, BarChart3, Mail, CreditCard, Upload, Crown, Sparkles, Image, MessageSquareQuote, User, CalendarDays } from 'lucide-react';
+import { Building2, BarChart3, Mail, CreditCard, Upload, Crown, Sparkles, Image, MessageSquareQuote, User, CalendarDays, FileText } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import ProfileEditor from '@/components/school-admin/ProfileEditor';
@@ -12,6 +12,8 @@ import PhotosMediaSection from '@/components/school-admin/PhotosMediaSection';
 import TestimonialsSection from '@/components/school-admin/TestimonialsSection';
 import AccountSection from '@/components/school-admin/AccountSection';
 import EventsSection from '@/components/school-admin/EventsSection';
+import ProfileCompletenessRing from '@/components/school-admin/ProfileCompletenessRing';
+import AdmissionsSection from '@/components/school-admin/AdmissionsSection';
 
 export default function SchoolAdmin() {
   const [user, setUser] = useState(null);
