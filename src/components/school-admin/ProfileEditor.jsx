@@ -497,53 +497,7 @@ export default function ProfileEditor({ school, onSave, isSaving }) {
     </div>
   );
 
-  // ==========================================================================
-  // Tier 4 fields (Media)
-  // ==========================================================================
-  const tier4Content = (
-    <div className="space-y-6">
-      <ImageUploadField label="School Logo" field="logoUrl" hint="Square image, max 500KB" formData={formData} onChange={handleChange} />
-      <ImageUploadField label="Header Photo" field="headerPhotoUrl" hint="16:9 ratio, 1200×675px, max 2MB" formData={formData} onChange={handleChange} />
-
-      {/* Photo Gallery */}
-      <div>
-        <Label>Photo Gallery</Label>
-        <p className="text-xs text-slate-500 mb-2">Up to 10 images, max 2MB each</p>
-        {formData.photoGallery && formData.photoGallery.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            {formData.photoGallery.map((url, idx) => (
-              <div key={idx} className="relative group">
-                <img src={url} alt={`Gallery ${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                <button
-                  onClick={() => handleChange('photoGallery', formData.photoGallery.filter((_, i) => i !== idx))}
-                  className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        {(!formData.photoGallery || formData.photoGallery.length < 10) && (
-          <input
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              try {
-                const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                handleChange('photoGallery', [...(formData.photoGallery || []), file_url]);
-              } catch { alert('Upload failed.'); }
-            }}
-            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-          />
-        )}
-      </div>
-    </div>
-  );
-
-  const tierContents = [tier1Content, tier2Content, tier3Content, tier4Content];
+  const tierContents = [tier1Content, tier2Content, tier3Content];
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
