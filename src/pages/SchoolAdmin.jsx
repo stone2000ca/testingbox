@@ -140,6 +140,7 @@ export default function SchoolAdmin() {
     {
       label: 'Content',
       items: [
+        { id: 'overview', label: 'Overview', icon: BarChart3 },
         { id: 'profile', label: 'Profile Editor', icon: Building2 },
         { id: 'media', label: 'Photos & Media', icon: Image },
         { id: 'testimonials', label: 'Testimonials', icon: MessageSquareQuote },
