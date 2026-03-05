@@ -378,11 +378,11 @@ export default function SchoolSearchProfile({
           </div>
 
           {/* Save/Cancel */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             <Button
               onClick={handleSaveEdits}
               disabled={isSaving}
-              className="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-sm"
+              className="flex-1 min-w-0 bg-teal-600 hover:bg-teal-700 text-white text-sm"
             >
               {isSaving ? 'Updating matches...' : 'Save Changes'}
             </Button>
@@ -399,7 +399,7 @@ export default function SchoolSearchProfile({
               }}
               disabled={isSaving}
               variant="secondary"
-              className="flex-1 text-sm"
+              className="flex-1 min-w-0 text-sm"
             >
               Cancel Edit
             </Button>
