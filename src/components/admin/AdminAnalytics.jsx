@@ -174,7 +174,7 @@ export default function AdminAnalytics() {
           </div>
           <div className="flex items-center gap-2 text-sm text-green-600">
             <TrendingUp className="h-4 w-4" />
-            <span>+12% from last period</span>
+            <span>{analytics.tokenTrend}</span>
           </div>
         </Card>
 
