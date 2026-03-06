@@ -36,6 +36,7 @@ export const useMessageHandler = ({
   setSchoolsAnimKey,
   setDeepDiveAnalysis,
   setVisitPrepKit,
+  setActionPlan,
   setFitReEvaluation,
   artifactCache,
   resetSort,
@@ -218,6 +219,13 @@ export const useMessageHandler = ({
         }
       } else if (response.data?.state !== 'DEEP_DIVE') {
         setVisitPrepKit(null);
+      }
+
+      // E28-S3 WC2: Action Plan capture
+      if (response.data?.actionPlan) {
+        setActionPlan(response.data.actionPlan);
+      } else if (response.data?.state !== 'DEEP_DIVE') {
+        setActionPlan(null);
       }
 
       // Fit Re-Evaluation: only set when returned, only clear when leaving DEEP_DIVE
