@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
     try {
       await base44.asServiceRole.entities.School.update(claim.schoolId, {
         claimStatus: 'claimed',
-        membershipTier: 'basic'
+        schoolTier: 'free'
       });
     } catch (schoolErr) {
       console.error('School.update failed after successful claim (non-fatal):', schoolErr.message);

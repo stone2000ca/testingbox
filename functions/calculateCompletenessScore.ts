@@ -27,7 +27,7 @@ const HIGH_FIELDS = [
 const EXCLUDED_FIELDS = new Set([
   'id', 'created_date', 'updated_date', 'created_by', 'created_by_id',
   'slug', 'status', 'verified', 'claimStatus',
-  'membershipTier', 'subscriptionTier', 'completenessScore',
+  'membershipTier', 'subscriptionTier', 'schoolTier', 'completenessScore',
   'adminUserId', 'is_sample', 'source', 'dataSource', 'governmentId',
   'aiEnrichedFields', 'verifiedFields', 'lastEnriched', 'importBatchId',
   // Excluded profile fields per spec

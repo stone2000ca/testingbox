@@ -90,8 +90,8 @@ Deno.serve(async (req) => {
     if (userId) {
       try {
         const userRecords = await base44.asServiceRole.entities.User.filter({ id: userId });
-        const userTier = userRecords?.[0]?.role || 'free';
-        isPremiumUser = ['premium', 'pro', 'enterprise'].includes(userTier);
+        const userTier = userRecords?.[0]?.tier || 'free';
+        isPremiumUser = userTier === 'premium';
         console.log('[E24-S3-WC1] userId:', userId, 'tier:', userTier, 'isPremium:', isPremiumUser);
       } catch (tierErr) {
         console.warn('[E24-S3-WC1] Failed to fetch user tier (defaulting to free):', tierErr.message);
@@ -405,7 +405,7 @@ Generate the DEEPDIVE card for this family-school match.`;
     const finalMessage = sanitizedMessage + followUpPrompt;
 
     // E16a-015: Calculate tourRequestOffered
-    const isPremium = selectedSchool.subscriptionTier === 'premium' || selectedSchool.membershipTier === 'premium';
+    const isPremium = selectedSchool.schoolTier === 'growth' || selectedSchool.schoolTier === 'pro';
     const tourRequestOffered = isPremium && upcomingEvents.length > 0;
 
     console.log('[DEEPDIVE] Returning aiMessage length:', finalMessage?.length);

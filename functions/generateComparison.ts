@@ -20,8 +20,8 @@ Deno.serve(async (req) => {
     if (userId) {
       try {
         const userRecords = await base44.asServiceRole.entities.User.filter({ id: userId });
-        const userTier = userRecords?.[0]?.role || 'free';
-        isPremiumUser = ['premium', 'pro', 'enterprise'].includes(userTier);
+        const userTier = userRecords?.[0]?.tier || 'free';
+        isPremiumUser = userTier === 'premium';
         console.log('[E24-S3-WC1] userId:', userId, 'tier:', userTier, 'isPremium:', isPremiumUser);
       } catch (tierErr) {
         console.warn('[E24-S3-WC1] Failed to fetch user tier (defaulting to free):', tierErr.message);
