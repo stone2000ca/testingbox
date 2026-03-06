@@ -1012,8 +1012,15 @@ Deno.serve(async (req) => {
           try {
             const finalProfile = await base44.entities.FamilyProfile.filter({ id: conversationFamilyProfile.id });
             if (finalProfile.length > 0) {
-              conversationFamilyProfile = finalProfile[0];
-              console.log('[RESULTS] Refreshed FamilyProfile from DB:', conversationFamilyProfile.id);
+              const dbProfile = finalProfile[0];
+              // E26-P0: Merge in-memory extractions into DB state to prevent race condition
+              for (const [key, value] of Object.entries(conversationFamilyProfile)) {
+                if (value !== null && value !== undefined && (dbProfile[key] === null || dbProfile[key] === undefined)) {
+                  dbProfile[key] = value;
+                }
+              }
+              conversationFamilyProfile = dbProfile;
+              console.log('[RESULTS] Merged FamilyProfile - DB + in-memory:', conversationFamilyProfile.id);
             }
           } catch (e) {
             console.error('[RESULTS] Failed to refresh FamilyProfile:', e.message);
