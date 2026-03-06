@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AdminAnalytics() {
   const [analytics, setAnalytics] = useState(null);
