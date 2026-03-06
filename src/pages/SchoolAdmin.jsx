@@ -51,6 +51,8 @@ export default function SchoolAdmin() {
         if (schoolData && schoolData.length > 0) {
           resolvedSchool = schoolData[0];
           setSchool(resolvedSchool);
+          // Fire-and-forget: recalculate completeness score on every admin login
+          base44.functions.invoke('calculateCompletenessScore', { schoolId: resolvedSchool.id }).catch(() => {});
         }
       } else {
         // Fallback: legacy adminUserId field on School
@@ -58,6 +60,8 @@ export default function SchoolAdmin() {
         if (schools && schools.length > 0) {
           resolvedSchool = schools[0];
           setSchool(resolvedSchool);
+          // Fire-and-forget: recalculate completeness score on every admin login
+          base44.functions.invoke('calculateCompletenessScore', { schoolId: resolvedSchool.id }).catch(() => {});
         }
       }
 
