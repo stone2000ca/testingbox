@@ -8,6 +8,7 @@ export default function AdminDisputes() {
   const [enriched, setEnriched] = useState([]); // disputes + school name + current owner
   const [loading, setLoading] = useState(true);
   const [actionMap, setActionMap] = useState({});
+  const [transferError, setTransferError] = useState(null);
 
   async function load() {
     setLoading(true);
