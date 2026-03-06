@@ -76,6 +76,12 @@ export default function AdminUsers() {
     const currentRole = user.role || 'user';
     const newRole = edits.role;
 
+    // Tokens validation
+    if (Number(edits.tokenBalance) < 0) {
+      toast.error("Token balance cannot be negative.");
+      return;
+    }
+
     // Self-demotion guard
     if (currentUser && user.id === currentUser.id && currentRole === 'admin' && newRole === 'user') {
       toast.error("You can't demote yourself.");
