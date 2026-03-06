@@ -16,7 +16,7 @@ function formatKB(bytes) {
   return `${Math.round(bytes / 1024)} KB`;
 }
 
-export default function PhotoReviewSection({ school, onUpdate }) {
+export default function PhotoReviewSection({ school, onUpdate, onCountChange }) {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(new Set());

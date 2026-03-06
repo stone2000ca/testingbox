@@ -19,7 +19,7 @@ function rowBg(confidence) {
   return 'bg-white';
 }
 
-export default function EnrichmentReviewSection({ school }) {
+export default function EnrichmentReviewSection({ school, onCountChange }) {
   const [diffs, setDiffs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(new Set());

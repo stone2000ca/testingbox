@@ -351,10 +351,10 @@ export default function SchoolAdmin() {
             <AccountSection school={school} />
           )}
           {currentView === 'enrichment' && (
-            <EnrichmentReviewSection school={school} />
+            <EnrichmentReviewSection school={school} onCountChange={(count) => setPendingDiffCount(count)} />
           )}
           {currentView === 'photo-review' && (
-            <PhotoReviewSection school={school} onUpdate={(field, value) => setSchool({ ...school, [field]: value })} />
+            <PhotoReviewSection school={school} onUpdate={(field, value) => setSchool({ ...school, [field]: value })} onCountChange={(count) => setPendingPhotoCount(count)}
           )}
         </main>
       </div>
