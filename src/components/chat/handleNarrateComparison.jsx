@@ -46,6 +46,11 @@ export async function handleNarrateComparison({
       genderPolicy: s.genderPolicy,
       boardingAvailable: s.boardingAvailable,
       avgClassSize: s.avgClassSize,
+      enrollment: s.enrollment,
+      studentTeacherRatio: s.studentTeacherRatio,
+      artsPrograms: s.artsPrograms,
+      sportsPrograms: s.sportsPrograms,
+      universityPlacements: s.universityPlacements,
       specializations: s.specializations,
       highlights: s.highlights,
       isVisited
