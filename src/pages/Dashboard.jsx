@@ -3,7 +3,6 @@ import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
-import ChatSessionCard from '@/components/dashboard/ChatSessionCard.jsx';
 import SchoolSearchProfile from '@/components/dashboard/SchoolSearchProfile.jsx';
 import UpgradePaywallModal from '@/components/dialogs/UpgradePaywallModal';
 import { Plus, Settings, X, AlertCircle, Crown, CheckCircle, Trash2 } from 'lucide-react';

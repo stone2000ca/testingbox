@@ -60,7 +60,6 @@ import ForSchools from './pages/ForSchools';
 import Guides from './pages/Guides';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
-import ParentDashboard from './pages/ParentDashboard';
 import Portal from './pages/Portal';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
@@ -89,7 +88,6 @@ export const PAGES = {
     "Guides": Guides,
     "Home": Home,
     "HowItWorks": HowItWorks,
-    "ParentDashboard": ParentDashboard,
     "Portal": Portal,
     "Pricing": Pricing,
     "Privacy": Privacy,
