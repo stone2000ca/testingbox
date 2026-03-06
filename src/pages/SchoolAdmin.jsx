@@ -41,43 +41,58 @@ export default function SchoolAdmin() {
       const userData = await base44.auth.me();
       setUser(userData);
 
-      // Look up SchoolAdmin records for this user (new userId field)
-      const adminRecords = await base44.entities.SchoolAdmin.filter({ userId: userData.id, isActive: true });
-
       let resolvedSchool = null;
-      if (adminRecords && adminRecords.length > 0) {
-        // Load the first associated school (multi-school selector can come later)
-        const schoolData = await base44.entities.School.filter({ id: adminRecords[0].schoolId });
-        if (schoolData && schoolData.length > 0) {
-          resolvedSchool = schoolData[0];
-          setSchool(resolvedSchool);
-          // Fire-and-forget: recalculate completeness score on every admin login
-          base44.functions.invoke('calculateCompletenessScore', { schoolId: resolvedSchool.id }).catch(() => {});
-        }
-      } else {
-        // Fallback: legacy adminUserId field on School
-        const schools = await base44.entities.School.filter({ adminUserId: userData.id });
-        if (schools && schools.length > 0) {
-          resolvedSchool = schools[0];
-          setSchool(resolvedSchool);
-          // Fire-and-forget: recalculate completeness score on every admin login
-          base44.functions.invoke('calculateCompletenessScore', { schoolId: resolvedSchool.id }).catch(() => {});
+
+      // --- ADMIN IMPERSONATION BYPASS (E23-B2) ---
+      const urlParams = new URLSearchParams(window.location.search);
+      const impersonateSchoolId = urlParams.get('schoolId');
+      if (impersonateSchoolId) {
+        const adminUsers = await base44.entities.User.filter({ email: userData.email });
+        const isAdmin = adminUsers && adminUsers.length > 0 && adminUsers[0].role === 'admin';
+        if (isAdmin) {
+          const schoolData = await base44.entities.School.filter({ id: impersonateSchoolId });
+          if (schoolData && schoolData.length > 0) {
+            resolvedSchool = schoolData[0];
+            setSchool(resolvedSchool);
+          }
         }
       }
 
-      // URL param fallback: if no admin record found, check if schoolId in URL with verified claim
+      // --- PATH A: SchoolAdmin record lookup ---
       if (!resolvedSchool) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlSchoolId = urlParams.get('schoolId');
+        const adminRecords = await base44.entities.SchoolAdmin.filter({ userId: userData.id, isActive: true });
+
+        if (adminRecords && adminRecords.length > 0) {
+          const schoolData = await base44.entities.School.filter({ id: adminRecords[0].schoolId });
+          if (schoolData && schoolData.length > 0) {
+            resolvedSchool = schoolData[0];
+            setSchool(resolvedSchool);
+            // Fire-and-forget: recalculate completeness score on every admin login
+            base44.functions.invoke('calculateCompletenessScore', { schoolId: resolvedSchool.id }).catch(() => {});
+          }
+        } else {
+          // --- PATH B: Legacy adminUserId fallback ---
+          const schools = await base44.entities.School.filter({ adminUserId: userData.id });
+          if (schools && schools.length > 0) {
+            resolvedSchool = schools[0];
+            setSchool(resolvedSchool);
+            // Fire-and-forget: recalculate completeness score on every admin login
+            base44.functions.invoke('calculateCompletenessScore', { schoolId: resolvedSchool.id }).catch(() => {});
+          }
+        }
+      }
+
+      // --- PATH C: URL param with verified SchoolClaim (non-admin users) ---
+      if (!resolvedSchool) {
+        const urlParams2 = new URLSearchParams(window.location.search);
+        const urlSchoolId = urlParams2.get('schoolId');
         if (urlSchoolId) {
-          // Verify user has an approved SchoolClaim for this school
           const claims = await base44.entities.SchoolClaim.filter({
             userId: userData.id,
             schoolId: urlSchoolId,
             status: 'verified'
           });
           if (claims && claims.length > 0) {
-            // Load school data
             const schoolData = await base44.entities.School.filter({ id: urlSchoolId });
             if (schoolData && schoolData.length > 0) {
               resolvedSchool = schoolData[0];
@@ -87,7 +102,7 @@ export default function SchoolAdmin() {
         }
       }
 
-      // If no school found, check for pending/rejected SchoolClaim records
+      // --- PATH D: Pending/rejected claim state ---
       if (!resolvedSchool) {
         try {
           const claims = await base44.entities.SchoolClaim.filter({ userId: userData.id });
@@ -102,7 +117,7 @@ export default function SchoolAdmin() {
         } catch (e) { /* non-blocking */ }
       }
 
-      // Load new tour request count for badge
+      // Load badges for resolved school
       if (resolvedSchool) {
         try {
           const inquiries = await base44.entities.SchoolInquiry.filter({ schoolId: resolvedSchool.id, inquiryType: 'tour_request' });
@@ -314,7 +329,6 @@ export default function SchoolAdmin() {
             {tierIcons[tier]}
             <span className="uppercase">{tierLabel[tier]}</span>
           </div>
-
         </div>
       </header>
 
