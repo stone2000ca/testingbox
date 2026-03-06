@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
 import { Building2, Users, MessageSquare, ClipboardCheck, DollarSign, TrendingUp } from 'lucide-react';
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ onViewChange }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,29 +13,46 @@ export default function AdminDashboard() {
 
   const loadStats = async () => {
     try {
-      const [schools, users, conversations, claims] = await Promise.all([
+      const [schools, users] = await Promise.all([
         base44.entities.School.list(),
         base44.entities.User.list(),
-        base44.entities.ChatHistory.list(),
-        base44.entities.School.filter({ verified: false })
       ]);
 
-      const today = new Date().toDateString();
-      const activeToday = conversations.filter(c => 
-        new Date(c.updated_date).toDateString() === today
-      ).length;
+      // Filter out archived schools
+      const activeSchools = schools.filter(s => s.status !== 'archived');
 
-      // Calculate revenue estimate (mock data)
-      const revenue = schools.reduce((sum, school) => {
-        const tierRevenue = { free: 0, basic: 99, premium: 249 };
-        return sum + (tierRevenue[school.subscriptionTier] || 0);
+      // Conversations — graceful fallback if entity fails
+      let activeToday = 0;
+      try {
+        const conversations = await base44.entities.ChatHistory.list();
+        const today = new Date().toDateString();
+        activeToday = conversations.filter(c =>
+          new Date(c.updated_date).toDateString() === today
+        ).length;
+      } catch (e) {
+        console.warn('ChatHistory unavailable:', e);
+      }
+
+      // Pending claims — use SchoolClaim entity, fallback to 0
+      let pendingClaims = 0;
+      try {
+        const claims = await base44.entities.SchoolClaim.filter({ status: 'pending' });
+        pendingClaims = claims.length;
+      } catch (e) {
+        console.warn('SchoolClaim unavailable:', e);
+      }
+
+      // Revenue — based on User.subscriptionPlan
+      const tierRevenue = { free: 0, basic: 99, premium: 249, pro: 499, enterprise: 999 };
+      const revenue = users.reduce((sum, user) => {
+        return sum + (tierRevenue[user.subscriptionPlan] || 0);
       }, 0);
 
       setStats({
-        totalSchools: schools.length,
+        totalSchools: activeSchools.length,
         totalUsers: users.length,
         activeConversationsToday: activeToday,
-        pendingClaims: claims.length,
+        pendingClaims,
         monthlyRevenue: revenue
       });
     } catch (error) {
