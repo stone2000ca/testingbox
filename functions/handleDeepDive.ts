@@ -181,7 +181,19 @@ Deno.serve(async (req) => {
       name: selectedSchool.name,
       tuitionFee: selectedSchool.tuition || selectedSchool.dayTuition || 'Not specified',
       location: `${selectedSchool.city}, ${selectedSchool.provinceState || selectedSchool.country}`,
-      genderPolicy: selectedSchool.genderPolicy || 'Co-ed'
+      genderPolicy: selectedSchool.genderPolicy || 'Co-ed',
+      // E26-S1: Enriched fields for deeper LLM analysis
+      curriculumType: selectedSchool.curriculumType || null,
+      specializations: selectedSchool.specializations || [],
+      avgClassSize: selectedSchool.avgClassSize || null,
+      studentTeacherRatio: selectedSchool.studentTeacherRatio || null,
+      sportsPrograms: selectedSchool.sportsPrograms?.slice(0, 5) || [],
+      artsPrograms: selectedSchool.artsPrograms?.slice(0, 5) || [],
+      boardingAvailable: !!(selectedSchool.boardingTuition || selectedSchool.boardingAvailable),
+      financialAidAvailable: selectedSchool.financialAidAvailable || false,
+      religiousAffiliation: selectedSchool.religiousAffiliation || null,
+      enrollment: selectedSchool.enrollment || null,
+      description: selectedSchool.description?.substring(0, 300) || null
     };
 
     // Build event context string for LLM injection
