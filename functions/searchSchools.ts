@@ -445,7 +445,12 @@ async function performSearch(req) {
       schools = schools.filter(s => s.distanceKm && s.distanceKm <= maxDistanceKm);
     }
 
-    schools.sort((a, b) => (a.distanceKm || 999999) - (b.distanceKm || 999999));
+    // E26-S2: Composite sort - score primary, distance penalty secondary
+    schools.sort((a, b) => {
+      const scoreA = (a._matchScore || 0) - ((a.distanceKm || 0) * 0.1);
+      const scoreB = (b._matchScore || 0) - ((b.distanceKm || 0) * 0.1);
+      return scoreB - scoreA;
+    });
   }
 
   if (familyProfile) {
