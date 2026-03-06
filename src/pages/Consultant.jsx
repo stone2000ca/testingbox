@@ -1585,6 +1585,7 @@ export default function Consultant() {
               }}
               onToggleShortlist={handleToggleShortlist}
               isShortlisted={user?.shortlist?.includes(selectedSchool.id) || false}
+              onCompare={(school) => handleOpenComparison([school])}
             />
           ) : currentState === STATES.RESULTS && schools.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-6 text-center">
