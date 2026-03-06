@@ -27,6 +27,24 @@ Deno.serve(async (req) => {
       </div>
     `;
 
+    // For VERIFICATION_CODE: generate code server-side, write to SchoolClaim, never trust client-supplied code
+    let generatedCode = null;
+    if (emailType === 'VERIFICATION_CODE') {
+      if (!schoolData.claimId) {
+        return Response.json({ error: 'claimId is required for VERIFICATION_CODE type' }, { status: 400 });
+      }
+      generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
+      await base44.asServiceRole.entities.SchoolClaim.update(schoolData.claimId, {
+        verificationCode: generatedCode,
+        codeExpiresAt: expiresAt,
+        attemptCount: 0,
+        lockedAt: null,
+      });
+      // Inject generated values so the email template below can use them
+      claimData = { ...claimData, verificationCode: generatedCode, codeExpiresAt: expiresAt };
+    }
+
     switch (emailType) {
       case 'VERIFICATION_CODE':
         subject = `Verify your NextSchool school claim - ${schoolData.name}`;
@@ -45,7 +63,7 @@ Deno.serve(async (req) => {
             </p>
           </div>
           <p style="color: #475569; line-height: 1.6; margin: 24px 0 0 0;">
-            <strong>This code expires in 24 hours</strong> (${new Date(claimData.codeExpiresAt).toLocaleString()})
+            <strong>This code expires in 15 minutes.</strong>
           </p>
           <p style="color: #64748B; font-size: 14px; line-height: 1.6; margin: 16px 0 0 0;">
             If you didn't request this, please ignore this email or contact support.
