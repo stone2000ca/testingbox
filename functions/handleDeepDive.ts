@@ -409,6 +409,55 @@ Generate the DEEPDIVE card for this family-school match.`;
     }
     console.log('[DEEPDIVE] deepDiveAnalysis populated:', !!deepDiveAnalysis, 'visitPrepKit populated:', !!generatedVisitPrepKit);
 
+    // E28-S3: Generate action plan artifact (deterministic)
+    let generatedActionPlan = null;
+    if (deepDiveAnalysis && selectedSchool && userId) {
+      const visitWindow = upcomingEvents && upcomingEvents.length > 0
+        ? { recommendedAction: `Attend ${upcomingEvents[0].title} on ${new Date(upcomingEvents[0].date).toLocaleDateString('en-CA')}`,
+            events: upcomingEvents.map(e => ({ title: e.title, date: e.date, type: e.eventType })) }
+        : { recommendedAction: 'Contact admissions to schedule a campus tour', events: [] };
+
+      const docChecklist = [
+        { item: 'Report cards (last 2 years)', status: 'pending' },
+        { item: 'Teacher reference letter', status: 'pending' },
+        { item: 'Standardized test scores (if available)', status: 'pending' }
+      ];
+      if (selectedSchool.financialAidAvailable) {
+        docChecklist.push({ item: 'Financial aid application', status: 'pending' });
+      }
+
+      generatedActionPlan = {
+        visitTimeline: visitWindow,
+        applicationDeadlines: {
+          deadline: selectedSchool.applicationDeadline || null,
+          financialAidDeadline: selectedSchool.financialAidDeadline || null,
+          isEstimated: !selectedSchool.applicationDeadline
+        },
+        documentChecklist: docChecklist,
+        followUpQuestions: deepDiveAnalysis.visitQuestions || [],
+        fitSummary: deepDiveAnalysis.fitLabel
+      };
+
+      // Persist as GeneratedArtifact (fire-and-forget)
+      (async () => {
+        try {
+          await base44.entities.GeneratedArtifact.create({
+            userId: userId,
+            schoolId: selectedSchoolId,
+            conversationId: conversationId || '',
+            artifactType: 'action_plan',
+            schoolName: selectedSchool.name,
+            content: JSON.stringify(generatedActionPlan),
+            isLocked: !isPremiumUser,
+            generatedAt: new Date().toISOString(),
+            status: 'active'
+          });
+        } catch (apErr) {
+          console.warn('[E28-S3] Action plan persist failed:', apErr.message);
+        }
+      })();
+    }
+
     // Deterministic follow-up prompt (fit-label based, appended after AI prose)
     let followUpPrompt = '';
     const fitLabel = deepDiveAnalysis?.fitLabel || 'worth_exploring';
@@ -456,6 +505,7 @@ Generate the DEEPDIVE card for this family-school match.`;
       conversationContext: { ...context, [deepDiveFollowUpKey]: true },
       deepDiveAnalysis: deepDiveAnalysis,
       visitPrepKit: generatedVisitPrepKit,
+      actionPlan: generatedActionPlan,
       tourRequestOffered: tourRequestOffered
     });
   } catch (error) {
