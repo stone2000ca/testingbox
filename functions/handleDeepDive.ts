@@ -243,60 +243,48 @@ ${eventContext}
 
 Generate the DEEPDIVE card for this family-school match.`;
 
-    // E25-S3 InvokeLLM-first routing
     console.log('[DEEPDIVE] Attempting AI-generated card');
 
     let deepDiveAnalysis = null;
     try {
-      const invokeResponse = await base44.integrations.Core.InvokeLLM({
-        prompt: deepDiveSystemPrompt + '\n\n' + deepDiveUserPrompt,
-        model: 'gpt-5'
+      const aiResponse = await callOpenRouter({
+        systemPrompt: deepDiveSystemPrompt,
+        userPrompt: deepDiveUserPrompt,
+        maxTokens: 2000,
+        temperature: 0.6
       });
-      const invokeText = invokeResponse?.response || invokeResponse;
-      if (invokeText) {
-        console.log('[DEEPDIVE] AI card via InvokeLLM (primary)');
-        aiMessage = invokeText;
+      if (aiResponse) {
+        console.log('[DEEPDIVE] AI card generated successfully');
+        aiMessage = aiResponse;
       }
-    } catch (invokeLLMError) {
-      console.log('[DEEPDIVE] InvokeLLM failed, falling back to callOpenRouter:', invokeLLMError.message);
-      try {
-        const aiResponse = await callOpenRouter({
-          systemPrompt: deepDiveSystemPrompt,
-          userPrompt: deepDiveUserPrompt,
-          maxTokens: 2000,
-          temperature: 0.6
-        });
-        if (aiResponse) {
-          console.log('[DEEPDIVE] AI card via callOpenRouter (fallback)');
-          aiMessage = aiResponse;
-        }
-      } catch (llmError) {
-        console.error('[DEEPDIVE] Both LLM providers failed:', llmError.message);
-        aiMessage = `**Great Fit for ${childDisplayName}**\n\n**Why ${selectedSchool.name} for ${childDisplayName}**\n${selectedSchool.description?.substring(0, 150) || 'School details available upon request.'}\n\n**Cost Reality**\nTuition: ${compressedSchoolData.tuitionFee}/year\n\nWhat would you like to know more about?`;
-      }
+    } catch (llmError) {
+      console.error('[DEEPDIVE] OpenRouter failed:', llmError.message);
+      aiMessage = `**Great Fit for ${childDisplayName}**\n\n**Why ${selectedSchool.name} for ${childDisplayName}**\n${selectedSchool.description?.substring(0, 150) || 'School details available upon request.'}\n\n**Cost Reality**\nTuition: ${compressedSchoolData.tuitionFee}/year\n\nWhat would you like to know more about?`;
     }
 
-    // E10b: Generate structured analysis — E25-S3 InvokeLLM-first routing
-    const analysisSystemPrompt = `You are a school analysis engine. Given a consultant's analysis of a school for a specific family, extract structured data. Return ONLY valid JSON matching the schema.`;
-    const analysisUserPrompt = `Consultant's analysis: ${aiMessage}\n\nSchool data: ${JSON.stringify(compressedSchoolData)}\n\nFamily profile: child=${childDisplayName}, budget=${resolvedMaxTuition}, priorities=${resolvedPriorities?.join(', ') || 'None'}\n\nIMPORTANT: Every school has trade-offs. You MUST return at least 3 items in tradeOffs[]. For each trade-off, include the dimension name, and either a strength (what this school does well for this family) or a concern (what might not fit), or both. Consider dimensions like: learning support, class size, arts/athletics programs, commute distance, budget fit, academic approach, campus facilities, community culture. If school data is missing for a dimension the family cares about, that itself is a trade-off with concern noting the data gap. Each dimension should appear only once in tradeOffs[]. Do not repeat dimensions. If a dimension has both a strength and a concern, include both in the same trade-off object.\n\nExtract: fitLabel (strong_match/good_match/worth_exploring), fitScore (0-100), tradeOffs (array with dimension, strength, concern, dataSource), dataGaps (array of field names with missing data relevant to this family), visitQuestions (array of 3-5 personalized questions for school visit), financialSummary (tuition, aidAvailable boolean, estimatedNetCost, budgetFit).`;
-    const analysisJsonSchema = {
-      type: 'object',
-      properties: {
-        fitLabel: { type: 'string', enum: ['strong_match', 'good_match', 'worth_exploring'] },
-        fitScore: { type: 'number' },
-        tradeOffs: { type: 'array', items: { type: 'object', properties: { dimension: { type: 'string' }, strength: { type: 'string' }, concern: { type: 'string' }, dataSource: { type: 'string' } } } },
-        dataGaps: { type: 'array', items: { type: 'string' } },
-        visitQuestions: { type: 'array', items: { type: 'string' } },
-        financialSummary: { type: 'object', properties: { tuition: { type: 'number' }, aidAvailable: { type: 'boolean' }, estimatedNetCost: { type: 'number' }, budgetFit: { type: 'string' } } }
-      },
-      required: ['fitLabel', 'fitScore', 'tradeOffs', 'dataGaps', 'visitQuestions', 'financialSummary']
-    };
+    // E10b: Generate structured analysis in parallel
     let rawAnalysisResponse = null;
     try {
-      let analysisResponse = await base44.integrations.Core.InvokeLLM({
-        prompt: analysisSystemPrompt + '\n\n' + analysisUserPrompt,
-        model: 'gpt-5',
-        response_json_schema: analysisJsonSchema
+      const analysisResponse = await callOpenRouter({
+        systemPrompt: `You are a school analysis engine. Given a consultant's analysis of a school for a specific family, extract structured data. Return ONLY valid JSON matching the schema.`,
+        userPrompt: `Consultant's analysis: ${aiMessage}\n\nSchool data: ${JSON.stringify(compressedSchoolData)}\n\nFamily profile: child=${childDisplayName}, budget=${resolvedMaxTuition}, priorities=${resolvedPriorities?.join(', ') || 'None'}\n\nIMPORTANT: Every school has trade-offs. You MUST return at least 3 items in tradeOffs[]. For each trade-off, include the dimension name, and either a strength (what this school does well for this family) or a concern (what might not fit), or both. Consider dimensions like: learning support, class size, arts/athletics programs, commute distance, budget fit, academic approach, campus facilities, community culture. If school data is missing for a dimension the family cares about, that itself is a trade-off with concern noting the data gap. Each dimension should appear only once in tradeOffs[]. Do not repeat dimensions. If a dimension has both a strength and a concern, include both in the same trade-off object.\n\nExtract: fitLabel (strong_match/good_match/worth_exploring), fitScore (0-100), tradeOffs (array with dimension, strength, concern, dataSource), dataGaps (array of field names with missing data relevant to this family), visitQuestions (array of 3-5 personalized questions for school visit), financialSummary (tuition, aidAvailable boolean, estimatedNetCost, budgetFit).`,
+        maxTokens: 800,
+        temperature: 0.3,
+        responseSchema: {
+          name: 'school_analysis',
+          schema: {
+            type: 'object',
+            properties: {
+              fitLabel: { type: 'string', enum: ['strong_match', 'good_match', 'worth_exploring'] },
+              fitScore: { type: 'number' },
+              tradeOffs: { type: 'array', items: { type: 'object', properties: { dimension: { type: 'string' }, strength: { type: 'string' }, concern: { type: 'string' }, dataSource: { type: 'string' } } } },
+              dataGaps: { type: 'array', items: { type: 'string' } },
+              visitQuestions: { type: 'array', items: { type: 'string' } },
+              financialSummary: { type: 'object', properties: { tuition: { type: 'number' }, aidAvailable: { type: 'boolean' }, estimatedNetCost: { type: 'number' }, budgetFit: { type: 'string' } } }
+            },
+            required: ['fitLabel', 'fitScore', 'tradeOffs', 'dataGaps', 'visitQuestions', 'financialSummary']
+          }
+        }
       });
       rawAnalysisResponse = analysisResponse;
       if (typeof analysisResponse === 'string') {
@@ -305,7 +293,7 @@ Generate the DEEPDIVE card for this family-school match.`;
       } else {
         deepDiveAnalysis = analysisResponse;
       }
-      console.log('[E10b] Structured analysis via InvokeLLM (primary)');
+      console.log('[E10b] Structured analysis extracted successfully');
 
       // Save to SchoolAnalysis entity (non-blocking, fire-and-forget)
       if (userId && selectedSchoolId && deepDiveAnalysis) {
@@ -342,27 +330,8 @@ Generate the DEEPDIVE card for this family-school match.`;
         })();
       }
     } catch (analysisError) {
-      console.log('[E10b] InvokeLLM failed for analysis, falling back to callOpenRouter:', analysisError.message);
-      try {
-        const analysisResponse = await callOpenRouter({
-          systemPrompt: analysisSystemPrompt,
-          userPrompt: analysisUserPrompt,
-          maxTokens: 800,
-          temperature: 0.3,
-          responseSchema: { name: 'school_analysis', schema: analysisJsonSchema }
-        });
-        rawAnalysisResponse = analysisResponse;
-        if (typeof analysisResponse === 'string') {
-          const stripped = analysisResponse.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-          deepDiveAnalysis = JSON.parse(stripped);
-        } else {
-          deepDiveAnalysis = analysisResponse;
-        }
-        console.log('[E10b] Structured analysis via callOpenRouter (fallback)');
-      } catch (fallbackAnalysisError) {
-        console.error('[E10b] Both analysis providers failed:', fallbackAnalysisError.message, 'Raw response:', rawAnalysisResponse);
-      }
-      if (!deepDiveAnalysis && rawAnalysisResponse && typeof rawAnalysisResponse === 'string') {
+      console.error('[E10b] deepDiveAnalysis generation failed:', analysisError.message, 'Raw response:', rawAnalysisResponse);
+      if (rawAnalysisResponse && typeof rawAnalysisResponse === 'string') {
         try {
           const stripped = rawAnalysisResponse.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
           deepDiveAnalysis = JSON.parse(stripped);

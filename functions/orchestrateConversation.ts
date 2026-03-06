@@ -519,25 +519,22 @@ LIAM TONE: Direct, analytical, practical. Acknowledge their observations factual
 
 ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, validate their insights, and summarize what you heard.' : `Ask them: "${nextQuestion}"\n\nBe natural — don't sound robotic.`}`;
 
-    // E25-S3 InvokeLLM-first routing
     let debriefMessage = "Tell me about your visit experience.";
     try {
-      const debriefResponse = await base44.integrations.Core.InvokeLLM({
-        prompt: debriefSystemPrompt + '\n\n' + debriefUserPrompt,
-        model: 'gpt-5'
+      const debriefResponse = await callOpenRouter({
+        systemPrompt: debriefSystemPrompt,
+        userPrompt: debriefUserPrompt,
+        maxTokens: 500,
+        temperature: 0.7
       });
-      debriefMessage = debriefResponse?.response || debriefResponse || "Tell me about your visit experience.";
-      console.log('[E13a] Debrief response via InvokeLLM (primary)');
-    } catch (invokeLLMError) {
-      console.log('[E13a] InvokeLLM failed, falling back to callOpenRouter:', invokeLLMError.message);
+      debriefMessage = debriefResponse || "Tell me about your visit experience.";
+    } catch (openrouterError) {
       try {
-        const debriefResponse = await callOpenRouter({
-          systemPrompt: debriefSystemPrompt,
-          userPrompt: debriefUserPrompt,
-          maxTokens: 500,
-          temperature: 0.7
+        const fallbackResponse = await base44.integrations.Core.InvokeLLM({
+          prompt: debriefSystemPrompt + '\n\n' + debriefUserPrompt,
+          model: 'gpt-5'
         });
-        debriefMessage = debriefResponse || "Tell me about your visit experience.";
+        debriefMessage = fallbackResponse?.response || fallbackResponse || "Tell me about your visit experience.";
       } catch (fallbackError) {
         console.error('[E13a] Debrief response failed:', fallbackError.message);
       }
@@ -624,49 +621,40 @@ ${qaContext}
 
 Based on what the family shared during their visit, provide a fit re-evaluation. Return JSON: { updatedFitLabel (enum: "strong_match", "good_match", "worth_exploring"), fitDirection (enum: "improved", "declined", "unchanged"), revisedStrengths (array of strings), revisedConcerns (array of strings), visitVerdict (string, 1-2 sentences) }`;
 
-          // E25-S3 InvokeLLM-first routing
           let reevalResult = null;
           try {
-            const invokeLLMResult = await base44.integrations.Core.InvokeLLM({
-              prompt: reevalSystemPrompt + '\n\n' + reevalUserPrompt,
-              model: 'gpt-5',
-              response_json_schema: {
-                type: 'object',
-                properties: {
-                  updatedFitLabel: { type: 'string', enum: ['strong_match', 'good_match', 'worth_exploring'] },
-                  fitDirection: { type: 'string', enum: ['improved', 'declined', 'unchanged'] },
-                  revisedStrengths: { type: 'array', items: { type: 'string' } },
-                  revisedConcerns: { type: 'array', items: { type: 'string' } },
-                  visitVerdict: { type: 'string' }
+            reevalResult = await callOpenRouter({
+              systemPrompt: reevalSystemPrompt,
+              userPrompt: reevalUserPrompt,
+              maxTokens: 600,
+              temperature: 0.5,
+              responseSchema: {
+                name: 'fit_reevaluation',
+                schema: {
+                  type: 'object',
+                  properties: {
+                    updatedFitLabel: { type: 'string', enum: ['strong_match', 'good_match', 'worth_exploring'] },
+                    fitDirection: { type: 'string', enum: ['improved', 'declined', 'unchanged'] },
+                    revisedStrengths: { type: 'array', items: { type: 'string' } },
+                    revisedConcerns: { type: 'array', items: { type: 'string' } },
+                    visitVerdict: { type: 'string' }
+                  },
+                  required: ['updatedFitLabel', 'fitDirection', 'revisedStrengths', 'revisedConcerns', 'visitVerdict'],
+                  additionalProperties: false
                 }
               }
             });
-            reevalResult = typeof invokeLLMResult === 'string' ? JSON.parse(invokeLLMResult) : invokeLLMResult;
-            console.log('[E13a-WC3] Fit re-evaluation via InvokeLLM (primary)');
-          } catch (invokeLLMError) {
-            console.log('[E13a-WC3] InvokeLLM failed, falling back to callOpenRouter:', invokeLLMError.message);
+          } catch (openrouterError) {
+            console.log('[E13a-WC3] OpenRouter failed, trying InvokeLLM fallback');
             try {
-              reevalResult = await callOpenRouter({
-                systemPrompt: reevalSystemPrompt,
-                userPrompt: reevalUserPrompt,
-                maxTokens: 600,
-                temperature: 0.5,
-                responseSchema: {
-                  name: 'fit_reevaluation',
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      updatedFitLabel: { type: 'string', enum: ['strong_match', 'good_match', 'worth_exploring'] },
-                      fitDirection: { type: 'string', enum: ['improved', 'declined', 'unchanged'] },
-                      revisedStrengths: { type: 'array', items: { type: 'string' } },
-                      revisedConcerns: { type: 'array', items: { type: 'string' } },
-                      visitVerdict: { type: 'string' }
-                    },
-                    required: ['updatedFitLabel', 'fitDirection', 'revisedStrengths', 'revisedConcerns', 'visitVerdict'],
-                    additionalProperties: false
-                  }
-                }
+              const fallbackResult = await base44.integrations.Core.InvokeLLM({
+                prompt: reevalSystemPrompt + '\n\n' + reevalUserPrompt
               });
+              if (typeof fallbackResult === 'string') {
+                reevalResult = JSON.parse(fallbackResult);
+              } else {
+                reevalResult = fallbackResult;
+              }
             } catch (fallbackError) {
               console.error('[E13a-WC3] Both fit re-evaluation methods failed:', fallbackError.message);
               reevalResult = null;
