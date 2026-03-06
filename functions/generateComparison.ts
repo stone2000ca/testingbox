@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       schools: schools.map(s => ({
         id: s.id,
         name: s.name,
-        heroImage: s.heroImage,
+        heroImage: s.headerPhotoUrl || s.heroImage || null,
         city: s.city,
         region: s.region
       })),
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
           name: 'Basic Info',
           rows: [
             { label: 'Location', values: schools.map(s => `${s.city}, ${s.provinceState}`) },
-            { label: 'Grades', values: schools.map(s => s.gradesServed) },
+            { label: 'Grades', values: schools.map(s => s.gradesServed || (s.lowestGrade && s.highestGrade ? s.lowestGrade + '-' + s.highestGrade : 'N/A')) },
             { label: 'Enrollment', values: schools.map(s => s.enrollment?.toLocaleString()) },
             { label: 'Founded', values: schools.map(s => s.founded) },
             { label: 'Curriculum', values: schools.map(s => s.curriculumType) }
@@ -139,9 +139,8 @@ Return JSON with array of insights (each 1-2 sentences highlighting key differen
         category: cat.name,
         label: row.label,
         values: row.values,
-        relevance: prioritySet.has(row.label.toLowerCase()) ? 'priority'
-          : dealbreakers?.some(d => row.label.toLowerCase().includes(d.toLowerCase())) ? 'dealbreaker'
-          : 'neutral'
+        relevance: (() => { const label = row.label.toLowerCase(); const isP = [...prioritySet].some(p => label.includes(p) || p.includes(label) || label.split(' ').some(w => p.includes(w))); return isP ? 'priority' : null; })()
+          || (dealbreakers?.some(d => { const label = row.label.toLowerCase(); const db = d.toLowerCase(); return label.includes(db) || db.includes(label) || db.split(' ').some(w => w.length > 3 && label.includes(w)); }) ? 'dealbreaker' : 'neutral')
       })))
     };
 
