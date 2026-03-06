@@ -470,6 +470,7 @@ export default function Dashboard() {
         )}
         </div>
       </div>
+      </div>
 
       {/* WC14: Archive Choice Modal (Case 4 - 5 active sessions) */}
       {showArchiveChoiceModal && (
