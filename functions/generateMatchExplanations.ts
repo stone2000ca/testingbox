@@ -2,7 +2,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
-  
+  const user = await base44.auth.me();
+  if (!user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+
   try {
     const { familyProfile, schools } = await req.json();
 
