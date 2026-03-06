@@ -723,9 +723,9 @@ export default function ClaimSchool() {
               {codeError && (
                 <p className="text-red-600 text-sm mt-2">{codeError}</p>
               )}
-              {claimId && (
+              {codeExpiryTime && (
                 <p className="text-slate-500 text-xs mt-2">
-                  Code expires: {new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toLocaleString()}
+                  Code expires: {codeExpiryTime.toLocaleString()}
                 </p>
               )}
             </div>
