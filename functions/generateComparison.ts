@@ -109,19 +109,24 @@ School ${i + 1}: ${s.name}
 
 Return JSON with array of insights (each 1-2 sentences highlighting key differences):`;
 
-    const insights = await base44.integrations.Core.InvokeLLM({
-      prompt: insightsPrompt,
-      model: 'gpt-5',
-      response_json_schema: {
-        type: "object",
-        properties: {
-          insights: {
-            type: "array",
-            items: { type: "string" }
+    let insights = { insights: [] };
+    try {
+      insights = await base44.integrations.Core.InvokeLLM({
+        prompt: insightsPrompt,
+        model: 'gpt-5',
+        response_json_schema: {
+          type: "object",
+          properties: {
+            insights: {
+              type: "array",
+              items: { type: "string" }
+            }
           }
         }
-      }
-    });
+      });
+    } catch (llmError) {
+      console.warn('[E25-S5] InvokeLLM for insights failed (returning empty insights):', llmError.message);
+    }
 
     // Build family-personalized comparisonMatrix
     const priorities = familyProfile?.priorities || [];
