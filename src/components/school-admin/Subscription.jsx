@@ -153,7 +153,6 @@ export default function Subscription({ school, onUpdate }) {
 
       {/* Billing Section */}
       {currentPlan !== 'free' && (
-
         <Card className="p-6 mt-8">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Billing Information</h3>
           <div className="space-y-3">
