@@ -382,6 +382,7 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
 
     let schools = [];
     try {
+      console.log('[DEBUG-P0] searchParams:', JSON.stringify(searchParams));
       const searchResult = await base44.asServiceRole.functions.invoke('searchSchools', {
         ...searchParams,
         conversationId: conversationId,
