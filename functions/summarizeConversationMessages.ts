@@ -3,6 +3,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+
     const { conversationId } = await req.json();
 
     // Get conversation
@@ -10,6 +13,8 @@ Deno.serve(async (req) => {
     if (!conversation || conversation.length === 0) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 });
     }
+
+    if (conversation[0]?.userId !== user.id) return Response.json({ error: 'Access denied' }, { status: 403 });
 
     const messages = conversation[0].messages || [];
     
