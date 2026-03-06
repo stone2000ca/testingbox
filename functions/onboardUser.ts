@@ -1,5 +1,22 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+function mergeProfileData(existing, extracted) {
+  const merged = { ...existing };
+  for (const [key, value] of Object.entries(extracted)) {
+    if (value === null || value === undefined) continue;
+    if (Array.isArray(value) && value.length > 0) {
+      if (Array.isArray(merged[key]) && merged[key].length > 0) {
+        merged[key] = [...new Set([...merged[key], ...value])];
+      } else {
+        merged[key] = value;
+      }
+    } else if (value !== '') {
+      merged[key] = value;
+    }
+  }
+  return merged;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
