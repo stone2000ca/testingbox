@@ -223,60 +223,78 @@ PARENT'S MESSAGE:
 
 Extract all factual data from the parent's message. Return ONLY valid JSON. Do NOT explain.`;
 
+    // E25-S3 InvokeLLM-first routing
+    const extractionSchema = {
+      type: 'object',
+      properties: {
+        childName: { type: 'string' },
+        childGrade: { type: 'number' },
+        locationArea: { type: 'string' },
+        maxTuition: { type: 'number' },
+        gender: { type: 'string' },
+        schoolGenderPreference: { type: 'string' },
+        schoolGenderExclusions: { type: 'array', items: { type: 'string' } },
+        priorities: { type: 'array', items: { type: 'string' } },
+        interests: { type: 'array', items: { type: 'string' } },
+        dealbreakers: { type: 'array', items: { type: 'string' } },
+        remove_priorities: { type: 'array', items: { type: 'string' } },
+        remove_interests: { type: 'array', items: { type: 'string' } },
+        remove_dealbreakers: { type: 'array', items: { type: 'string' } },
+        intentSignal: { type: 'string', enum: ['continue', 'request-brief', 'request-results', 'edit-criteria', 'ask-about-school', 'back-to-results', 'restart', 'off-topic', 'confirm-brief', 'visit_prep_request', 'visit_debrief'] },
+        briefDelta: { type: 'object', properties: { additions: { type: 'array' }, updates: { type: 'array' }, removals: { type: 'array' } } }
+      },
+      required: ['intentSignal', 'briefDelta']
+    };
     try {
-      result = await callOpenRouter({
-        systemPrompt,
-        userPrompt,
-        responseSchema: {
-          name: 'entity_extraction_with_intent',
-          schema: {
-            type: 'object',
-            properties: {
-              childName: { type: ['string', 'null'] },
-              childGrade: { type: ['number', 'null'] },
-              locationArea: { type: ['string', 'null'], description: 'Geographic location only — city, region, or neighborhood. Never curriculum types (IB, AP, Montessori, Waldorf, Reggio, IGCSE, French immersion).' },
-              maxTuition: { type: ['number', 'null'] },
-              gender: { type: ['string', 'null'] },
-              schoolGenderPreference: { type: ['string', 'null'] },
-              schoolGenderExclusions: { type: 'array', items: { type: 'string' } },
-              priorities: { type: 'array', items: { type: 'string' }, description: 'School requirements and attributes the family needs (curriculum, structure, gender, religious, boarding, learning support, class size)' },
-              interests: { type: 'array', items: { type: 'string' }, description: 'Child hobbies, activities, and extracurricular interests (sports, clubs, arts, coding)' },
-              dealbreakers: { type: 'array', items: { type: 'string' } },
-              remove_priorities: { type: 'array', items: { type: 'string' } },
-              remove_interests: { type: 'array', items: { type: 'string' } },
-              remove_dealbreakers: { type: 'array', items: { type: 'string' } },
-              intentSignal: { type: 'string', enum: ['continue', 'request-brief', 'request-results', 'edit-criteria', 'ask-about-school', 'back-to-results', 'restart', 'off-topic', 'confirm-brief', 'visit_prep_request', 'visit_debrief'] },
-              briefDelta: {
-                type: 'object',
-                properties: {
-                  additions: { type: 'array' },
-                  updates: { type: 'array' },
-                  removals: { type: 'array' }
-                }
-              }
-            },
-            required: ['intentSignal', 'briefDelta'],
-            additionalProperties: false
-          }
-        },
-        maxTokens: 500,
-        temperature: 0.1
+      let invokeResult = await base44.integrations.Core.InvokeLLM({
+        prompt: systemPrompt + '\n\n' + userPrompt,
+        model: 'gpt-5',
+        response_json_schema: extractionSchema
       });
+      if (typeof invokeResult === 'string') {
+        try { invokeResult = JSON.parse(invokeResult); } catch { invokeResult = {}; }
+      }
+      result = invokeResult || {};
       intentSignal = result?.intentSignal || 'continue';
-      console.log('[INTENT SIGNAL]', intentSignal);
-    } catch (openrouterError) {
-      console.error('[EXTRACT ERROR] OpenRouter failed:', openrouterError.message);
+      console.log('[INTENT SIGNAL] via InvokeLLM (primary)', intentSignal);
+    } catch (invokeLLMError) {
+      console.error('[EXTRACT] InvokeLLM failed, falling back to callOpenRouter:', invokeLLMError.message);
       try {
-        let fallbackResult = await base44.integrations.Core.InvokeLLM({
-          prompt: `Extract data from: "${message}". Return JSON with intentSignal and briefDelta.`
+        result = await callOpenRouter({
+          systemPrompt,
+          userPrompt,
+          responseSchema: {
+            name: 'entity_extraction_with_intent',
+            schema: {
+              type: 'object',
+              properties: {
+                childName: { type: ['string', 'null'] },
+                childGrade: { type: ['number', 'null'] },
+                locationArea: { type: ['string', 'null'], description: 'Geographic location only — city, region, or neighborhood. Never curriculum types (IB, AP, Montessori, Waldorf, Reggio, IGCSE, French immersion).' },
+                maxTuition: { type: ['number', 'null'] },
+                gender: { type: ['string', 'null'] },
+                schoolGenderPreference: { type: ['string', 'null'] },
+                schoolGenderExclusions: { type: 'array', items: { type: 'string' } },
+                priorities: { type: 'array', items: { type: 'string' }, description: 'School requirements and attributes the family needs (curriculum, structure, gender, religious, boarding, learning support, class size)' },
+                interests: { type: 'array', items: { type: 'string' }, description: 'Child hobbies, activities, and extracurricular interests (sports, clubs, arts, coding)' },
+                dealbreakers: { type: 'array', items: { type: 'string' } },
+                remove_priorities: { type: 'array', items: { type: 'string' } },
+                remove_interests: { type: 'array', items: { type: 'string' } },
+                remove_dealbreakers: { type: 'array', items: { type: 'string' } },
+                intentSignal: { type: 'string', enum: ['continue', 'request-brief', 'request-results', 'edit-criteria', 'ask-about-school', 'back-to-results', 'restart', 'off-topic', 'confirm-brief', 'visit_prep_request', 'visit_debrief'] },
+                briefDelta: { type: 'object', properties: { additions: { type: 'array' }, updates: { type: 'array' }, removals: { type: 'array' } } }
+              },
+              required: ['intentSignal', 'briefDelta'],
+              additionalProperties: false
+            }
+          },
+          maxTokens: 500,
+          temperature: 0.1
         });
-        if (typeof fallbackResult === 'string') {
-          try { fallbackResult = JSON.parse(fallbackResult); } catch { fallbackResult = {}; }
-        }
-        result = fallbackResult || {};
         intentSignal = result?.intentSignal || 'continue';
+        console.log('[INTENT SIGNAL] via callOpenRouter (fallback)', intentSignal);
       } catch (fallbackError) {
-        console.error('[FALLBACK ERROR] InvokeLLM extraction failed:', fallbackError.message);
+        console.error('[EXTRACT FALLBACK] callOpenRouter also failed:', fallbackError.message);
         result = {};
         intentSignal = 'continue';
       }

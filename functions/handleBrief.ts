@@ -135,16 +135,19 @@ Deno.serve(async (req) => {
 
       const adjustUserPrompt = `The parent message was: "${message}"\n\nAsk what needs adjustment in their brief.`;
 
+      // E25-S3 InvokeLLM-first routing
       let adjustMessage = "What would you like to adjust?";
       try {
-        const adjustResponse = await callOpenRouter({ systemPrompt: adjustSystemPrompt, userPrompt: adjustUserPrompt, maxTokens: 300, temperature: 0.5 });
-        adjustMessage = adjustResponse || "What would you like to adjust?";
-      } catch (openrouterError) {
+        const adjustResponse = await base44.integrations.Core.InvokeLLM({ prompt: adjustSystemPrompt + '\n\n' + adjustUserPrompt, model: 'gpt-5' });
+        adjustMessage = adjustResponse?.response || adjustResponse || "What would you like to adjust?";
+        console.log('[BRIEF] Adjust message via InvokeLLM (primary)');
+      } catch (invokeLLMError) {
+        console.log('[BRIEF] InvokeLLM failed, falling back to callOpenRouter:', invokeLLMError.message);
         try {
-          const fallbackResponse = await base44.integrations.Core.InvokeLLM({ prompt: adjustSystemPrompt, model: 'gpt-5' });
-          adjustMessage = fallbackResponse?.response || fallbackResponse || "What would you like to adjust?";
+          const fallbackResponse = await callOpenRouter({ systemPrompt: adjustSystemPrompt, userPrompt: adjustUserPrompt, maxTokens: 300, temperature: 0.5 });
+          adjustMessage = fallbackResponse || "What would you like to adjust?";
         } catch (fallbackError) {
-          console.error('[FALLBACK ERROR] BRIEF adjustment failed:', fallbackError.message);
+          console.error('[BRIEF] BRIEF adjustment failed:', fallbackError.message);
         }
       }
 
@@ -303,17 +306,28 @@ Format as a markdown bullet list with one field per line. Start the child field 
           "\nDoes that capture it? Anything to adjust?"
         ].filter(line => line !== null).join('\n');
         
+        // E25-S3 InvokeLLM-first routing
         try {
-          const briefResult = await callOpenRouter({
-            systemPrompt: jackieBriefSystemPrompt,
-            userPrompt: jackieBriefUserPrompt,
-            maxTokens: 800,
-            temperature: 0.5
+          const briefResponse = await base44.integrations.Core.InvokeLLM({
+            prompt: jackieBriefSystemPrompt + '\n\n' + jackieBriefUserPrompt,
+            model: 'gpt-5'
           });
-          briefMessageText = briefResult || programmaticFallback;
-        } catch (openrouterError) {
-          console.log('[BRIEF] OpenRouter failed for Jackie, using programmatic fallback');
-          briefMessageText = programmaticFallback;
+          briefMessageText = briefResponse?.response || briefResponse || programmaticFallback;
+          console.log('[BRIEF] Jackie brief via InvokeLLM (primary)');
+        } catch (invokeLLMError) {
+          console.log('[BRIEF] InvokeLLM failed, falling back to callOpenRouter:', invokeLLMError.message);
+          try {
+            const briefResult = await callOpenRouter({
+              systemPrompt: jackieBriefSystemPrompt,
+              userPrompt: jackieBriefUserPrompt,
+              maxTokens: 800,
+              temperature: 0.5
+            });
+            briefMessageText = briefResult || programmaticFallback;
+          } catch (openrouterError) {
+            console.log('[BRIEF] callOpenRouter also failed for Jackie, using programmatic fallback');
+            briefMessageText = programmaticFallback;
+          }
         }
       }
       briefMessage = briefMessageText;
