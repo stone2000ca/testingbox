@@ -29,7 +29,6 @@ import { extractAndSaveMemories } from '../components/utils/memoryManager';
 import { restoreSessionFromParam } from '@/components/chat/SessionRestorer';
 import LoginGateModal from '@/components/dialogs/LoginGateModal';
 import DebugPanel from '@/components/utils/DebugPanel'; // E18c-001
-import FamilyBriefPanel from '@/components/chat/FamilyBriefPanel';
 import ChatPanel from '@/components/chat/ChatPanel';
 import ProgressBar from '@/components/ui/progress-bar';
 import { Link, useSearchParams } from 'react-router-dom';
