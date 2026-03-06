@@ -67,8 +67,13 @@ export async function handleNarrateComparison({
       s.genderPolicy ? `Gender: ${s.genderPolicy}` : '',
       s.boardingAvailable != null ? `Boarding: ${s.boardingAvailable ? 'Yes' : 'No'}` : '',
       s.avgClassSize ? `Avg class size: ${s.avgClassSize}` : '',
+      s.enrollment ? `Enrollment: ${s.enrollment}` : '',
+      s.studentTeacherRatio ? `Student-teacher ratio: ${s.studentTeacherRatio}` : '',
+      s.artsPrograms?.length ? `Arts: ${s.artsPrograms.join(', ')}` : '',
+      s.sportsPrograms?.length ? `Sports: ${s.sportsPrograms.join(', ')}` : '',
+      s.universityPlacements ? `University placements: ${s.universityPlacements}` : '',
       s.specializations?.length ? `Specializations: ${s.specializations.join(', ')}` : '',
-      s.highlights?.length ? `Highlights: ${s.highlights.slice(0, 2).join('; ')}` : '',
+      s.highlights?.length ? `Highlights: ${s.highlights.join('; ')}` : '',
     ].filter(Boolean).join(', ');
   }).join('\n');
 
