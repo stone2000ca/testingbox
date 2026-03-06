@@ -135,17 +135,17 @@ export default function AdminDashboard({ onViewChange }) {
       <Card className="p-6 mt-6">
         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
         <div className="grid grid-cols-3 gap-4">
-          <button className="p-4 border-2 border-slate-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
+          <button onClick={() => onViewChange?.('schools')} className="p-4 border-2 border-slate-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
             <Building2 className="h-5 w-5 text-teal-600 mb-2" />
             <div className="font-medium text-slate-900">Add New School</div>
             <div className="text-xs text-slate-600">Manually add a school</div>
           </button>
-          <button className="p-4 border-2 border-slate-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
+          <button onClick={() => onViewChange?.('users')} className="p-4 border-2 border-slate-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
             <Users className="h-5 w-5 text-teal-600 mb-2" />
             <div className="font-medium text-slate-900">Invite Admin</div>
             <div className="text-xs text-slate-600">Send school admin invite</div>
           </button>
-          <button className="p-4 border-2 border-slate-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
+          <button onClick={() => onViewChange?.('analytics')} className="p-4 border-2 border-slate-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors text-left">
             <TrendingUp className="h-5 w-5 text-teal-600 mb-2" />
             <div className="font-medium text-slate-900">Export Report</div>
             <div className="text-xs text-slate-600">Download analytics</div>
