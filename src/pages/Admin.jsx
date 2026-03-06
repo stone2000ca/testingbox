@@ -106,7 +106,7 @@ export default function Admin() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
-          {currentView === 'dashboard' && <AdminDashboard />}
+          {currentView === 'dashboard' && <AdminDashboard onViewChange={setCurrentView} />}
           {currentView === 'schools' && <AdminSchools />}
           {currentView === 'users' && <AdminUsers />}
           {currentView === 'claims' && <AdminClaims />}
