@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Heart, ExternalLink, CheckCircle, Check, X, CalendarDays, Mail } from "lucide-react";
+import { ArrowLeft, Heart, ExternalLink, CheckCircle, Check, X, CalendarDays, Mail, ClipboardList } from "lucide-react";
 import TourRequestModal from './TourRequestModal';
 
 function gradeLabel(grade) {
@@ -292,6 +292,78 @@ function ReviewsTier() {
   );
 }
 
+// E28-S3 WC2: Action Plan Section
+function ActionPlanSection({ actionPlan }) {
+  if (!actionPlan) return null;
+
+  return (
+    <div className="p-6 border-b border-slate-700">
+      <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+        <ClipboardList className="h-5 w-5 text-indigo-400" />
+        Your Action Plan
+      </h3>
+      <div className="space-y-4 text-sm text-slate-300">
+        {/* Visit Timeline */}
+        <div>
+          <p className="font-semibold text-slate-200">Visit Timeline:</p>
+          <p>{actionPlan.visitTimeline.recommendedAction}</p>
+          {actionPlan.visitTimeline.events?.length > 0 && (
+            <ul className="list-disc list-inside ml-4 mt-1">
+              {actionPlan.visitTimeline.events.map((event, idx) => (
+                <li key={idx}>{event.title} on {new Date(event.date).toLocaleDateString('en-CA')}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Application Deadlines */}
+        <div>
+          <p className="font-semibold text-slate-200">Application Deadlines:</p>
+          {actionPlan.applicationDeadlines.deadline ? (
+            <p>Application: {actionPlan.applicationDeadlines.deadline} {actionPlan.applicationDeadlines.isEstimated && '(estimated)'}</p>
+          ) : (
+            <p>Application: Not specified</p>
+          )}
+          {actionPlan.applicationDeadlines.financialAidDeadline && (
+            <p>Financial Aid: {actionPlan.applicationDeadlines.financialAidDeadline}</p>
+          )}
+        </div>
+
+        {/* Document Checklist */}
+        <div>
+          <p className="font-semibold text-slate-200">Document Checklist:</p>
+          {actionPlan.documentChecklist?.length > 0 ? (
+            <ul className="space-y-1 mt-1">
+              {actionPlan.documentChecklist.map((item, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  {item.status === 'completed' ? <CheckCircle className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-slate-500" />}
+                  <span>{item.item}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No specific documents listed.</p>
+          )}
+        </div>
+
+        {/* Follow-Up Questions */}
+        <div>
+          <p className="font-semibold text-slate-200">Follow-Up Questions:</p>
+          {actionPlan.followUpQuestions?.length > 0 ? (
+            <ul className="list-disc list-inside ml-4 mt-1">
+              {actionPlan.followUpQuestions.map((question, idx) => (
+                <li key={idx}>{question}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No specific follow-up questions generated.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // TIER 5: Sticky CTA Bar
 function CtaBar({ school, isShortlisted, onToggleShortlist, onCompare, isPremium, onRequestTour }) {
   return (
@@ -356,7 +428,8 @@ export default function SchoolDetailPanel({
   onBack, 
   onToggleShortlist, 
   onCompare,
-  isShortlisted 
+  isShortlisted,
+  actionPlan
 }) {
   const [showTourModal, setShowTourModal] = useState(false);
 
@@ -394,6 +467,9 @@ export default function SchoolDetailPanel({
         
         {/* TIER 4 */}
         <ReviewsTier />
+
+        {/* E28-S3 WC2: Action Plan */}
+        <ActionPlanSection actionPlan={actionPlan} />
       </div>
       
       {/* TIER 5 */}

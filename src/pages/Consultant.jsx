@@ -165,6 +165,9 @@ export default function Consultant() {
   // Visit Prep Kit data
   const [visitPrepKit, setVisitPrepKit] = useState(null);
 
+  // Action Plan data
+  const [actionPlan, setActionPlan] = useState(null);
+
   // Fit Re-Evaluation data
   const [fitReEvaluation, setFitReEvaluation] = useState(null);
 
@@ -768,6 +771,7 @@ export default function Consultant() {
     setSchoolsAnimKey,
     setDeepDiveAnalysis,
     setVisitPrepKit,
+    setActionPlan,
     setFitReEvaluation,
     artifactCache,
     resetSort,
@@ -1218,6 +1222,7 @@ export default function Consultant() {
               onToggleShortlist={handleToggleShortlist}
               isShortlisted={user?.shortlist?.includes(selectedSchool.id) || false}
               onCompare={(school) => handleOpenComparison([school])}
+              actionPlan={actionPlan}
             />
           ) : currentState === STATES.RESULTS && schools.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-6 text-center">
