@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
 
     // Mode 1: single school by id (post-save hook)
     if (schoolId) {
-      const schools = await base44.asServiceRole.entities.School.filter({ id: body.schoolId });
+      const schools = await base44.asServiceRole.entities.School.filter({ id: schoolId });
       if (!schools || schools.length === 0) {
         return Response.json({ error: 'School not found' }, { status: 404 });
       }
