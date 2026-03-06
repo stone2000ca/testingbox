@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     const extractedData = await extractPhaseData(base44, message, currentPhase, profile);
     
     // Merge extracted data into profile
-    profile = { ...profile, ...extractedData };
+    profile = mergeProfileData(profile, extractedData);
 
     // Check if required fields for phase are filled
     const requiredFieldsMet = checkRequiredFields(currentPhase, profile);
