@@ -1189,9 +1189,7 @@ export default function Consultant() {
         familyProfileId: familyProfile?.id || null,
         userId: user?.id || null
       });
-      if (result.data?.comparisonMatrix) {
-        setComparisonMatrix(result.data.comparisonMatrix);
-      }
+      // S87-WC2: Path A runs for logging/artifact only — Path B (handleNarrateComparison) is sole matrix writer
     } catch (e) {
       console.warn('[E11b] generateComparison failed (non-blocking):', e.message);
     }
