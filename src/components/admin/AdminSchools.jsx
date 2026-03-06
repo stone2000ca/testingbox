@@ -88,7 +88,7 @@ export default function AdminSchools() {
         setEnrichmentProgress({ current: schoolIndex, total: schools.length });
         
         try {
-          await base44.functions.invoke('enrichSchoolData', { schoolId: school.id });
+          await base44.functions.invoke('enrichSchoolFromWeb', { schoolId: school.id });
           console.log(`✓ Enriched ${school.name}`);
         } catch (error) {
           console.error(`✗ Failed to enrich ${school.name}:`, error);
