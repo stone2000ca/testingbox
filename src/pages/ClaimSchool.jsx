@@ -239,26 +239,22 @@ export default function ClaimSchool() {
 
   const handleResendEmail = async () => {
     if (!claimId) return;
-    
+
     setSendingEmail(true);
     setEmailError('');
     try {
-      const claim = await base44.entities.SchoolClaim.get(claimId);
-      
       await base44.functions.invoke('sendClaimEmail', {
         emailType: 'VERIFICATION_CODE',
         claimData: {
-          claimantName: claim.claimantName,
-          claimantEmail: claim.claimantEmail,
-          verificationCode: claim.verificationCode,
-          codeExpiresAt: claim.codeExpiresAt
+          claimantName: formData.name,
+          claimantEmail: formData.email,
         },
         schoolData: {
           name: school.name,
-          id: schoolId
+          id: schoolId,
+          claimId
         }
       });
-      
       alert('Verification code resent!');
     } catch (error) {
       console.error('Resend failed:', error);
