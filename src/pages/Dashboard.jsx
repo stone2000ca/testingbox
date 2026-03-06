@@ -242,7 +242,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#1E1E2E]">
+    <div className="h-screen flex flex-col bg-[#1E1E2E] overflow-hidden">
       <Navbar />
 
       {/* WC15: Upgrade Success Banner */}
@@ -265,39 +265,42 @@ export default function Dashboard() {
       )}
 
       {/* Top Bar */}
-      <div className="bg-[#2A2A3D] border-b border-white/10 py-4">
+      <div className="bg-[#2A2A3D] border-b border-white/10 py-4 flex-shrink-0">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-white">
-            Welcome back, {user.full_name || 'User'}
-          </h1>
-          {/* WC12: Tier badge */}
-          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-            user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise'
-              ? 'bg-amber-500/20 text-amber-300'
-              : 'bg-slate-500/20 text-slate-300'
-          }`}>
-            {(user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise') && (
-              <Crown className="w-3 h-3" />
-            )}
-            {user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise' ? 'Premium' : 'Free Plan'}
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-white">
+              Welcome back, {user.full_name || 'User'}
+            </h1>
+            {/* WC12: Tier badge */}
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+              user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise'
+                ? 'bg-amber-500/20 text-amber-300'
+                : 'bg-slate-500/20 text-slate-300'
+            }`}>
+              {(user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise') && (
+                <Crown className="w-3 h-3" />
+              )}
+              {user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'enterprise' ? 'Premium' : 'Free Plan'}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={handleNewSearch}
-            className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Search
-          </Button>
-          <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-            <Settings className="w-5 h-5 text-white/60" />
-          </button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleNewSearch}
+              className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              New Search
+            </Button>
+            <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <Settings className="w-5 h-5 text-white/60" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full overflow-x-hidden">
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-6">
         {error && (
           <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
             {error}
