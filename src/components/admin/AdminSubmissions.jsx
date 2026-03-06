@@ -20,21 +20,26 @@ export default function AdminSubmissions() {
 
   async function approve(school) {
     setActionMap(m => ({ ...m, [school.id]: "approving" }));
-    await base44.entities.School.update(school.id, { status: "active" });
-    // Create SchoolAdmin record linking the submitter email as owner
-    // We look up the user by email; if not found, we skip (they'll claim later)
+    // Fix 1+2: Set status, claimStatus, membershipTier together
+    await base44.entities.School.update(school.id, { status: "active", claimStatus: "claimed", membershipTier: "basic" });
+    // Fix 3: Update existing SchoolClaim to verified (non-blocking)
     try {
-      const users = await base44.entities.User.list();
-      const match = users.find(u => u.email === school.created_by);
-      if (match) {
+      const claims = await base44.entities.SchoolClaim.filter({ schoolId: school.id, status: "pending_review" });
+      if (claims.length > 0) {
+        await base44.entities.SchoolClaim.update(claims[0].id, { status: "verified", verifiedAt: new Date().toISOString() });
+      }
+    } catch (e) { /* non-blocking */ }
+    // Fix 4: Use school.userId directly — no User.list() lookup needed
+    if (school.userId) {
+      try {
         await base44.entities.SchoolAdmin.create({
           schoolId: school.id,
-          userId: match.id,
+          userId: school.userId,
           role: "owner",
           isActive: true,
         });
-      }
-    } catch (_) { /* user not found — submitter can claim manually */ }
+      } catch (_) { /* already exists or non-blocking */ }
+    }
     setSubmissions(s => s.filter(x => x.id !== school.id));
     setActionMap(m => ({ ...m, [school.id]: "done" }));
   }
