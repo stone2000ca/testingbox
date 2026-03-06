@@ -404,6 +404,7 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
       }
       
       schools = searchResult.data.schools || [];
+      console.log('[DEBUG-P0] searchResult schools count:', searchResult?.data?.schools?.length);
       if (!Array.isArray(schools)) {
         console.error('[ERROR] searchSchools schools is not an array:', typeof schools);
         schools = [];
