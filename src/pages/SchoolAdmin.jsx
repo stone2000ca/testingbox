@@ -290,7 +290,7 @@ export default function SchoolAdmin() {
                     <button
                       key={item.id}
                       onClick={() => !item.locked && !item.showLoading && handleClick()}
-                      disabled={(item.locked && item.id !== 'events') || item.showLoading}
+                      disabled={item.locked || item.showLoading}
                       className={`
                         w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors
                         ${isActive

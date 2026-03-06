@@ -54,7 +54,9 @@ export default function Subscription({ school, onUpdate }) {
     }
   ];
 
-  const currentPlan = school.subscriptionTier || 'free';
+  // Normalize legacy tier names to new names for display logic
+  const rawTier = school.subscriptionTier || 'free';
+  const currentPlan = rawTier === 'basic' ? 'growth' : rawTier === 'premium' ? 'professional' : rawTier;
 
   const handleUpgrade = (planId) => {
     // In production, integrate with Stripe
