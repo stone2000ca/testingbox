@@ -66,7 +66,11 @@ export default function EnrichmentReviewSection({ school, onCountChange }) {
         reviewedAt: new Date().toISOString(),
       }),
     ]);
-    setDiffs(prev => prev.map(d => d.id === diff.id ? { ...d, status: 'approved' } : d));
+    setDiffs(prev => {
+      const next = prev.map(d => d.id === diff.id ? { ...d, status: 'approved' } : d);
+      onCountChange && onCountChange(next.filter(d => d.status === 'pending').length);
+      return next;
+    });
     setProcessing(p => { const n = new Set(p); n.delete(diff.id); return n; });
   };
 
@@ -77,7 +81,11 @@ export default function EnrichmentReviewSection({ school, onCountChange }) {
       reviewedBy: user?.email || '',
       reviewedAt: new Date().toISOString(),
     });
-    setDiffs(prev => prev.map(d => d.id === diff.id ? { ...d, status: 'rejected' } : d));
+    setDiffs(prev => {
+      const next = prev.map(d => d.id === diff.id ? { ...d, status: 'rejected' } : d);
+      onCountChange && onCountChange(next.filter(d => d.status === 'pending').length);
+      return next;
+    });
     setProcessing(p => { const n = new Set(p); n.delete(diff.id); return n; });
   };
 
@@ -86,6 +94,12 @@ export default function EnrichmentReviewSection({ school, onCountChange }) {
     for (const diff of highConf) {
       await approveDiff(diff);
     }
+    // Call onCountChange once after the loop with the final remaining pending count
+    setDiffs(prev => {
+      const remaining = prev.filter(d => d.status === 'pending').length;
+      onCountChange && onCountChange(remaining);
+      return prev;
+    });
   };
 
   if (loading) {

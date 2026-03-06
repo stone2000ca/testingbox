@@ -70,7 +70,11 @@ export default function PhotoReviewSection({ school, onUpdate, onCountChange }) 
           onUpdate && onUpdate('photoGallery', updated);
         }
       }
-      setCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, status: 'approved', approvedAs } : c));
+      setCandidates(prev => {
+        const next = prev.map(c => c.id === candidate.id ? { ...c, status: 'approved', approvedAs } : c);
+        onCountChange && onCountChange(next.filter(c => c.status === 'pending').length);
+        return next;
+      });
     } finally {
       setProc(candidate.id, false);
     }
@@ -84,7 +88,11 @@ export default function PhotoReviewSection({ school, onUpdate, onCountChange }) 
         rejectionReason: reason || '',
         reviewedAt: new Date().toISOString(),
       });
-      setCandidates(prev => prev.map(c => c.id === id ? { ...c, status: 'rejected', rejectionReason: reason } : c));
+      setCandidates(prev => {
+        const next = prev.map(c => c.id === id ? { ...c, status: 'rejected', rejectionReason: reason } : c);
+        onCountChange && onCountChange(next.filter(c => c.status === 'pending').length);
+        return next;
+      });
     } finally {
       setProc(id, false);
       setRejectingId(null);
