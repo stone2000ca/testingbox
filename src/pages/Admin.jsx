@@ -21,13 +21,15 @@ export default function Admin() {
   const checkAdmin = async () => {
     try {
       const userData = await base44.auth.me();
-      
-      if (userData.role !== 'admin') {
+      const users = await base44.entities.User.filter({ email: userData.email });
+      const userRecord = users?.[0];
+
+      if (!userRecord || userRecord.role !== 'admin') {
         window.location.href = '/';
         return;
       }
-      
-      setUser(userData);
+
+      setUser({ ...userData, ...userRecord });
     } catch (error) {
       window.location.href = '/';
     } finally {
