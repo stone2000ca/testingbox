@@ -471,6 +471,8 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Modals rendered outside scroll container but inside root div */}
+
       {/* WC14: Archive Choice Modal (Case 4 - 5 active sessions) */}
       {showArchiveChoiceModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
