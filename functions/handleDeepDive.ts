@@ -10,6 +10,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 // INLINED: callOpenRouter
 // =============================================================================
 async function callOpenRouter(options) {
+  // callOpenRouter v1.0 -- E25-S2 canonical
   const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7 } = options;
   
   const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
@@ -21,9 +22,12 @@ async function callOpenRouter(options) {
   const messages = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: userPrompt });
-  
+
+  // Model waterfall: quality-first (Gemini Flash), cost fallback (GPT-4.1-mini), latency fallback (Flash Lite)
+  const models = ['google/gemini-2.5-flash', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash-lite'];
+
   const body = {
-    models: ['google/gemini-2.5-flash', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash-lite'],
+    models,
     messages,
     max_tokens: maxTokens,
     temperature

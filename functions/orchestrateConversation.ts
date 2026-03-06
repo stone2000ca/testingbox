@@ -5,6 +5,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 // E18c-002: LLM call logging — writes LLMLog entity for every call (fire-and-forget)
 // =============================================================================
 async function callOpenRouter(options) {
+  // callOpenRouter v1.0 -- E25-S2 canonical
   const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7, _logContext } = options;
   // _logContext = { base44, conversation_id, phase, is_test } — optional, used for LLMLog only
 
@@ -17,9 +18,12 @@ async function callOpenRouter(options) {
   const messages = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: userPrompt });
+
+  // Model waterfall: quality-first (Gemini Flash), cost fallback (GPT-4.1-mini), latency fallback (Flash Lite)
+  const models = ['google/gemini-2.5-flash', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash-lite'];
   
   const body: any = {
-    models: ['google/gemini-2.5-flash', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash-lite'],
+    models,
     messages,
     max_tokens: maxTokens,
     temperature
