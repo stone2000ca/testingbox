@@ -339,27 +339,48 @@ export default function Dashboard() {
           /* Sessions Grid + Shortlist */
           <div>
             {/* Active / Archived Toggle */}
-            <div className="flex items-center gap-4 mb-6">
-              <button
-                onClick={() => setShowArchivedTab(false)}
-                className={`text-lg font-semibold pb-2 border-b-2 transition-colors ${
-                  !showArchivedTab 
-                    ? 'text-white border-teal-500' 
-                    : 'text-white/50 border-transparent hover:text-white/70'
-                }`}
-              >
-                Active ({sessions.filter(s => s.status === 'active').length})
-              </button>
-              <button
-                onClick={() => setShowArchivedTab(true)}
-                className={`text-lg font-semibold pb-2 border-b-2 transition-colors ${
-                  showArchivedTab 
-                    ? 'text-white border-teal-500' 
-                    : 'text-white/50 border-transparent hover:text-white/70'
-                }`}
-              >
-                Archived ({sessions.filter(s => s.status === 'archived').length})
-              </button>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setShowArchivedTab(false)}
+                  className={`text-lg font-semibold pb-2 border-b-2 transition-colors ${
+                    !showArchivedTab 
+                      ? 'text-white border-teal-500' 
+                      : 'text-white/50 border-transparent hover:text-white/70'
+                  }`}
+                >
+                  Active ({sessions.filter(s => s.status === 'active').length})
+                </button>
+                <button
+                  onClick={() => setShowArchivedTab(true)}
+                  className={`text-lg font-semibold pb-2 border-b-2 transition-colors ${
+                    showArchivedTab 
+                      ? 'text-white border-teal-500' 
+                      : 'text-white/50 border-transparent hover:text-white/70'
+                  }`}
+                >
+                  Archived ({sessions.filter(s => s.status === 'archived').length})
+                </button>
+              </div>
+              {/* Delete All — only shown when current tab has profiles */}
+              {!showArchivedTab && sessions.filter(s => s.status === 'active').length > 0 && (
+                <button
+                  onClick={() => setDeleteAllTarget('active')}
+                  className="flex items-center gap-1.5 text-sm text-red-400/70 hover:text-red-400 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete All
+                </button>
+              )}
+              {showArchivedTab && sessions.filter(s => s.status === 'archived').length > 0 && (
+                <button
+                  onClick={() => setDeleteAllTarget('archived')}
+                  className="flex items-center gap-1.5 text-sm text-red-400/70 hover:text-red-400 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete All
+                </button>
+              )}
             </div>
 
             {/* Active Sessions */}
