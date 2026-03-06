@@ -246,7 +246,7 @@ export default function ClaimSchool() {
     setSendingEmail(true);
     setEmailError('');
     try {
-      await base44.functions.invoke('sendClaimEmail', {
+      const emailRes = await base44.functions.invoke('sendClaimEmail', {
         emailType: 'VERIFICATION_CODE',
         claimData: {
           claimantName: formData.name,
@@ -258,6 +258,8 @@ export default function ClaimSchool() {
           claimId
         }
       });
+      const expiresInMinutes = emailRes?.data?.expiresInMinutes ?? 15;
+      setCodeExpiryTime(new Date(Date.now() + expiresInMinutes * 60 * 1000));
       alert('Verification code resent!');
     } catch (error) {
       console.error('Resend failed:', error);
