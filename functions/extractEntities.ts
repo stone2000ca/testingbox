@@ -267,60 +267,8 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     } catch (openrouterError) {
       console.error('[EXTRACT ERROR] OpenRouter failed:', openrouterError.message);
       try {
-        // E25-S4 improved fallback prompt
-        const fallbackPrompt = `Extract factual data from the parent's message below. Return ONLY valid JSON.
-
-CLASSIFICATION RULES:
-- PRIORITIES = what the SCHOOL must offer (curriculum type e.g. IB/AP/STEM-focused, gender policy, boarding, religious, class size, learning support, structured environment)
-- INTERESTS = what the CHILD enjoys doing (robotics, soccer, art, coding, music, drama)
-- NEVER put STEM, IB, AP, Montessori, French immersion into interests — they are priorities.
-
-INTENT SIGNAL — set intentSignal to ONE of:
-continue | request-brief | request-results | edit-criteria | ask-about-school | back-to-results | restart | off-topic | confirm-brief | visit_prep_request | visit_debrief
-
-- confirm-brief: parent says "yes", "looks right", "show me schools", "confirmed", "go ahead"
-- visit_debrief: parent mentions visiting/touring a school
-- visit_prep_request: parent asks for a visit prep kit
-- request-results: parent wants to see school matches
-
-BRIEF DELTA — populate briefDelta with arrays of plain strings:
-- additions: new info added this message
-- updates: existing fields corrected/changed
-- removals: things the parent explicitly removed
-
-KNOWN DATA (do not re-extract what's already set):
-${JSON.stringify(knownData, null, 2)}
-
-PARENT MESSAGE: "${message}"`;
-
         let fallbackResult = await base44.integrations.Core.InvokeLLM({
-          prompt: fallbackPrompt,
-          response_json_schema: {
-            type: 'object',
-            properties: {
-              childName: { type: ['string', 'null'] },
-              childGrade: { type: ['number', 'null'] },
-              locationArea: { type: ['string', 'null'] },
-              maxTuition: { type: ['number', 'null'] },
-              gender: { type: ['string', 'null'] },
-              priorities: { type: 'array', items: { type: 'string' } },
-              interests: { type: 'array', items: { type: 'string' } },
-              dealbreakers: { type: 'array', items: { type: 'string' } },
-              remove_priorities: { type: 'array', items: { type: 'string' } },
-              remove_interests: { type: 'array', items: { type: 'string' } },
-              remove_dealbreakers: { type: 'array', items: { type: 'string' } },
-              intentSignal: { type: 'string' },
-              briefDelta: {
-                type: 'object',
-                properties: {
-                  additions: { type: 'array' },
-                  updates: { type: 'array' },
-                  removals: { type: 'array' }
-                }
-              }
-            },
-            required: ['intentSignal', 'briefDelta']
-          }
+          prompt: `Extract data from: "${message}". Return JSON with intentSignal and briefDelta.`
         });
         if (typeof fallbackResult === 'string') {
           try { fallbackResult = JSON.parse(fallbackResult); } catch { fallbackResult = {}; }
