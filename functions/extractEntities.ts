@@ -68,6 +68,7 @@ async function callOpenRouter(options) {
       console.error(`[TIMEOUT] callOpenRouter timed out after ${TIMEOUT_MS}ms in extractEntities.ts`);
       throw new Error(`LLM request timed out after ${TIMEOUT_MS/1000}s`);
     }
+    console.error(`[callOpenRouter] Model call failed in extractEntities.ts:`, error.message);
     throw error;
   }
   clearTimeout(timeoutId);

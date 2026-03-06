@@ -133,6 +133,7 @@ async function callOpenRouter(options) {
       console.error(`[TIMEOUT] callOpenRouter timed out after ${TIMEOUT_MS}ms in orchestrateConversation.ts`);
       throw new Error(`LLM request timed out after ${TIMEOUT_MS/1000}s`);
     }
+    console.error(`[callOpenRouter] Model call failed in orchestrateConversation.ts:`, err.message);
     const latency_ms = Date.now() - startTime;
     // Only log if not already logged above (i.e. network-level errors, not HTTP errors)
     const isNetworkError = !err.message?.startsWith('OpenRouter API error:') && err.message !== 'OpenRouter returned empty content' && err.message !== 'OpenRouter structured output parse failed';

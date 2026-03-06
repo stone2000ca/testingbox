@@ -127,6 +127,7 @@ async function callOpenRouter(options) {
       console.error(`[TIMEOUT] callOpenRouter timed out after ${TIMEOUT_MS}ms in handleResults.ts`);
       throw new Error(`LLM request timed out after ${TIMEOUT_MS/1000}s`);
     }
+    console.error(`[callOpenRouter] Model call failed in handleResults.ts:`, error.message);
     throw error;
   }
   clearTimeout(timeoutId);
