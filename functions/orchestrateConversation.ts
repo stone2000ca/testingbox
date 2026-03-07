@@ -1050,7 +1050,8 @@ Deno.serve(async (req) => {
         }
 
         // E29-003: Fire-and-forget FamilyJourney creation at Brief confirmation
-        if (context.previousState === STATES.BRIEF && briefStatus === 'confirmed') {
+        const briefJustConfirmed = isConfirmBrief || (transitionResult.briefStatus === 'confirmed' && transitionResult.transitionReason?.startsWith('brief_confirmed'));
+        if (briefJustConfirmed) {
           (async () => {
             try {
               const briefSnapshot = JSON.parse(JSON.stringify(conversationFamilyProfile || {}));
