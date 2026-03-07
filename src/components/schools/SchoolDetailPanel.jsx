@@ -365,11 +365,11 @@ function ActionPlanSection({ actionPlan }) {
 }
 
 // TIER 5: Sticky CTA Bar
-function CtaBar({ school, isShortlisted, onToggleShortlist, onCompare, isPremium, onRequestTour }) {
+function CtaBar({ school, isShortlisted, onToggleShortlist, onCompare, hasTourFeatures, onRequestTour }) {
   return (
     <div className="sticky bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 p-4 space-y-2 z-40">
       {/* Tour request row */}
-      {isPremium ? (
+      {hasTourFeatures ? (
         <Button
           onClick={onRequestTour}
           className="w-full bg-teal-600 hover:bg-teal-700 flex items-center justify-center gap-2"
@@ -435,7 +435,8 @@ export default function SchoolDetailPanel({
 
   if (!school) return null;
 
-  const isPremium = school.schoolTier === 'pro';
+  const hasTourFeatures = school.schoolTier === 'growth' || school.schoolTier === 'pro';
+  const hasAllFeatures = school.schoolTier === 'pro';
   const matchScore = calculateMatchScore(school, familyProfile);
   const matchReasons = getMatchReasons(school, familyProfile);
 
@@ -478,7 +479,7 @@ export default function SchoolDetailPanel({
         isShortlisted={isShortlisted} 
         onToggleShortlist={onToggleShortlist}
         onCompare={onCompare}
-        isPremium={isPremium}
+        hasTourFeatures={hasTourFeatures}
         onRequestTour={() => setShowTourModal(true)}
       />
 
