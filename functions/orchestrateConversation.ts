@@ -1049,6 +1049,38 @@ Deno.serve(async (req) => {
           })();
         }
 
+        // E29-003: Fire-and-forget FamilyJourney creation at Brief confirmation
+        if (context.previousState === STATES.BRIEF && briefStatus === 'confirmed') {
+          (async () => {
+            try {
+              const briefSnapshot = JSON.parse(JSON.stringify(conversationFamilyProfile || {}));
+              const childName = conversationFamilyProfile?.childName || conversationFamilyProfile?.conversationContext?.childName || 'My Child';
+              const journey = await base44.asServiceRole.entities.FamilyJourney.create({
+                userId,
+                childName,
+                profileLabel: `${childName}'s School Search`,
+                currentPhase: 'MATCH',
+                phaseHistory: [
+                  { phase: 'UNDERSTAND', enteredAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+                  { phase: 'MATCH', enteredAt: new Date().toISOString(), completedAt: null }
+                ],
+                familyProfileId: conversationFamilyProfile?.id || '',
+                briefSnapshot,
+                consultantId: consultantName || 'jackie',
+                schoolJourneys: [],
+                totalSessions: 1,
+                lastActiveAt: new Date().toISOString(),
+                isStale: false,
+                isArchived: false
+              });
+              await base44.asServiceRole.entities.ChatHistory.update(conversationId, { journeyId: journey.id });
+              console.log('[E29] FamilyJourney created:', journey.id);
+            } catch (e) {
+              console.error('[E29] FamilyJourney creation failed (non-blocking):', e.message);
+            }
+          })();
+        }
+
         const autoRefresh = context.autoRefreshed === true;
         const resultsResult = await base44.asServiceRole.functions.invoke('handleResults', {
           message: processMessage,
