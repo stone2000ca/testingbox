@@ -1,4 +1,20 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+// Function: updateUserMemory
+// Purpose: Persist extracted memory strings as individual UserMemory records with metadata
+// Entities: UserMemory
+// Last Modified: 2026-03-07
+// Dependencies: none
+
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+
+const MAX_MEMORIES = 25;
+
+function detectCategory(content) {
+  const lower = content.toLowerCase();
+  if (lower.includes('prefer') || lower.includes('want') || lower.includes('looking for') || lower.includes('important')) return 'preference';
+  if (lower.includes('child') || lower.includes('grade') || lower.includes('age') || lower.includes('budget') || lower.includes('location')) return 'fact';
+  if (lower.includes('feedback') || lower.includes('liked') || lower.includes('disliked') || lower.includes('concern')) return 'feedback';
+  return 'context';
+}
 
 Deno.serve(async (req) => {
   try {
@@ -9,69 +25,49 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { memories, deduplicate } = await req.json();
+    const { memories } = await req.json();
 
     if (!memories || !Array.isArray(memories)) {
       return Response.json({ error: 'Invalid memories array' }, { status: 400 });
     }
 
-    // Fetch existing memories
-    const existing = await base44.entities.UserMemory.filter({ userId: user.id });
-    const userMemoryRecord = existing.length > 0 ? existing[0] : null;
+    // Fetch all existing memory records for this user
+    const existingRecords = await base44.entities.UserMemory.filter({ userId: user.id });
 
-    let finalMemories = memories;
+    // Enforce max cap — if at limit, skip creating new ones
+    const currentCount = existingRecords.length;
+    let created = 0;
+    let updated = 0;
 
-    // Deduplication: group by category and keep only the latest value
-    if (deduplicate && userMemoryRecord?.memories) {
-      const categoryMap = new Map();
-      
-      // Parse existing memories (format: "category: value")
-      userMemoryRecord.memories.forEach(mem => {
-        const match = mem.match(/^([^:]+):\s*(.+)$/);
-        if (match) {
-          const category = match[1].trim();
-          categoryMap.set(category, mem);
-        }
-      });
+    const now = new Date().toISOString();
 
-      // Update/add new memories by category
-      finalMemories.forEach(mem => {
-        const match = mem.match(/^([^:]+):\s*(.+)$/);
-        if (match) {
-          const category = match[1].trim();
-          categoryMap.set(category, mem); // Replace old value
-        }
-      });
+    for (const content of memories) {
+      if (typeof content !== 'string' || !content.trim()) continue;
 
-      // Convert back to array
-      finalMemories = Array.from(categoryMap.values());
-    } else if (userMemoryRecord?.memories) {
-      // If not deduplicating, append new to existing
-      const allMemories = [...userMemoryRecord.memories, ...memories];
-      const uniqueMemories = [...new Set(allMemories)];
-      finalMemories = uniqueMemories.slice(0, 10); // Max 10
+      // Check for duplicate by content
+      const duplicate = existingRecords.find(m => m.content === content);
+
+      if (duplicate) {
+        // Update lastAccessed only
+        await base44.entities.UserMemory.update(duplicate.id, { lastAccessed: now });
+        updated++;
+      } else {
+        // Enforce max cap
+        if (currentCount + created >= MAX_MEMORIES) continue;
+
+        await base44.entities.UserMemory.create({
+          userId: user.id,
+          content,
+          category: detectCategory(content),
+          confidence: 0.8,
+          lastAccessed: now,
+          source: 'extraction'
+        });
+        created++;
+      }
     }
 
-    // Enforce max 10 entries
-    if (finalMemories.length > 10) {
-      finalMemories = finalMemories.slice(0, 10);
-    }
-
-    // Update or create UserMemory record
-    if (userMemoryRecord) {
-      await base44.entities.UserMemory.update(userMemoryRecord.id, {
-        memories: finalMemories,
-        lastUpdated: new Date().toISOString()
-      });
-    } else {
-      await base44.entities.UserMemory.create({
-        userId: user.id,
-        memories: finalMemories,
-        lastUpdated: new Date().toISOString()
-      });
-    }
-
-    return Response.json({ success: true, memories: finalMemories });
+    return Response.json({ success: true, created, updated });
   } catch (error) {
     console.error('Memory update error:', error);
     return Response.json({ error: error.message }, { status: 500 });
