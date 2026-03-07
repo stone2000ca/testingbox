@@ -896,6 +896,73 @@ export default function Consultant() {
       
       await base44.auth.updateMe({ shortlist: updatedShortlist });
       setUser({ ...user, shortlist: updatedShortlist });
+
+      // E29-004: Sync shortlist to FamilyJourney
+      ;(async () => {
+        try {
+          if (!user?.id) return;
+
+          // Find active FamilyJourney
+          let familyJourney = null;
+          if (currentConversation?.journeyId) {
+            familyJourney = await base44.entities.FamilyJourney.get(currentConversation.journeyId);
+          } else {
+            const journeys = await base44.entities.FamilyJourney.filter(
+              { userId: user.id },
+              '-updated_date',
+              1
+            );
+            familyJourney = journeys[0];
+          }
+          if (!familyJourney) return;
+
+          const currentSchoolJourneys = familyJourney.schoolJourneys || [];
+          let updatedSchoolJourneys;
+          let phaseUpdate = {};
+
+          if (isRemoving) {
+            // Soft delete: set status to REMOVED
+            updatedSchoolJourneys = currentSchoolJourneys.map(sj =>
+              sj.schoolId === schoolId
+                ? { ...sj, status: 'REMOVED', removedAt: new Date().toISOString() }
+                : sj
+            );
+          } else {
+            // Add new SchoolJourneyItem
+            const school = schools.find(s => s.id === schoolId) || shortlistData.find(s => s.id === schoolId);
+            let matchData = {};
+            try {
+              const checks = buildPriorityChecks(school, familyProfile, priorityOverrides);
+              matchData = { matchScore: checks?.score || null, matchReasons: checks?.reasons || null, priorityChecks: checks?.priorityRows || null };
+            } catch (e) { /* match data optional */ }
+
+            const newItem = {
+              schoolId,
+              schoolName: school?.name || 'Unknown',
+              status: 'SHORTLISTED',
+              addedAt: new Date().toISOString(),
+              ...matchData
+            };
+            updatedSchoolJourneys = [...currentSchoolJourneys.filter(sj => sj.schoolId !== schoolId), newItem];
+
+            // Phase auto-advance: MATCH -> EVALUATE on first shortlist
+            if (familyJourney.currentPhase === 'MATCH') {
+              const phaseHistory = familyJourney.phaseHistory || [];
+              phaseHistory.push({ phase: 'EVALUATE', enteredAt: new Date().toISOString() });
+              phaseUpdate = { currentPhase: 'EVALUATE', phaseHistory };
+            }
+          }
+
+          await base44.entities.FamilyJourney.update(familyJourney.id, {
+            schoolJourneys: updatedSchoolJourneys,
+            ...phaseUpdate
+          });
+          console.log('[E29-004] SchoolJourney synced:', schoolId, isRemoving ? 'REMOVED' : 'SHORTLISTED');
+        } catch (e) {
+          console.error('[E29-004] FamilyJourney sync failed:', e.message);
+        }
+      })();
+
       await loadShortlist(user.id);
 
       // T-SL-004: Determine nudge (max 1 per action, only in RESULTS state)
