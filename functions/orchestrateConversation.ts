@@ -621,13 +621,16 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
     let reevalResult = null;
     // E13a-WC3: Fit re-evaluation after debrief complete (non-blocking)
     if (isDebriefComplete && context.userId) {
-      base44.asServiceRole.functions.invoke('processDebriefCompletion', {
-        conversationId: context.conversationId,
-        schoolId: selectedSchoolId,
-        userId: context.userId,
-        journeyId: context.journeyId,
-        conversationFamilyProfile
-      }).catch(e => console.error('[E29-010] Async debrief completion failed:', e.message));
+      await Promise.race([
+        base44.asServiceRole.functions.invoke('processDebriefCompletion', {
+          conversationId: context.conversationId,
+          schoolId: selectedSchoolId,
+          userId: context.userId,
+          journeyId: context.journeyId,
+          conversationFamilyProfile
+        }).catch(e => console.error('[E29-010] Async debrief completion failed:', e.message)),
+        new Promise(res => setTimeout(res, 500))
+      ]);
     }
 
     return {
