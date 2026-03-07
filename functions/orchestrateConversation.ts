@@ -614,7 +614,7 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
         } else {
           // E29-006: sync debrief to FamilyJourney (fire-and-forget)
           (async () => {
-            try {
+           try {
               const journey = context.journeyId
                 ? (await base44.entities.FamilyJourney.filter({ id: context.journeyId }))?.[0]
                 : (await base44.entities.FamilyJourney.filter({ userId: context.userId }))?.[0];
