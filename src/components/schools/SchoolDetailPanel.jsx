@@ -369,7 +369,15 @@ function CtaBar({ school, isShortlisted, onToggleShortlist, onCompare, isPremium
   return (
     <div className="sticky bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 p-4 space-y-2 z-40">
       {/* Tour request row */}
-      {school.claimStatus !== 'claimed' ? (
+      {isPremium ? (
+        <Button
+          onClick={onRequestTour}
+          className="w-full bg-teal-600 hover:bg-teal-700 flex items-center justify-center gap-2"
+        >
+          <CalendarDays className="h-4 w-4" />
+          Request a Tour
+        </Button>
+      ) : school.claimStatus !== 'claimed' ? (
         school.website ? (
           <a href={school.website} target="_blank" rel="noopener noreferrer" className="block w-full">
             <Button variant="outline" className="w-full flex items-center justify-center gap-2">
@@ -378,14 +386,6 @@ function CtaBar({ school, isShortlisted, onToggleShortlist, onCompare, isPremium
             </Button>
           </a>
         ) : null
-      ) : isPremium ? (
-        <Button
-          onClick={onRequestTour}
-          className="w-full bg-teal-600 hover:bg-teal-700 flex items-center justify-center gap-2"
-        >
-          <CalendarDays className="h-4 w-4" />
-          Request a Tour
-        </Button>
       ) : (
         school.email ? (
           <a href={`mailto:${school.email}`} className="block w-full">
