@@ -594,6 +594,7 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
       }
     }
 
+    let reevalResult = null;
     // E13a-WC3: Fit re-evaluation after debrief complete (non-blocking)
     if (isDebriefComplete && deepDiveAnalysis && context.userId && context.conversationId) {
       try {
@@ -607,7 +608,7 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
         });
         const debriefArtifact = debriefArtifacts?.[0];
         // Hoist reevalResult so it's in scope for return
-        let reevalResult = null;
+
         
         if (!debriefArtifact?.content?.qaPairs || debriefArtifact.content.qaPairs.length === 0) {
           console.log('[E13a-WC3] No Q&A pairs found, skipping re-evaluation');
