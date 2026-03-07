@@ -16,8 +16,7 @@ export default function SchoolDetail({ school, onClose, onToggleShortlist, isSho
   const [showTourModal, setShowTourModal] = useState(false);
   const [events, setEvents] = useState([]);
   const [eventsLoaded, setEventsLoaded] = useState(false);
-  const isPremium = school?.membershipTier === 'premium';
-
+  const isPremium = school?.schoolTier === 'pro';
   useEffect(() => {
     if (!school?.id) return;
     base44.entities.SchoolEvent.filter({ schoolId: school.id, isActive: true })
