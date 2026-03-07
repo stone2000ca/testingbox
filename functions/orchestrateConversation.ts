@@ -948,7 +948,9 @@ Deno.serve(async (req) => {
       }
       
       Object.assign(conversationFamilyProfile, extractionResult.updatedFamilyProfile);
-      Object.assign(context, extractionResult.updatedContext);
+      // E29-009: Exclude debrief context fields from extractEntities merge to prevent overwrite
+const { debriefQuestionQueue: _dq, debriefQuestionsAsked: _da, debriefSchoolId: _ds, isNewDebrief: _ind, activeDebriefSchoolName: _adn, hasActiveDebrief: _had, ...safeUpdatedContext } = extractionResult.updatedContext || {};
+Object.assign(context, safeUpdatedContext);
 
       const tier1After = {
         childGrade: conversationFamilyProfile?.childGrade ?? null,
