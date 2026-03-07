@@ -315,6 +315,32 @@ Based on what the family shared during their visit, provide a fit re-evaluation.
                 pdfUrl: null,
                 shareToken: null
               });
+
+              // E29-006: patch FamilyJourney with fit re-evaluation details (fire-and-forget)
+              (async () => {
+                try {
+                  const journey = context.journeyId
+                    ? (await base44.entities.FamilyJourney.filter({ id: context.journeyId }))?.[0]
+                    : (await base44.entities.FamilyJourney.filter({ userId: context.userId }))?.[0];
+                  if (!journey) return;
+
+                  const schoolJourneys = Array.isArray(journey.schoolJourneys) ? [...journey.schoolJourneys] : [];
+                  const item = schoolJourneys.find((sj) => sj.schoolId === selectedSchoolId);
+                  if (item) {
+                    item.postVisitFitLabel = reevalResult.updatedFitLabel;
+                    item.fitDirection = reevalResult.fitDirection;
+                    item.visitVerdict = reevalResult.visitVerdict;
+                    item.revisedStrengths = reevalResult.revisedStrengths;
+                    item.revisedConcerns = reevalResult.revisedConcerns;
+                  }
+
+                  await base44.entities.FamilyJourney.update(journey.id, { schoolJourneys });
+                  console.log('[E29-006] FamilyJourney re-eval sync completed for school', selectedSchoolId);
+                } catch (e) {
+                  console.error('[E29-006] FamilyJourney re-eval sync failed:', e?.message || e);
+                }
+              })();
+
               console.log('[E13a-WC3] Fit re-evaluation artifact created');
             } catch (createError) {
               console.error('[E13a-WC3] Failed to persist fit re-evaluation (non-blocking):', createError.message);
