@@ -272,7 +272,7 @@ export default function SchoolAdmin() {
     professional: 'Professional'
   };
 
-  const tier = school.subscriptionTier || 'free';
+  const tier = school.schoolTier || 'free';
   const isFree = tier === 'free';
 
   const navGroups = [
