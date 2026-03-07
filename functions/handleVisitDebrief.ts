@@ -84,7 +84,7 @@ async function handleVisitDebrief(base44, selectedSchoolId, processMessage, conv
     }
     
     const isDebriefComplete = debriefQuestionQueue.length === 0 && debriefQuestionsAsked.length >= 3;
-    const debriefQuestionsContext = `${nextQuestion ? `Next focus: "${nextQuestion}"` : 'Wrap up naturally — you've asked your key questions.'}\n\nQuestions asked so far: ${debriefQuestionsAsked.length}/3`;
+    const debriefQuestionsContext = `${nextQuestion ? `Next focus: "${nextQuestion}"` : "Wrap up naturally — you've asked your key questions."}\n\nQuestions asked so far: ${debriefQuestionsAsked.length}/3`;
     
     // Build debrief prompt with persona-specific framing
     const basePrompt = `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}You are ${consultantName}, an education consultant. The family just returned from visiting ${schoolName}.
