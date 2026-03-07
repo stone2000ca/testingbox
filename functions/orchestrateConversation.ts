@@ -249,6 +249,18 @@ function resolveTransition(params) {
     return { nextState: STATES.BRIEF, sufficiency, flags, transitionReason: 'stop_intent', briefStatus: 'generating', tier1CompletedTurn };
   }
 
+  // DETERMINISTIC BRIEF PHRASES — explicit phrases that should always route to BRIEF
+  const BRIEF_PHRASES = /\b(show me the brief|show my brief|generate the brief|generate my brief|prepare the brief|ready for the brief|let'?s see the brief|create the brief)\b/i;
+  if (currentState === STATES.DISCOVERY && BRIEF_PHRASES.test(userMessage || '')) {
+    flags.USER_INTENT_OVERRIDE = true;
+    console.log('[FIX-BRIEF] Brief-intent phrase detected:', userMessage);
+    return {
+      nextState: STATES.BRIEF, sufficiency, flags,
+      transitionReason: 'brief_phrase_deterministic',
+      briefStatus: 'generating', tier1CompletedTurn
+    };
+  }
+
   if ((intentSignal === 'request-brief' || intentSignal === 'request-results') && turnCount >= 3 && currentState === STATES.DISCOVERY) {
     if (sufficiency === 'MINIMUM' || sufficiency === 'RICH') {
       flags.USER_INTENT_OVERRIDE = true;
@@ -348,7 +360,7 @@ async function handleDiscovery(base44, message, conversationFamilyProfile, conte
   }
 
   const stopIntentConstraint = `CRITICAL HARD CONSTRAINT — HIGHEST PRIORITY — OVERRIDES ALL OTHER INSTRUCTIONS:
-If the user signals they are done with questions (e.g. "show me schools", "no more questions", "stop asking", "that's enough", "I'm done", "just show me results", "skip", "go ahead", "let's see", "move on"), you MUST immediately stop asking questions. Do NOT ask any clarifying or follow-up question. Do NOT explain what information is missing. Your ONLY job at that point is to acknowledge their request in one warm sentence and confirm the brief is being prepared. This rule overrides all instructions about thoroughness, completeness, or missing Tier 1 data.\n\n`;
+  If the user signals they are done with questions (e.g. "show me schools", "no more questions", "stop asking", "that's enough", "I'm done", "just show me results", "skip", "go ahead", "let's see", "move on"), you MUST immediately stop asking questions. Do NOT ask any clarifying or follow-up question. Do NOT explain what information is missing. Your ONLY job at that point is to acknowledge their request in one warm sentence and confirm the brief is being prepared. Do NOT say 'I'll prepare the brief' or promise a brief unless the system has actually transitioned to BRIEF state. This rule overrides all instructions about thoroughness, completeness, or missing Tier 1 data.\n\n`;
 
   const personaInstructions = consultantName === 'Jackie'
     ? `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}${stopIntentConstraint}[STATE: DISCOVERY] You are gathering family info to find the right school. Your primary goal is to collect Tier 1 data: child's grade/age, preferred location, and budget — in that priority order.
