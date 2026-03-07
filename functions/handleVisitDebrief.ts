@@ -181,6 +181,56 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
         if (!debriefArtifact?.content?.qaPairs || debriefArtifact.content.qaPairs.length === 0) {
           console.log('[E13a-WC3] No Q&A pairs found, skipping re-evaluation');
         } else {
+          // E29-006: sync debrief to FamilyJourney (fire-and-forget)
+          (async () => {
+            try {
+              const journey = context.journeyId
+                ? (await base44.entities.FamilyJourney.filter({ id: context.journeyId }))?.[0]
+                : (await base44.entities.FamilyJourney.filter({ userId: context.userId }))?.[0];
+
+              if (!journey) return;
+
+              const nowIso = new Date().toISOString();
+              const currentPhase = journey.currentPhase;
+              const schoolJourneys = Array.isArray(journey.schoolJourneys) ? [...journey.schoolJourneys] : [];
+              let item = schoolJourneys.find((sj) => sj.schoolId === selectedSchoolId);
+
+              if (item) {
+                item.status = 'VISITED';
+                item.visitedAt = nowIso;
+                item.debriefCompletedAt = nowIso;
+                if (Array.isArray(debriefArtifacts) && debriefArtifacts[0]?.id) {
+                  item.debriefArtifactId = debriefArtifacts[0].id;
+                }
+              } else {
+                schoolJourneys.push({
+                  schoolId: selectedSchoolId,
+                  schoolName: schoolName,
+                  status: 'VISITED',
+                  addedVia: 'DEBRIEF',
+                  visitedAt: nowIso,
+                  debriefCompletedAt: nowIso,
+                  debriefArtifactId: Array.isArray(debriefArtifacts) && debriefArtifacts[0]?.id ? debriefArtifacts[0].id : undefined
+                });
+              }
+
+              // Phase auto-advance: if all TOURING items are now VISITED and phase is EXPERIENCE -> DECIDE
+              let nextPhase = null;
+              const hasTouring = schoolJourneys.some((sj) => sj.status === 'TOURING');
+              if (!hasTouring && currentPhase === 'EXPERIENCE') {
+                nextPhase = 'DECIDE';
+              }
+
+              const updatePayload = { schoolJourneys };
+              if (nextPhase) updatePayload.currentPhase = nextPhase;
+
+              await base44.entities.FamilyJourney.update(journey.id, updatePayload);
+              console.log('[E29-006] FamilyJourney debrief sync completed for school', selectedSchoolId);
+            } catch (e) {
+              console.error('[E29-006] FamilyJourney debrief sync failed:', e?.message || e);
+            }
+          })();
+
           const originalAnalysis = deepDiveAnalysis.content || {};
           const qaPairs = debriefArtifact.content.qaPairs;
           const priorities = conversationFamilyProfile?.priorities || [];
