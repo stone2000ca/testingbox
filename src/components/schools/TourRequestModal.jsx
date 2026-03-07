@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, CheckCircle2, CalendarDays } from 'lucide-react';
 import { EVENT_TYPE_LABELS } from '@/components/utils/eventConstants';
 import { sendSchoolEmail } from '@/components/utils/sendSchoolEmail';
+import FamilyJourney from '@/entities/FamilyJourney';
 
 export default function TourRequestModal({ school, onClose, upcomingEvents = [] }) {
   const [user, setUser] = useState(null);
@@ -69,7 +70,7 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
       form.specialRequests ? `Special requests: ${form.specialRequests}` : null,
     ].filter(Boolean).join('\n');
 
-    await base44.entities.SchoolInquiry.create({
+    const inquiry = await base44.entities.SchoolInquiry.create({
       parentUserId: user.id,
       schoolId: school.id,
       inquiryType: 'tour_request',
@@ -92,6 +93,55 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
         profileSnapshotAt: new Date().toISOString(),
       }),
     });
+
+    // Fire-and-forget: sync FamilyJourney on tour request
+    (async () => {
+      try {
+        const me = await base44.auth.me();
+        if (!me?.id) return;
+
+        const journeys = await FamilyJourney.filter({ userId: me.id });
+        if (!journeys || journeys.length === 0) return;
+
+        const journey = journeys[0];
+        const schoolJourneys = Array.isArray(journey.schoolJourneys) ? [...journey.schoolJourneys] : [];
+        const existingIdx = schoolJourneys.findIndex(sj => sj.schoolId === school.id);
+
+        const tourDetails = {
+          tourRequestId: inquiry.id,
+          tourDate: preferredDate || null,
+          tourType: form.tourType || 'in_person',
+          tourStatus: 'REQUESTED',
+          requestedAt: new Date().toISOString()
+        };
+
+        if (existingIdx >= 0) {
+          const updated = { ...schoolJourneys[existingIdx], status: 'TOURING', tourDetails };
+          schoolJourneys[existingIdx] = updated;
+        } else {
+          schoolJourneys.push({
+            schoolId: school.id,
+            schoolName: school.name,
+            status: 'TOURING',
+            addedVia: 'TOUR_REQUEST',
+            addedAt: new Date().toISOString(),
+            tourDetails
+          });
+        }
+
+        const updateObj = { schoolJourneys };
+
+        if (journey.currentPhase === 'EVALUATE') {
+          const history = Array.isArray(journey.phaseHistory) ? journey.phaseHistory : [];
+          updateObj.currentPhase = 'EXPERIENCE';
+          updateObj.phaseHistory = [...history, { phase: 'EXPERIENCE', enteredAt: new Date().toISOString() }];
+        }
+
+        await FamilyJourney.update(journey.id, updateObj);
+      } catch (err) {
+        console.error('[TourRequestModal] FamilyJourney sync failed (non-blocking):', err?.message || err);
+      }
+    })();
 
     // WC4: Email notification to school admin via sendSchoolEmail wrapper
     if (school.email) {
