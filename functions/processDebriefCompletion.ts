@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     let currentPhase = journey?.currentPhase || null;
     const nowIso = new Date().toISOString();
     let schoolJourneys = Array.isArray(journey?.schoolJourneys) ? [...journey.schoolJourneys] : [];
-    let item = schoolJourneys.find((sj) => sj.schoolId === schoolId);
+    let item = schoolJourneys.find((sj: any) => sj.schoolId === schoolId);
 
     if (item) {
       item.status = 'VISITED';
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     } else if (journey) {
       schoolJourneys.push({
         schoolId,
-        schoolName: '', // optional; available elsewhere
+        schoolName: '', // optional; can be filled elsewhere
         status: 'VISITED',
         addedVia: 'DEBRIEF',
         visitedAt: nowIso,
@@ -81,19 +81,19 @@ Deno.serve(async (req) => {
 CRITICAL: Return ONLY valid JSON. Do NOT include any markdown code blocks, explanations, or text outside the JSON.`;
 
         const reevalUserPrompt = `ORIGINAL ANALYSIS:
-- Fit Label: ${'${'}originalAnalysis.fitLabel || 'unknown'}
-- Trade-offs: ${'${'}(originalAnalysis.tradeOffs || []).map((t: any) => `${'${'}t.dimension}: ${'${'}t.concern || 'neutral'}`).join('; ') || 'none'}
-- Strengths: ${'${'}(originalAnalysis.strengths || []).join(', ') || 'none noted'}
+- Fit Label: ${originalAnalysis.fitLabel || 'unknown'}
+- Trade-offs: ${(originalAnalysis.tradeOffs || []).map((t: any) => `${t.dimension}: ${t.concern || 'neutral'}`).join('; ') || 'none'}
+- Strengths: ${(originalAnalysis.strengths || []).join(', ') || 'none noted'}
 
-FAMILY PRIORITIES: ${'${'}priorities.join(', ') || 'not specified'}
+FAMILY PRIORITIES: ${priorities.join(', ') || 'not specified'}
 
 POST-VISIT DEBRIEF Q&A:
-${'${'}qaContext}
+${qaContext}
 
 Based on what the family shared during their visit, provide a fit re-evaluation. Return JSON: { updatedFitLabel (enum: "strong_match", "good_match", "worth_exploring"), fitDirection (enum: "improved", "declined", "unchanged"), revisedStrengths (array of strings), revisedConcerns (array of strings), visitVerdict (string, 1-2 sentences) }`;
 
         const structured = await base44.integrations.Core.InvokeLLM({
-          prompt: `${'${'}reevalSystemPrompt}\n\n${'${'}reevalUserPrompt}`,
+          prompt: `${reevalSystemPrompt}\n\n${reevalUserPrompt}`,
           response_json_schema: {
             type: 'object',
             properties: {
@@ -150,7 +150,7 @@ Based on what the family shared during their visit, provide a fit re-evaluation.
     // 7) Phase advance: if all TOURING items now VISITED and phase is EXPERIENCE -> DECIDE
     let nextPhase: string | null = null;
     if (journey) {
-      const hasTouring = schoolJourneys.some((sj) => sj.status === 'TOURING');
+      const hasTouring = schoolJourneys.some((sj: any) => sj.status === 'TOURING');
       if (!hasTouring && currentPhase === 'EXPERIENCE') {
         nextPhase = 'DECIDE';
       }
