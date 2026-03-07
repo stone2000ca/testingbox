@@ -249,31 +249,27 @@ export default function SchoolAdmin() {
   }
 
   const tierColors = {
-    free: 'bg-slate-100 text-slate-700',
-    basic: 'bg-blue-100 text-blue-700',
+    standard: 'bg-slate-100 text-slate-700',
     growth: 'bg-blue-100 text-blue-700',
-    premium: 'bg-amber-100 text-amber-700',
-    professional: 'bg-amber-100 text-amber-700'
+    pro: 'bg-amber-100 text-amber-700'
   };
 
   const tierIcons = {
-    free: null,
-    basic: <Sparkles className="h-3 w-3" />,
+    standard: null,
     growth: <Sparkles className="h-3 w-3" />,
-    premium: <Crown className="h-3 w-3" />,
-    professional: <Crown className="h-3 w-3" />
+    pro: <Crown className="h-3 w-3" />
   };
 
   const tierLabel = {
-    free: 'Free',
-    basic: 'Growth',
+    standard: 'Standard',
     growth: 'Growth',
-    premium: 'Professional',
-    professional: 'Professional'
+    pro: 'Professional'
   };
 
-  const tier = school.schoolTier || 'free';
-  const isFree = tier === 'free';
+  const TIER_MIGRATION = { free: 'standard', basic: 'growth', premium: 'pro', professional: 'pro' };
+  const tier = TIER_MIGRATION[school.schoolTier] || school.schoolTier || 'standard';
+  const hasTourFeatures = tier === 'growth' || tier === 'pro';
+  const hasAllFeatures = tier === 'pro';
 
   const navGroups = [
     {
@@ -296,9 +292,9 @@ export default function SchoolAdmin() {
       label: 'Engagement',
       items: [
         { id: 'admissions', label: 'Admissions', icon: FileText },
-        { id: 'events', label: 'Events & Open Houses', icon: CalendarDays, locked: isFree, lockLabel: 'Growth' },
-        { id: 'inquiries', label: 'Inquiries', icon: Mail, badge: newInquiryCount, locked: isFree, lockLabel: 'Growth' },
-        { id: 'analytics', label: 'Analytics', icon: BarChart3, locked: isFree, lockLabel: 'Growth' },
+        { id: 'events', label: 'Events & Open Houses', icon: CalendarDays, locked: !hasTourFeatures, lockLabel: 'Growth' },
+        { id: 'inquiries', label: 'Inquiries', icon: Mail, badge: newInquiryCount, locked: !hasTourFeatures, lockLabel: 'Growth' },
+        { id: 'analytics', label: 'Analytics', icon: BarChart3, locked: !hasAllFeatures, lockLabel: 'Pro' },
       ],
     },
     {
