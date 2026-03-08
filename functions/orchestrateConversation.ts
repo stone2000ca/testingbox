@@ -348,17 +348,17 @@ function lightweightExtract(message, existingProfile) {
   const bridgeProfile = { ...existingProfile };
   let bridgeIntent = 'continue';
 
-  // Grade extraction: "grade 9", "9th grade", "kindergarten", "JK", "SK"
-  const gradeMatch = message.match(/\b(?:grade|gr\.?)\s*([0-9]+|\b(?:pk|jk|sk|k|junior|senior)\b)/i);
+  // Grade extraction: "grade 9", "going into grade 9", "9th grade", "kindergarten", "JK", "SK"
+  const gradeMatch = message.match(/(?:going\s+)?(?:into\s+)?(?:grade|gr\.?)\s+([0-9]+|pk|jk|sk|k|kindergarten|junior|senior)/i);
   if (gradeMatch && !bridgeProfile.childGrade) {
     const gradeStr = gradeMatch[1].toLowerCase();
-    const gradeMap = { 'pk': -2, 'jk': -1, 'sk': 0, 'k': 0, 'junior': 11, 'senior': 12 };
+    const gradeMap = { 'pk': -2, 'jk': -1, 'sk': 0, 'k': 0, 'kindergarten': 0, 'junior': 11, 'senior': 12 };
     const grade = gradeMap[gradeStr] !== undefined ? gradeMap[gradeStr] : parseInt(gradeStr);
     if (!isNaN(grade)) bridgeProfile.childGrade = grade;
   }
 
-  // Location extraction: "in Boston", "near Toronto", "around Vancouver"
-  const locMatch = message.match(/\b(?:in|near|around|from)\s+([a-zA-Z]+(?:\s[a-zA-Z]+)?)/);
+  // Location extraction: "in Boston", "near Toronto", "live in midtown Toronto", "around Vancouver"
+  const locMatch = message.match(/(?:live\s+)?(?:in|near|around|from)\s+([a-zA-Z\s]+?)(?:\s+(?:area|region|city|province|state)|\.|\s*$|,)/i);
   if (locMatch && !bridgeProfile.locationArea) {
     const loc = locMatch[1].trim();
     if (loc.length > 2 && /[A-Z]/.test(loc)) {
@@ -366,13 +366,13 @@ function lightweightExtract(message, existingProfile) {
     }
   }
 
-  // Budget extraction: "30k", "$30000", "30K"
-  const budgetMatch = message.match(/\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*[kK]?(?:\b|$)/);
+  // Budget extraction: "30k", "$30000", "around 30k", "budget of 30k"
+  const budgetMatch = message.match(/(?:around|about|up\s+to|budget\s+(?:of\s+)?|tuition\s+(?:of\s+)?)?\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*([kK])?/);
   if (budgetMatch && !bridgeProfile.maxTuition) {
     const numStr = budgetMatch[1].replace(/,/g, '');
     const num = parseInt(numStr);
     if (!isNaN(num) && num >= 5000 && num <= 500000) {
-      const amount = message.match(/[kK]/) ? num * 1000 : num;
+      const amount = budgetMatch[2] ? num * 1000 : num;
       bridgeProfile.maxTuition = amount;
     }
   }
