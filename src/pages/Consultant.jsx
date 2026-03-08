@@ -386,6 +386,14 @@ export default function Consultant() {
     }
   }, [sessionIdParam, isAuthenticated, user?.id]);
 
+  // Hydrate schools from restored conversationContext (after session restore or when context first arrives)
+  useEffect(() => {
+    const restored = currentConversation?.conversationContext?.schools;
+    if (Array.isArray(restored) && restored.length > 0) {
+      setSchools(restored);
+    }
+  }, [currentConversation?.conversationContext?.schools]);
+
   // Load family profile for Brief panel and restore guest session after login
   useEffect(() => {
     if (user?.id && currentConversation?.id) {
