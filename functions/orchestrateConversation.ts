@@ -1164,49 +1164,8 @@ Object.assign(context, safeUpdatedContext);
         responseData = deepDiveResult.data;
         responseData.extractedEntities = extractionResult?.extractedEntities || {};
 
-        // E29-010: Fire-and-forget next action inference after DEEP_DIVE turn
-        const journeyIdForDeepDive = journeyContext?.journeyId || context.journeyId;
-        if (journeyIdForDeepDive && journeyContext) {
-          (async () => {
-            try {
-              const schoolLines = (journeyContext.schoolsSummary || [])
-                .map(s => `- ${s.schoolName}: ${s.status}`)
-                .join('\n') || 'None shortlisted yet.';
-              const nextActionPrompt = `You are an education consultant assistant. Based on the following school journey, generate the single most important next action for this family.
-
-Schools:
-${schoolLines}
-Current phase: ${journeyContext.currentPhase || 'MATCH'}
-Last session: ${journeyContext.lastSessionSummary || 'N/A'}
-
-Respond with ONLY a JSON object: { "nextAction": "<one specific sentence>", "nextActionType": "<TOUR|COMPARE|APPLY|REVIEW|FOLLOWUP>", "nextActionDue": "<ISO date within 2 weeks>" }
-Keep nextAction under 100 characters. Be specific about school names.`;
-
-              const raw = await base44.integrations.Core.InvokeLLM({
-                prompt: nextActionPrompt,
-                response_json_schema: {
-                  type: 'object',
-                  properties: {
-                    nextAction: { type: 'string' },
-                    nextActionType: { type: 'string' },
-                    nextActionDue: { type: 'string' }
-                  },
-                  required: ['nextAction', 'nextActionType', 'nextActionDue']
-                }
-              });
-              const parsed = typeof raw === 'object' ? raw : JSON.parse(raw);
-              await base44.asServiceRole.entities.FamilyJourney.update(journeyIdForDeepDive, {
-                nextAction: parsed.nextAction,
-                nextActionType: parsed.nextActionType,
-                nextActionDue: parsed.nextActionDue,
-                lastActiveAt: new Date().toISOString()
-              });
-              console.log('[E29-010] FamilyJourney next action updated (DEEP_DIVE):', parsed.nextAction);
-            } catch (e) {
-              console.warn('[E29-010] Next action update skipped (DEEP_DIVE):', e.message);
-            }
-          })();
-        }
+        // E29-010/E29-012: Fire-and-forget — next action + session summary + totalSessions increment
+        fireJourneyUpdate(base44, journeyContext, context, conversationHistory, message, 'DEEP_DIVE');
 
         return Response.json(responseData);
       }
