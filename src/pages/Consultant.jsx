@@ -29,7 +29,7 @@ import { getShortlistNudge } from '../components/utils/shortlistNudges';
 import { extractAndSaveMemories } from '../components/utils/memoryManager';
 import { restoreSessionFromParam } from '@/components/chat/SessionRestorer';
 import LoginGateModal from '@/components/dialogs/LoginGateModal';
-import UpgradeModal from '@/components/dialogs/UpgradeModal';
+import UpgradePaywallModal from '@/components/dialogs/UpgradePaywallModal';
 import DebugPanel from '@/components/utils/DebugPanel'; // E18c-001
 import ChatPanel from '@/components/chat/ChatPanel';
 import ProgressBar from '@/components/ui/progress-bar';
@@ -1687,7 +1687,7 @@ export default function Consultant() {
       )}
 
       {/* Upgrade Modal - Premium features gating modal */}
-      <UpgradeModal showUpgradeModal={showUpgradeModal && tokenBalance > 0} onClose={() => setShowUpgradeModal(false)} />
+      <UpgradePaywallModal isOpen={showUpgradeModal && tokenBalance > 0} variant='GENERAL' onClose={() => setShowUpgradeModal(false)} />
 
       {/* Shortlist Panel */}
       {showShortlistPanel && (

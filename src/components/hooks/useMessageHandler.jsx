@@ -221,7 +221,11 @@ export const useMessageHandler = ({
         const cacheKey = `${selectedSchool.id}_visit_prep`;
         if (artifactCache[cacheKey]) {
           console.log('[WC6] Hydrating visitPrepKit from cache');
-          setVisitPrepKit(artifactCache[cacheKey]);
+          if (!isPremium) {
+            setVisitPrepKit({ __gated: true, schoolName: artifactCache[cacheKey].schoolName || selectedSchool?.name || 'this school' });
+          } else {
+            setVisitPrepKit(artifactCache[cacheKey]);
+          }
         }
       } else if (response.data?.state !== 'DEEP_DIVE') {
         setVisitPrepKit(null);

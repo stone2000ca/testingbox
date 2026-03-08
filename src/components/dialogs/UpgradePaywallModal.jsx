@@ -6,6 +6,16 @@ import { createPageUrl } from '../../utils';
 import { base44 } from '@/api/base44Client';
 
 const variantConfig = {
+  GENERAL: {
+    icon: Sparkles,
+    title: 'Upgrade to Premium',
+    subtitle: 'Unlock all advanced features',
+    description: 'Get visit prep briefs, debrief analysis, detailed comparisons, and unlimited messages.',
+    buttons: [
+      { label: 'See Pricing Plans', variant: 'default', action: 'upgrade', isPrimary: true },
+      { label: 'Maybe Later', variant: 'outline', action: 'cancel' }
+    ]
+  },
   NEW_SEARCH: {
     icon: Sparkles,
     title: 'Save Multiple Searches',
