@@ -366,8 +366,8 @@ function lightweightExtract(message, existingProfile) {
     }
   }
 
-  // Budget extraction: "30k", "$30000", "around 30k", "budget of 30k"
-  const budgetMatch = message.match(/(?:around|about|up\s+to|budget\s+(?:of\s+)?|tuition\s+(?:of\s+)?)?\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*([kK])?/);
+  // Budget extraction: "30k", "$30k", "$30,000", "30000", "around 30k", "budget is 30k"
+  const budgetMatch = message.match(/\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*([kK])?/);
   if (budgetMatch && !bridgeProfile.maxTuition) {
     const numStr = budgetMatch[1].replace(/,/g, '');
     const num = parseInt(numStr);
