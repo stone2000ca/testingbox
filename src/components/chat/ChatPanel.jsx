@@ -7,6 +7,7 @@ import MessageBubble from '@/components/chat/MessageBubble';
 import ChatInput from '@/components/chat/ChatInput';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import DeepDiveConfirmation from '@/components/dialogs/DeepDiveConfirmation';
+import PremiumGate from '@/components/dialogs/PremiumGate';
 import SchoolAnalysisCard from '@/components/chat/SchoolAnalysisCard';
 import VisitPrepCard from '@/components/chat/VisitPrepCard';
 import FitReEvaluationCard from '@/components/chat/FitReEvaluationCard';
@@ -197,18 +198,47 @@ const ChatPanel = forwardRef(function ChatPanel({
               )}
               {msgVisitPrepKit && currentState === STATES.DEEP_DIVE && !isTyping && (
                 <div className="relative">
-                  <VisitPrepCard
-                    schoolName={msgVisitPrepKit.schoolName}
-                    visitQuestions={msgVisitPrepKit.visitQuestions}
-                    observations={msgVisitPrepKit.observations}
-                    redFlags={msgVisitPrepKit.redFlags}
-                    isPremium={isPremium}
-                    onUpgrade={onUpgrade}
-                  />
+                  {msgVisitPrepKit.__gated ? (
+                    <PremiumGate
+                      feature="visit-prep"
+                      isPremium={false}
+                      schoolName={msgVisitPrepKit.schoolName}
+                      onUpgrade={onUpgrade}
+                    >
+                      <VisitPrepCard
+                        schoolName={msgVisitPrepKit.schoolName}
+                        visitQuestions={msgVisitPrepKit.visitQuestions}
+                        observations={msgVisitPrepKit.observations}
+                        redFlags={msgVisitPrepKit.redFlags}
+                        isPremium={isPremium}
+                        onUpgrade={onUpgrade}
+                      />
+                    </PremiumGate>
+                  ) : (
+                    <VisitPrepCard
+                      schoolName={msgVisitPrepKit.schoolName}
+                      visitQuestions={msgVisitPrepKit.visitQuestions}
+                      observations={msgVisitPrepKit.observations}
+                      redFlags={msgVisitPrepKit.redFlags}
+                      isPremium={isPremium}
+                      onUpgrade={onUpgrade}
+                    />
+                  )}
                 </div>
               )}
               {msgFitReEval && currentState === STATES.DEEP_DIVE && !isTyping && (
-                <FitReEvaluationCard fitReEvaluation={msgFitReEval} />
+                msgFitReEval.__gated ? (
+                  <PremiumGate
+                    feature="debrief-analysis"
+                    isPremium={false}
+                    schoolName={msgFitReEval.schoolName}
+                    onUpgrade={onUpgrade}
+                  >
+                    <FitReEvaluationCard fitReEvaluation={msgFitReEval} />
+                  </PremiumGate>
+                ) : (
+                  <FitReEvaluationCard fitReEvaluation={msgFitReEval} />
+                )
               )}
             </div>
           );

@@ -29,6 +29,7 @@ import { getShortlistNudge } from '../components/utils/shortlistNudges';
 import { extractAndSaveMemories } from '../components/utils/memoryManager';
 import { restoreSessionFromParam } from '@/components/chat/SessionRestorer';
 import LoginGateModal from '@/components/dialogs/LoginGateModal';
+import UpgradeModal from '@/components/dialogs/UpgradeModal';
 import DebugPanel from '@/components/utils/DebugPanel'; // E18c-001
 import ChatPanel from '@/components/chat/ChatPanel';
 import ProgressBar from '@/components/ui/progress-bar';
@@ -909,6 +910,10 @@ export default function Consultant() {
 
   // Open full-screen comparison view and update conversationContext with compared school names
   const handleOpenComparison = async (comparedSchools) => {
+    if (!isPremium) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setComparisonData(comparedSchools);
     setCurrentView('comparison');
 
@@ -1609,8 +1614,8 @@ export default function Consultant() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Upgrade Modal */}
-      {showUpgradeModal && (
+      {/* Upgrade Modal - Token exhaustion modal */}
+      {showUpgradeModal && tokenBalance <= 0 && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl">
             <div className="text-center mb-6">
@@ -1680,6 +1685,9 @@ export default function Consultant() {
           </div>
         </div>
       )}
+
+      {/* Upgrade Modal - Premium features gating modal */}
+      <UpgradeModal showUpgradeModal={showUpgradeModal && tokenBalance > 0} onClose={() => setShowUpgradeModal(false)} />
 
       {/* Shortlist Panel */}
       {showShortlistPanel && (

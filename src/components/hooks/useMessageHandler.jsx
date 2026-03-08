@@ -52,7 +52,7 @@ export const useMessageHandler = ({
   hasAutoPopulatedShortlist,
   createPageUrl,
   activeJourney,
-}) => {
+}, isPremiumParam = isPremium) => {
   const handleSendMessage = async (messageText, explicitSchoolId = null, displayText = null) => {
     // Track message sent
     base44.functions.invoke('trackSessionEvent', {
@@ -211,7 +211,11 @@ export const useMessageHandler = ({
 
       // Visit Prep Kit: same — only set when returned, only clear when leaving DEEP_DIVE
       if (response.data?.visitPrepKit) {
-        setVisitPrepKit(response.data.visitPrepKit);
+        if (!isPremium) {
+          setVisitPrepKit({ __gated: true, schoolName: response.data.visitPrepKit.schoolName || 'this school' });
+        } else {
+          setVisitPrepKit(response.data.visitPrepKit);
+        }
       } else if (response.data?.state === 'DEEP_DIVE' && response.data?.visitPrepKit === null && artifactCache && selectedSchool?.id) {
         // WC6: Hydrate from cache if no new visit prep kit in DEEP_DIVE state
         const cacheKey = `${selectedSchool.id}_visit_prep`;
@@ -232,7 +236,11 @@ export const useMessageHandler = ({
 
       // Fit Re-Evaluation: only set when returned, only clear when leaving DEEP_DIVE
       if (response.data?.fitReEvaluation) {
-        setFitReEvaluation(response.data.fitReEvaluation);
+        if (!isPremium) {
+          setFitReEvaluation({ __gated: true, schoolName: response.data.fitReEvaluation.schoolName || '' });
+        } else {
+          setFitReEvaluation(response.data.fitReEvaluation);
+        }
       } else if (response.data?.state !== 'DEEP_DIVE') {
         setFitReEvaluation(null);
       }
