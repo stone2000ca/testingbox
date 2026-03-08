@@ -51,6 +51,7 @@ export const useMessageHandler = ({
   mapStateToView,
   hasAutoPopulatedShortlist,
   createPageUrl,
+  activeJourney,
 }) => {
   const handleSendMessage = async (messageText, explicitSchoolId = null, displayText = null) => {
     // Track message sent
