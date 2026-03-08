@@ -366,15 +366,28 @@ function lightweightExtract(message, existingProfile) {
     }
   }
 
-  // Budget extraction: "30k", "$30k", "$30,000", "30000", "around 30k", "budget is 30k"
-  const budgetMatch = message.match(/\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*([kK])?/);
-  if (budgetMatch && !bridgeProfile.maxTuition) {
-    const numStr = budgetMatch[1].replace(/,/g, '');
-    const num = parseInt(numStr);
-    if (!isNaN(num)) {
-      const amount = budgetMatch[2] ? num * 1000 : num;
-      if (amount >= 5000 && amount <= 500000) {
-        bridgeProfile.maxTuition = amount;
+  // Budget extraction: "30k", "$30k", "$30,000", "around 30k", "budget is 30k"
+  // Require either $ prefix OR k/K suffix to avoid matching bare numbers like "grade 9"
+  if (!bridgeProfile.maxTuition) {
+    const budgetMatches = message.matchAll(/(\$)\s*(\d{1,3}(?:,\d{3})*|\d+)\s*([kK])?|(\d{1,3}(?:,\d{3})*|\d+)\s*([kK])/g);
+    for (const match of budgetMatches) {
+      let numStr, hasKilo;
+      if (match[1]) {
+        // Dollar-prefixed pattern
+        numStr = match[2];
+        hasKilo = !!match[3];
+      } else {
+        // k/K-suffixed pattern
+        numStr = match[4];
+        hasKilo = !!match[5];
+      }
+      const num = parseInt(numStr.replace(/,/g, ''));
+      if (!isNaN(num)) {
+        const amount = hasKilo ? num * 1000 : num;
+        if (amount >= 5000 && amount <= 500000) {
+          bridgeProfile.maxTuition = amount;
+          break;
+        }
       }
     }
   }
