@@ -171,7 +171,8 @@ export const useMessageHandler = ({
         } : null,
         selectedSchoolId: explicitSchoolId || selectedSchool?.id || null,
         conversationId: currentConversation?.id || null,
-        returningUserContext
+        returningUserContext,
+        ...(activeJourney ? { journeyContext: activeJourney } : {})
       });
 
       // DEFENSIVE CHECK: Ensure response.data exists
