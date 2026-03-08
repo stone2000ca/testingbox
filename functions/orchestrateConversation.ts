@@ -1058,7 +1058,17 @@ Object.assign(context, safeUpdatedContext);
           const debriefResult = await handleVisitDebrief(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, consultantName, returningUserContextBlock, callOpenRouter);
           if (debriefResult) {
             if (debriefResult.updatedContext) Object.assign(context, debriefResult.updatedContext);
-            return Response.json({ message: debriefResult.message, state: STATES.DEEP_DIVE, briefStatus, deepDiveMode: debriefResult.deepDiveMode, visitPrepKit: debriefResult.visitPrepKit, fitReEvaluation: debriefResult.fitReEvaluation || null, familyProfile: conversationFamilyProfile, conversationContext: context, extractedEntities: extractionResult?.extractedEntities || {}, schools: currentSchools || [] });
+            return Response.json({ 
+              message: debriefResult.message, 
+              state: STATES.DEEP_DIVE, 
+              briefStatus, 
+              deepDiveMode: debriefResult.deepDiveMode, 
+              visitPrepKit: debriefResult.visitPrepKit, 
+              fitReEvaluation: debriefResult.fitReEvaluation || null, 
+              familyProfile: conversationFamilyProfile, 
+              conversationContext: context, 
+              extractedEntities: extractionResult?.extractedEntities || {}, 
+              schools: currentSchools || [] });
           }
           console.log('[E13a] handleVisitDebrief returned null, falling through');
         }
