@@ -208,9 +208,18 @@ For each school, identify 1-2 key trade-offs worth mentioning (e.g., "Higher cos
     // result is now a parsed object with { narrative, comparisonMatrix }
     const narrativeText = result?.narrative || 'Unable to generate comparison.';
     
-    // E11b: Store structured matrix for later use
+    // E11b: Store structured matrix for later use, but override schools with actual comparedSchools
     if (result?.comparisonMatrix) {
-      setComparisonMatrix(result.comparisonMatrix);
+      // Override the schools array to ensure it contains ONLY the actual compared schools
+      const correctedMatrix = {
+        ...result.comparisonMatrix,
+        schools: comparedSchools.map(s => ({
+          id: s.id,
+          name: s.name,
+          isVisited: visitedSchoolIds.has(s.id)
+        }))
+      };
+      setComparisonMatrix(correctedMatrix);
     }
 
     setMessages(prev => {
