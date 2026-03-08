@@ -419,7 +419,8 @@ export const useMessageHandler = ({
             maxTuition: profileForSession?.maxTuition,
             priorities: profileForSession?.priorities,
             matchedSchools: JSON.stringify(matchedSchoolIds),
-            profileName
+            profileName,
+            journeyId: null,
           });
 
           // Update URL with entity id (not sessionToken)
