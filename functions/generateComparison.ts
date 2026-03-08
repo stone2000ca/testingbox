@@ -255,7 +255,8 @@ Return JSON with array of insights (each 1-2 sentences highlighting key differen
           content: {
             comparisonMatrix,
             insights: finalInsights,
-            isLocked
+            isLocked,
+            tradeoffNarration
           },
           generatedAt: new Date().toISOString()
         };
@@ -276,7 +277,8 @@ Return JSON with array of insights (each 1-2 sentences highlighting key differen
       ...comparison, 
       comparisonMatrix, 
       isLocked,
-      journeyPhase: activeJourney?.currentPhase || null
+      journeyPhase: activeJourney?.currentPhase || null,
+      tradeoffNarration
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
