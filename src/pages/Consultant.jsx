@@ -928,6 +928,8 @@ export default function Consultant() {
       // E29-004: Sync shortlist to FamilyJourney
       ;(async () => {
         console.log('[E29-004] sync starting, user:', user?.id, 'schoolId:', schoolId, 'isRemoving:', isRemoving);
+        // E29-004-DEBUG: Visible marker — writes to FamilyJourney.nextAction so we can verify IIFE is executing
+        try { const _dj = await base44.entities.FamilyJourney.filter({}, '-updated_date', 1); if (_dj.length > 0) { await base44.entities.FamilyJourney.update(_dj[0].id, { nextAction: 'E29-004-DEBUG: ' + new Date().toISOString() + ' user=' + (user?.id || 'NULL') }); } } catch(_de) {}
         try {
           if (!user?.id) return;
 
