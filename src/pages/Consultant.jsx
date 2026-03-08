@@ -943,6 +943,7 @@ export default function Consultant() {
             );
             familyJourney = journeys[0];
           }
+          console.log('[E29-004] found journey:', familyJourney?.id, 'phase:', familyJourney?.currentPhase);
           if (!familyJourney) return;
 
           const currentSchoolJourneys = familyJourney.schoolJourneys || [];
