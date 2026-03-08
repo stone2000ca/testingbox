@@ -942,20 +942,15 @@ export default function Consultant() {
           if (!familyJourney) return;
 
           if (isRemoving) {
-            // Find existing SchoolJourney record and mark as removed
+            // Find existing SchoolJourney and mark as removed
             const existing = await base44.entities.SchoolJourney.filter({
               familyJourneyId: familyJourney.id,
               schoolId: schoolId,
-              status: 'shortlisted',
             });
             if (existing.length > 0) {
-              await base44.entities.SchoolJourney.update(existing[0].id, { status: 'removed' });
-            }
-            if (existing.length === 0) {
-              const broader = await base44.entities.SchoolJourney.filter({ schoolId: schoolId, status: 'shortlisted' });
-              if (broader.length > 0) {
-                await base44.entities.SchoolJourney.update(broader[0].id, { status: 'removed' });
-              }
+              await base44.entities.SchoolJourney.update(existing[0].id, {
+                status: 'removed',
+              });
             }
           } else {
             // Create a new SchoolJourney record
