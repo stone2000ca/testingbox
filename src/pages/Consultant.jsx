@@ -926,71 +926,42 @@ export default function Consultant() {
       await base44.auth.updateMe({ shortlist: updatedShortlist });
       setUser({ ...user, shortlist: updatedShortlist });
 
-      // E29-004: Sync shortlist to FamilyJourney
-      // Capture school object NOW from outer scope before IIFE executes asynchronously
-      const schoolForJourney = school;
+      // E29-004: Sync shortlist to SchoolJourney entity
       ;(async () => {
-        const user = await base44.auth.me();
-
         try {
-          if (!user?.id) return;
+          const freshUser = await base44.auth.me();
+          if (!freshUser?.id) return;
 
-          // Find active FamilyJourney
-          let familyJourney = null;
-          if (currentConversation?.journeyId) {
-            familyJourney = await base44.entities.FamilyJourney.get(currentConversation.journeyId);
-          } else {
-            const journeys = await base44.entities.FamilyJourney.filter(
-              { userId: user.id },
-              '-updated_date',
-              1
-            );
-            familyJourney = journeys[0];
-          }
+          // Find active FamilyJourney for this user
+          const journeys = await base44.entities.FamilyJourney.filter(
+            { userId: freshUser.id },
+            '-updated_date',
+            1
+          );
+          const familyJourney = journeys[0];
           if (!familyJourney) return;
 
-          const currentSchoolJourneys = familyJourney.schoolJourneys || [];
-          let updatedSchoolJourneys;
-          let phaseUpdate = {};
-
           if (isRemoving) {
-            // Soft delete: set status to REMOVED
-            updatedSchoolJourneys = currentSchoolJourneys.map(sj =>
-              sj.schoolId === schoolId
-                ? { ...sj, status: 'REMOVED', removedAt: new Date().toISOString() }
-                : sj
-            );
-          } else {
-            // Use schoolForJourney captured synchronously before async gap
-            let matchData = {};
-            try {
-              const checks = buildPriorityChecks(schoolForJourney, familyProfile, priorityOverrides);
-              matchData = { matchScore: checks?.score || null, matchReasons: checks?.reasons || null, priorityChecks: checks?.priorityRows || null };
-            } catch (e) { /* match data optional */ }
-
-            const newItem = {
-              schoolId: schoolForJourney?.id || schoolId,
-              schoolName: schoolForJourney?.name || '',
-              status: 'SHORTLISTED',
-              addedAt: new Date().toISOString(),
-              ...matchData
-            };
-            updatedSchoolJourneys = [...currentSchoolJourneys.filter(sj => sj.schoolId !== schoolId), newItem];
-
-            // Phase auto-advance: MATCH -> EVALUATE on first shortlist
-            if (familyJourney.currentPhase === 'MATCH') {
-              const phaseHistory = familyJourney.phaseHistory || [];
-              phaseHistory.push({ phase: 'EVALUATE', enteredAt: new Date().toISOString() });
-              phaseUpdate = { currentPhase: 'EVALUATE', phaseHistory };
+            // Find existing SchoolJourney record and mark as removed
+            const existing = await base44.entities.SchoolJourney.filter({
+              familyJourneyId: familyJourney.id,
+              schoolId: schoolId,
+            });
+            if (existing.length > 0) {
+              await base44.entities.SchoolJourney.update(existing[0].id, { status: 'removed' });
             }
+          } else {
+            // Create a new SchoolJourney record
+            await base44.entities.SchoolJourney.create({
+              familyJourneyId: familyJourney.id,
+              schoolId: school?.id || schoolId,
+              schoolName: school?.name || '',
+              status: 'shortlisted',
+              addedAt: new Date().toISOString(),
+            });
           }
-
-          await base44.entities.FamilyJourney.update(familyJourney.id, {
-            schoolJourneys: updatedSchoolJourneys,
-            ...phaseUpdate
-          });
         } catch (e) {
-          console.error('[E29-004] FamilyJourney sync failed:', e.message, e);
+          console.error('[E29-004] SchoolJourney sync failed:', e.message, e);
         }
       })();
 
