@@ -342,6 +342,55 @@ function resolveTransition(params) {
 
 
 // =============================================================================
+// LIGHTWEIGHT REGEX EXTRACTION — zero LLM calls, <5ms execution
+// =============================================================================
+function lightweightExtract(message, existingProfile) {
+  const bridgeProfile = { ...existingProfile };
+  let bridgeIntent = 'continue';
+
+  // Grade extraction: "grade 9", "9th grade", "kindergarten", "JK", "SK"
+  const gradeMatch = message.match(/\b(?:grade|gr\.?)\s*([0-9]+|\b(?:pk|jk|sk|k|junior|senior)\b)/i);
+  if (gradeMatch && !bridgeProfile.childGrade) {
+    const gradeStr = gradeMatch[1].toLowerCase();
+    const gradeMap = { 'pk': -2, 'jk': -1, 'sk': 0, 'k': 0, 'junior': 11, 'senior': 12 };
+    const grade = gradeMap[gradeStr] !== undefined ? gradeMap[gradeStr] : parseInt(gradeStr);
+    if (!isNaN(grade)) bridgeProfile.childGrade = grade;
+  }
+
+  // Location extraction: "in Boston", "near Toronto", "around Vancouver"
+  const locMatch = message.match(/\b(?:in|near|around|from)\s+([a-zA-Z]+(?:\s[a-zA-Z]+)?)/);
+  if (locMatch && !bridgeProfile.locationArea) {
+    const loc = locMatch[1].trim();
+    if (loc.length > 2 && /[A-Z]/.test(loc)) {
+      bridgeProfile.locationArea = loc;
+    }
+  }
+
+  // Budget extraction: "30k", "$30000", "30K"
+  const budgetMatch = message.match(/\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\s*[kK]?(?:\b|$)/);
+  if (budgetMatch && !bridgeProfile.maxTuition) {
+    const numStr = budgetMatch[1].replace(/,/g, '');
+    const num = parseInt(numStr);
+    if (!isNaN(num) && num >= 5000 && num <= 500000) {
+      const amount = message.match(/[kK]/) ? num * 1000 : num;
+      bridgeProfile.maxTuition = amount;
+    }
+  }
+
+  // Gender extraction: "son", "daughter", "boy", "girl"
+  if (!bridgeProfile.childGender) {
+    if (/\b(son|boy|he|him|his)\b/i.test(message)) bridgeProfile.childGender = 'male';
+    else if (/\b(daughter|girl|she|her)\b/i.test(message)) bridgeProfile.childGender = 'female';
+  }
+
+  // Intent detection
+  if (/\b(brief|summary|that'?s all|that'?s it)\b/i.test(message)) bridgeIntent = 'request-brief';
+  else if (/\b(that looks right|show me schools|looks good|looks right|confirmed?|yes please)\b/i.test(message)) bridgeIntent = 'confirm-brief';
+
+  return { bridgeProfile, bridgeIntent };
+}
+
+// =============================================================================
 // INLINED: handleDiscovery
 // =============================================================================
 async function handleDiscovery(base44, message, conversationFamilyProfile, context, conversationHistory, consultantName, currentSchools, flags, returningUserContextBlock) {
