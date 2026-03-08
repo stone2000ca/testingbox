@@ -184,6 +184,9 @@ export default function Consultant() {
   // WC6: Artifact cache indexed by schoolId_artifactType (e.g., '123_visit_prep')
   const [artifactCache, setArtifactCache] = useState(null);
 
+  // E29-007: Active journey context for returning users
+  const [activeJourney, setActiveJourney] = useState(null);
+
   // E13a-WC4: Track visited school IDs (schools with a visit_debrief artifact)
   const [visitedSchoolIds, setVisitedSchoolIds] = useState(new Set());
   
