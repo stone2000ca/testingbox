@@ -661,7 +661,7 @@ Deno.serve(async (req) => {
     
     try {
       const base44 = createClientFromRequest(req);
-      const { message, conversationHistory, conversationContext, region, userId, consultantName, currentSchools, userLocation, selectedSchoolId, conversationId: conversationIdFromPayload, returningUserContext } = await req.json();
+      const { message, conversationHistory, conversationContext, region, userId, consultantName, currentSchools, userLocation, selectedSchoolId, conversationId: conversationIdFromPayload, returningUserContext, journeyContext } = await req.json();
 
       // WC6: Build RETURNING USER CONTEXT block if present
       let returningUserContextBlock = null;
