@@ -132,6 +132,19 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
       const gradeStr = gradeMatch[1].toLowerCase();
       const gradeMap = { 'pk': -2, 'jk': -1, 'k': 0, 'junior': 11, 'senior': 12 };
       extractedGrade = gradeMap[gradeStr] !== undefined ? gradeMap[gradeStr] : parseInt(gradeStr);
+    } else {
+      // Age-to-grade conversion if no explicit grade mentioned
+      const ageMatch = message.match(/\b(?:name\s+)?is\s+(\d{1,2})(?:\s+years?\s+old)?\b/i);
+      if (ageMatch) {
+        const age = parseInt(ageMatch[1]);
+        if (age >= 2 && age <= 18) {
+          if (age === 3) extractedGrade = -2; // PK
+          else if (age === 4) extractedGrade = -1; // JK
+          else if (age === 5) extractedGrade = 0; // K
+          else if (age >= 6) extractedGrade = age - 5; // Grade 1 for age 6, Grade 2 for age 7, etc.
+          console.log('[EXTRACT] Age detection: converted age', age, 'to grade', extractedGrade);
+        }
+      }
     }
 
     let extractedGender = null;
@@ -204,6 +217,12 @@ LOCATION SPECIFICITY (BUG-LOC-003): For locationArea, always use the most specif
 LOCATION vs CURRICULUM: locationArea must ONLY contain geographic places. IB, AP, STEM, Montessori, Waldorf, Reggio, IGCSE, French immersion are curriculum types — put them in priorities, never locationArea.
 
 LOCATION vs ACADEMIC SUBJECTS: Academic subjects like English, Math, Science, Art, Music, History, Drama are NEVER locations. 'does well in English' means the subject, not a place. Only extract geographic places as locationArea.
+
+AGE vs GRADE HANDLING:
+- If the user says "[name] is [number]" or "[name] is [number] years old" WITHOUT the word "grade", treat the number as AGE, not grade.
+- Convert age to grade: age 3 = PK (grade -2), age 4 = JK (grade -1), age 5 = K (grade 0), age 6+ = grade (age - 5). So age 6 = grade 1, age 7 = grade 2, etc.
+- If unclear whether age or grade, return childGrade as null and let the conversation ask for clarification.
+- "grade 3" or "in grade 3" = grade 3. "is 3" or "is 3 years old" = age 3 = PK.
 
 PRIORITY vs INTEREST CLASSIFICATION:
 - PRIORITIES = requirements the SCHOOL must meet (curriculum type, teaching style, class size, gender policy, religious affiliation, boarding, learning support, structured environment, boys-only, STEM focus, French immersion)
