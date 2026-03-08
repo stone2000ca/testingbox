@@ -1053,8 +1053,6 @@ export default function Consultant() {
         }
       })();
 
-      await loadShortlist(user.id);
-
       // T-SL-004: Determine nudge (max 1 per action, only in RESULTS state)
       if (currentState === STATES.RESULTS) {
         const nudge = getShortlistNudge({
