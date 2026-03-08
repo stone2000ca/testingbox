@@ -930,8 +930,7 @@ export default function Consultant() {
       const schoolForJourney = school;
       ;(async () => {
         const user = await base44.auth.me();
-        // E29-004-DEBUG: write school shape to FamilyJourney.nextAction for inspection
-        try { const _dj = await base44.entities.FamilyJourney.filter({}, '-updated_date', 1); if (_dj.length > 0) { await base44.entities.FamilyJourney.update(_dj[0].id, { nextAction: 'SCHOOL_DEBUG: outer=' + JSON.stringify(school) + ' captured=' + JSON.stringify(schoolForJourney) }); } } catch(_de) {}
+
         try {
           if (!user?.id) return;
 
