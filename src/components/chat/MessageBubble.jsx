@@ -1,7 +1,37 @@
 import ReactMarkdown from 'react-markdown';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+
+// Parse deep dive content into sections by markdown headers (## or ###)
+function parseDeepDiveSections(content) {
+  const lines = content.split('\n');
+  const sections = [];
+  let currentSection = null;
+
+  for (const line of lines) {
+    const headerMatch = line.match(/^(#{2,3})\s+(.+)$/);
+    if (headerMatch) {
+      if (currentSection) {
+        sections.push(currentSection);
+      }
+      currentSection = {
+        title: headerMatch[2].trim(),
+        content: ''
+      };
+    } else if (currentSection) {
+      currentSection.content += (currentSection.content ? '\n' : '') + line;
+    }
+  }
+
+  if (currentSection) {
+    sections.push(currentSection);
+  }
+
+  return sections;
+}
 
 export default function MessageBubble({ message, isUser, onViewSchoolProfile, schools, consultantName }) {
   const accentColor = consultantName === 'Jackie' ? '#C27B8A' : '#6B9DAD';
+  const isDeepDive = message.deepDiveAnalysis;
   
   return (
     <div className={`flex gap-2 sm:gap-3 ${isUser ? 'justify-end' : 'justify-start'} ${!isUser ? 'animate-fadeIn' : ''}`}>
@@ -18,63 +48,100 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
         }`}>
           {isUser ? (
            <p className="text-sm leading-relaxed">{message.content}</p>
+          ) : isDeepDive ? (
+           <Accordion type="single" collapsible className="w-full">
+              {parseDeepDiveSections(message.content).map((section, idx) => (
+                <AccordionItem key={idx} value={`section-${idx}`} className="border-white/20">
+                  <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2 px-0 text-white">
+                    {section.title}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-white/90 pt-2 pb-0">
+                    <ReactMarkdown 
+                      className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                      components={{
+                        p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
+                        ul: ({ children }) => <ul className="my-1 ml-4 list-disc">{children}</ul>,
+                        ol: ({ children }) => <ol className="my-1 ml-4 list-decimal">{children}</ol>,
+                        li: ({ children }) => <li className="my-0.5">{children}</li>,
+                        strong: ({ children }) => <strong className="font-semibold" style={{ color: accentColor }}>{children}</strong>,
+                        a: ({ href, children }) => (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (href) window.open(href, '_blank');
+                            }}
+                            className="hover:underline cursor-pointer font-semibold inline bg-transparent border-none p-0"
+                            style={{ color: accentColor }}
+                          >
+                            {children}
+                          </button>
+                        )
+                      }}
+                    >
+                      {section.content}
+                    </ReactMarkdown>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           ) : (
            <ReactMarkdown 
-             className="text-sm prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-             components={{
-               p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
-               ul: ({ children }) => <ul className="my-1 ml-4 list-disc">{children}</ul>,
-               ol: ({ children }) => <ol className="my-1 ml-4 list-decimal">{children}</ol>,
-               li: ({ children }) => <li className="my-0.5">{children}</li>,
-                strong: ({ children }) => <strong className="font-semibold" style={{ color: accentColor }}>{children}</strong>,
-                a: ({ href, children }) => {
-                   const childText = typeof children === 'string' ? children : 
-                     Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
-                   
-                   console.log('🔗 MessageBubble link clicked:', { childText, href, schoolsAvailable: schools?.length });
-                   
-                   // Check if href is a school link (format: school:slug)
-                   const isSchoolLink = href && href.startsWith('school:');
-                   const slugFromHref = isSchoolLink ? href.replace('school:', '') : null;
-                   
-                   // Try to find matching school by name (case-insensitive exact match)
-                   const matchingSchool = schools?.find(s => 
-                     s.name && childText && s.name.toLowerCase().trim() === childText.toLowerCase().trim()
-                   );
-                   
-                   console.log('🎯 Link analysis:', { isSchoolLink, slugFromHref, matchingSchool: matchingSchool?.name || 'not found' });
-                   
-                   // BULLETPROOF: Always return a button, never a regular <a> tag
-                   // Prevents default navigation in all cases
-                   return (
-                     <button
-                       onClick={(e) => {
-                         e.preventDefault();
-                         e.stopPropagation();
+              className="text-sm prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+              components={{
+                p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
+                ul: ({ children }) => <ul className="my-1 ml-4 list-disc">{children}</ul>,
+                ol: ({ children }) => <ol className="my-1 ml-4 list-decimal">{children}</ol>,
+                li: ({ children }) => <li className="my-0.5">{children}</li>,
+                 strong: ({ children }) => <strong className="font-semibold" style={{ color: accentColor }}>{children}</strong>,
+                 a: ({ href, children }) => {
+                    const childText = typeof children === 'string' ? children : 
+                      Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
 
-                         // If it's a school link or matches a school name, call onViewSchoolProfile
-                         if (isSchoolLink || matchingSchool) {
-                           const slug = slugFromHref || matchingSchool?.slug;
-                           console.log('✅ Calling onViewSchoolProfile with slug:', slug);
-                           onViewSchoolProfile && onViewSchoolProfile(slug);
-                         } else if (href) {
-                           // Otherwise, open the link in a new tab
-                           console.log('🌐 Opening external link:', href);
-                           window.open(href, '_blank');
-                         }
-                       }}
-                       className="hover:underline cursor-pointer font-semibold inline bg-transparent border-none p-0"
-                       style={{ color: accentColor }}
-                     >
-                       {children}
-                     </button>
-                   );
-                   }
-                   }}
-                   >
-                   {message.content}
-                   </ReactMarkdown>
-                   )}
+                    console.log('🔗 MessageBubble link clicked:', { childText, href, schoolsAvailable: schools?.length });
+
+                    // Check if href is a school link (format: school:slug)
+                    const isSchoolLink = href && href.startsWith('school:');
+                    const slugFromHref = isSchoolLink ? href.replace('school:', '') : null;
+
+                    // Try to find matching school by name (case-insensitive exact match)
+                    const matchingSchool = schools?.find(s => 
+                      s.name && childText && s.name.toLowerCase().trim() === childText.toLowerCase().trim()
+                    );
+
+                    console.log('🎯 Link analysis:', { isSchoolLink, slugFromHref, matchingSchool: matchingSchool?.name || 'not found' });
+
+                    // BULLETPROOF: Always return a button, never a regular <a> tag
+                    // Prevents default navigation in all cases
+                    return (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+
+                          // If it's a school link or matches a school name, call onViewSchoolProfile
+                          if (isSchoolLink || matchingSchool) {
+                            const slug = slugFromHref || matchingSchool?.slug;
+                            console.log('✅ Calling onViewSchoolProfile with slug:', slug);
+                            onViewSchoolProfile && onViewSchoolProfile(slug);
+                          } else if (href) {
+                            // Otherwise, open the link in a new tab
+                            console.log('🌐 Opening external link:', href);
+                            window.open(href, '_blank');
+                          }
+                        }}
+                        className="hover:underline cursor-pointer font-semibold inline bg-transparent border-none p-0"
+                        style={{ color: accentColor }}
+                      >
+                        {children}
+                      </button>
+                    );
+                    }
+                    }}
+                    >
+                    {message.content}
+                    </ReactMarkdown>
+                    )}
                    </div>
                    {message.timestamp && (
                    <span className={`text-[10px] sm:text-xs mt-1 px-1 ${isUser ? 'text-slate-500' : 'text-white/40'}`}>
