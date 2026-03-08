@@ -647,18 +647,62 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
             schoolId: selectedSchoolId,
           });
 
+          let sjId = null;
           if (existing && existing.length > 0) {
             await base44.asServiceRole.entities.SchoolJourney.update(existing[0].id, { status: 'visited' });
+            sjId = existing[0].id;
           } else {
-            await base44.asServiceRole.entities.SchoolJourney.create({
+            const created = await base44.asServiceRole.entities.SchoolJourney.create({
               familyJourneyId: familyJourney.id,
               schoolId: selectedSchoolId,
               schoolName: school?.name || '',
               status: 'visited',
               addedAt: new Date().toISOString(),
             });
+            sjId = created?.id;
           }
           console.log('[E29-006] SchoolJourney marked visited for', selectedSchoolId);
+
+          // E29-014: Generate debrief summary + sentiment from Q&A pairs
+          if (sjId && context.conversationId) {
+            try {
+              const debriefArtifacts = await base44.asServiceRole.entities.GeneratedArtifact.filter({
+                conversationId: context.conversationId,
+                schoolId: selectedSchoolId,
+                artifactType: 'visit_debrief'
+              });
+              const qaPairs = debriefArtifacts?.[0]?.content?.qaPairs || [];
+              if (qaPairs.length > 0) {
+                const qaText = qaPairs.map((qa, i) => `Q${i+1}: ${qa.question}\nA${i+1}: ${qa.answer}`).join('\n\n');
+                const debriefAnalysis = await base44.integrations.Core.InvokeLLM({
+                  prompt: `A parent just completed a post-visit debrief for ${school?.name || 'a school'}. Analyze their responses and return JSON only.
+
+Debrief Q&A:
+${qaText}
+
+Return ONLY this JSON (no markdown): { "debriefSummary": "<2-3 sentences summarizing what the parent observed and felt>", "debriefSentiment": "<POSITIVE|MIXED|NEGATIVE based on overall impression>" }`,
+                  response_json_schema: {
+                    type: 'object',
+                    properties: {
+                      debriefSummary: { type: 'string' },
+                      debriefSentiment: { type: 'string', enum: ['POSITIVE', 'MIXED', 'NEGATIVE'] }
+                    },
+                    required: ['debriefSummary', 'debriefSentiment']
+                  }
+                });
+                const parsed = typeof debriefAnalysis === 'object' ? debriefAnalysis : JSON.parse(debriefAnalysis);
+                if (parsed?.debriefSummary) {
+                  await base44.asServiceRole.entities.SchoolJourney.update(sjId, {
+                    debriefSummary: parsed.debriefSummary,
+                    debriefSentiment: parsed.debriefSentiment || 'MIXED'
+                  });
+                  console.log('[E29-014] SchoolJourney debrief summary stored, sentiment:', parsed.debriefSentiment);
+                }
+              }
+            } catch (debriefErr) {
+              console.error('[E29-014] Debrief summary generation failed:', debriefErr?.message);
+            }
+          }
 
           // E29-015: Phase auto-advancement → DECIDE if all non-removed schools are now visited
           try {
