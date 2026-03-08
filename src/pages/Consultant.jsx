@@ -419,6 +419,35 @@ export default function Consultant() {
     if (isAuthenticated && user && !sessionIdParam) {
       handleRestoreGuestSession();
     }
+
+    // E29-012: Hydrate shortlistData from SchoolJourney entity on auth load
+    ;(async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        if (!currentUser?.id) return;
+
+        const journeys = await base44.entities.FamilyJourney.filter({ userId: currentUser.id });
+        const activeJourney = journeys.find(j => !j.isArchived);
+        if (!activeJourney) return;
+
+        const schoolJourneys = await base44.entities.SchoolJourney.filter({
+          familyJourneyId: activeJourney.id,
+          status: 'shortlisted',
+        });
+        if (schoolJourneys.length === 0) return;
+
+        const schoolIds = schoolJourneys.map(sj => sj.schoolId).filter(Boolean);
+        const fetchedSchools = await base44.entities.School.filter({ id: { $in: schoolIds } });
+
+        setShortlistData(prev => {
+          const existingIds = new Set(prev.map(s => s.id));
+          const newSchools = fetchedSchools.filter(s => !existingIds.has(s.id));
+          return newSchools.length > 0 ? [...prev, ...newSchools] : prev;
+        });
+      } catch (e) {
+        console.error('[E29-012] SchoolJourney shortlist hydration failed:', e.message);
+      }
+    })();
   }, [isAuthenticated, user?.id, sessionIdParam]);
 
 
