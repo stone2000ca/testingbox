@@ -143,6 +143,12 @@ export async function restoreSessionFromParam(
         state: STATES.RESULTS,
         schools: restoredSchools
       };
+      // S97-WC3: Hydrate schools from matchedSchools on reload
+      if (Array.isArray(chatSession.matchedSchools) && chatSession.matchedSchools.length > 0) {
+        const restoredSchools = chatSession.matchedSchools;
+        restoredContext.schools = restoredSchools;
+        setSchools(restoredSchools);
+      }
       const restoredConversation = {
         ...chatHistory,
         conversationContext: restoredContext
@@ -153,6 +159,12 @@ export async function restoreSessionFromParam(
         state: STATES.RESULTS,
         schools: restoredSchools
       };
+      // S97-WC3: Hydrate schools from matchedSchools on reload
+      if (Array.isArray(chatSession.matchedSchools) && chatSession.matchedSchools.length > 0) {
+        const restoredSchools = chatSession.matchedSchools;
+        restoredContext.schools = restoredSchools;
+        setSchools(restoredSchools);
+      }
       setCurrentConversation({
         conversationContext: restoredContext
       });
