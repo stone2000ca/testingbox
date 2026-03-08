@@ -123,41 +123,6 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
       }
     }
 
-    // E29-006: Fire-and-forget — mark SchoolJourney as visited when debrief is complete
-    if (isDebriefComplete && context.userId) {
-      (async () => {
-        try {
-          const journeys = context.journeyId
-            ? await base44.entities.FamilyJourney.filter({ id: context.journeyId })
-            : await base44.entities.FamilyJourney.filter({ userId: context.userId }, '-updated_date', 1);
-          const familyJourney = journeys?.[0];
-          if (!familyJourney) return;
-
-          const existing = await base44.entities.SchoolJourney.filter({
-            familyJourneyId: familyJourney.id,
-            schoolId: selectedSchoolId,
-          });
-
-          if (existing && existing.length > 0) {
-            await base44.entities.SchoolJourney.update(existing[0].id, {
-              status: 'visited',
-            });
-          } else {
-            await base44.entities.SchoolJourney.create({
-              familyJourneyId: familyJourney.id,
-              schoolId: selectedSchoolId,
-              schoolName: schoolName,
-              status: 'visited',
-              addedAt: new Date().toISOString(),
-            });
-          }
-          console.log('[E29-006] SchoolJourney marked visited for', selectedSchoolId);
-        } catch (e) {
-          console.error('[E29-006] SchoolJourney visited sync failed:', e?.message || e);
-        }
-      })();
-    }
-
     // WC9: Persist debrief Q&A pair (non-blocking)
     if (nextQuestion && context.userId) {
       try {

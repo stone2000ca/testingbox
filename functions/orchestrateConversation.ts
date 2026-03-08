@@ -632,6 +632,39 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
       }
     }
 
+    // E29-006: Fire-and-forget — mark SchoolJourney entity as visited on debrief completion
+    if (isDebriefComplete && context.userId) {
+      (async () => {
+        try {
+          const journeys = context.journeyId
+            ? await base44.asServiceRole.entities.FamilyJourney.filter({ id: context.journeyId })
+            : await base44.asServiceRole.entities.FamilyJourney.filter({ userId: context.userId }, '-updated_date', 1);
+          const familyJourney = journeys?.[0];
+          if (!familyJourney) return;
+
+          const existing = await base44.asServiceRole.entities.SchoolJourney.filter({
+            familyJourneyId: familyJourney.id,
+            schoolId: selectedSchoolId,
+          });
+
+          if (existing && existing.length > 0) {
+            await base44.asServiceRole.entities.SchoolJourney.update(existing[0].id, { status: 'visited' });
+          } else {
+            await base44.asServiceRole.entities.SchoolJourney.create({
+              familyJourneyId: familyJourney.id,
+              schoolId: selectedSchoolId,
+              schoolName: school?.name || '',
+              status: 'visited',
+              addedAt: new Date().toISOString(),
+            });
+          }
+          console.log('[E29-006] SchoolJourney marked visited for', selectedSchoolId);
+        } catch (e) {
+          console.error('[E29-006] SchoolJourney visited sync failed:', e?.message || e);
+        }
+      })();
+    }
+
     let reevalResult = null;
     // E13a-WC3: Fit re-evaluation after debrief complete (non-blocking)
     if (isDebriefComplete && context.userId) {
