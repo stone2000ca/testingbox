@@ -352,11 +352,29 @@ export const useMessageHandler = ({
             ? `${profileForSession.childName}'s School Search Profile`
             : 'School Search Profile';
 
+          // Ensure a ChatHistory record exists for URL-based flow
+          let chatHistoryRecord = null;
+          if ((!currentConversation?.id) && isAuthenticated && user) {
+            try {
+              chatHistoryRecord = await base44.entities.ChatHistory.create({
+                userId: user.id,
+                title: profileName,
+                messages: updatedMessages,
+                conversationContext: updatedContext,
+                isActive: true
+              });
+              setCurrentConversation(prev => ({ ...(prev || {}), ...chatHistoryRecord, conversationContext: updatedContext }));
+              console.log('[SESSION] Created ChatHistory with id:', chatHistoryRecord.id);
+            } catch (e) {
+              console.error('Failed to create ChatHistory before ChatSession:', e);
+            }
+          }
+
           const chatSession = await base44.entities.ChatSession.create({
             sessionToken: sessionId,
             userId: user?.id,
             familyProfileId: profileForSession?.id || null,
-            chatHistoryId: currentConversation?.id,
+            chatHistoryId: chatHistoryRecord?.id || currentConversation?.id,
             status: 'active',
             consultantSelected: selectedConsultant,
             childName: profileForSession?.childName,
