@@ -365,11 +365,23 @@ function lightweightExtract(message, existingProfile) {
   }
 
   // Location extraction
+  // S113-WC1: Location fix - curated city regex + await extractEntities at BRIEF/RESULTS
   const locMatch = message.match(/(?:live\s+)?(?:in|near|around|from)\s+([a-zA-Z\s]+?)(?:\s+(?:area|region|city|province|state)|\.|\s*$|,)/i);
   if (locMatch) {
     const loc = locMatch[1].trim();
     if (loc.length > 2 && /[A-Z]/.test(loc)) {
       bridgeProfile.locationArea = loc;
+    }
+  }
+  // S113-WC1: Secondary fallback — bare city name or known Canadian region (no preposition required)
+  if (!bridgeProfile.locationArea) {
+    const KNOWN_LOCATIONS = ['Greater Toronto Area', 'GTA', 'Toronto', 'Vancouver', 'Montreal', 'Ottawa', 'Calgary', 'Edmonton', 'Mississauga', 'Oakville', 'Markham', 'Richmond Hill', 'Burlington', 'Hamilton', 'Brampton', 'Vaughan', 'Waterloo', 'Kitchener', 'London', 'Victoria'];
+    for (const knownLoc of KNOWN_LOCATIONS) {
+      const escaped = knownLoc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (new RegExp(`\\b${escaped}\\b`, 'i').test(message)) {
+        bridgeProfile.locationArea = knownLoc;
+        break;
+      }
     }
   }
 
@@ -1178,14 +1190,7 @@ Write a warm, natural 3-sentence welcome-back greeting. Acknowledge where they l
       intentSignal = bridgeIntent;
       briefDelta = { additions: [], updates: [], removals: [] };
 
-      // BACKGROUND: Fire-and-forget async LLM-based extraction
-      base44.asServiceRole.functions.invoke('extractEntities', {
-        message: processMessage,
-        conversationFamilyProfile,
-        context,
-        conversationHistory
-      }).catch(e => console.error('[ASYNC] extractEntities failed (non-blocking):', e.message));
-
+      // S113-WC1: extractEntities stub — will be replaced conditionally after resolveTransition
       extractionResult = {
         extractedEntities: {},
         updatedFamilyProfile: conversationFamilyProfile,
