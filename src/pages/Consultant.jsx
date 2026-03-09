@@ -495,7 +495,11 @@ export default function Consultant() {
     if (!user?.id || !currentConversation?.id) return;
 
     // Guard: if familyProfile already has meaningful data from orchestrateConversation, skip DB fetch to avoid overwriting it
-    if (familyProfile && Object.keys(familyProfile).length > 2) {
+    const METADATA_KEYS = ['id', 'userId', 'conversationId', 'created_date', 'updated_date', 'created_by'];
+    const hasRealData = familyProfile && Object.entries(familyProfile).some(
+      ([k, v]) => !METADATA_KEYS.includes(k) && v != null && v !== '' && !(Array.isArray(v) && v.length === 0)
+    );
+    if (hasRealData) {
       console.log('[loadFamilyProfile] Skipping DB fetch — meaningful data already in state');
       await loadPreviousArtifacts(currentConversation.id);
       return;
