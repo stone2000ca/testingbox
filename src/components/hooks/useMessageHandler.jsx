@@ -54,7 +54,15 @@ export const useMessageHandler = ({
   activeJourney,
   setActiveJourney,
 }, isPremiumParam = isPremium) => {
+    // S114-WC2: Processing guard to prevent concurrent message sends (F15 fix)
+  let isProcessing = false;
   const handleSendMessage = async (messageText, explicitSchoolId = null, displayText = null) => {
+        // S114-WC2: Prevent concurrent sends
+    if (isProcessing) {
+      console.warn('[F15-GUARD] Message send blocked - already processing');
+      return;
+    }
+    isProcessing = true;
     // Track message sent
     base44.functions.invoke('trackSessionEvent', {
       eventType: 'message_sent',
@@ -564,6 +572,11 @@ export const useMessageHandler = ({
       };
       setMessages([...updatedMessages, errorMessage]);
     }
+            finally {
+      // S114-WC2: Always reset processing guard
+      isProcessing = false;
+          }
+    
   };
 
   return { handleSendMessage };
