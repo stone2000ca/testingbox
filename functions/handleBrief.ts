@@ -118,6 +118,20 @@ Deno.serve(async (req) => {
     const localProfile = JSON.parse(JSON.stringify(rawProfile || {}));
     let context = rawContext || {};
 
+    // S108-WC3 Fix 2: Belt-and-suspenders fallback — merge accumulatedFamilyProfile into localProfile
+    // for any key that is null/undefined/empty in localProfile but present in accumulated context.
+    const accumulated = context.accumulatedFamilyProfile || {};
+    for (const [key, value] of Object.entries(accumulated)) {
+      if (value === null || value === undefined) continue;
+      if (Array.isArray(value) && value.length === 0) continue;
+      const existing = localProfile[key];
+      const isEmpty = existing === null || existing === undefined || (Array.isArray(existing) && existing.length === 0);
+      if (isEmpty) {
+        localProfile[key] = value;
+        console.log(`[BRIEF-S108] Backfilled from accumulatedFamilyProfile: ${key} =`, value);
+      }
+    }
+
     const STATES = { WELCOME: 'WELCOME', DISCOVERY: 'DISCOVERY', BRIEF: 'BRIEF', RESULTS: 'RESULTS', DEEP_DIVE: 'DEEP_DIVE' };
     const BRIEF_STATUS = { GENERATING: 'generating', PENDING_REVIEW: 'pending_review', EDITING: 'editing', CONFIRMED: 'confirmed' };
 
