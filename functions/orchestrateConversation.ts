@@ -1246,10 +1246,15 @@ Object.assign(context, safeUpdatedContext);
       }
 
       if (currentState === STATES.BRIEF) {
+        // Change B: If we transitioned directly from DISCOVERY→BRIEF (stop_intent, enrichment_cap, etc.),
+        // handleDiscovery was correctly skipped above (currentState !== DISCOVERY). Log for confirmation.
+        if (previousState === STATES.DISCOVERY) {
+          console.log('[Change-B] DISCOVERY→BRIEF direct transition — handleDiscovery skipped, routing to handleBrief with workingProfile');
+        }
         try {
           const briefResult = await base44.asServiceRole.functions.invoke('handleBrief', {
             message: processMessage,
-            conversationFamilyProfile,
+            conversationFamilyProfile: workingProfile,
             context,
             conversationHistory,
             consultantName,
