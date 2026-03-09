@@ -1086,12 +1086,19 @@ Write a warm, natural 3-sentence welcome-back greeting. Acknowledge where they l
         gender: conversationFamilyProfile?.gender ?? null
       };
 
-      // FAST PATH: Synchronous lightweight extraction to unblock response
-      const accumulatedProfile = context.accumulatedFamilyProfile || {};
+      // S108-WC3 Fix 1 (Hoisted): lightweightExtract + workingProfile built BEFORE all state branches
+      // Merge order: accumulated < DB < bridgeProfile (fresh extraction always wins)
+      // For-loop patches any DB nulls that accumulated already knew.
       const { bridgeProfile, bridgeIntent } = lightweightExtract(processMessage, conversationFamilyProfile);
-      const workingProfile = { ...conversationFamilyProfile, ...accumulatedProfile, ...bridgeProfile }; // merged snapshot: DB base < accumulated turns < fresh extraction
-      context.accumulatedFamilyProfile = workingProfile; // persist accumulated profile for next turn
-      Object.assign(conversationFamilyProfile, bridgeProfile); // keep mutation for BRIEF/RESULTS/DEEP_DIVE paths
+      const accumulatedProfile = context.accumulatedFamilyProfile || {};
+      const workingProfile = { ...accumulatedProfile, ...conversationFamilyProfile, ...bridgeProfile };
+      for (const [key, val] of Object.entries(workingProfile)) {
+        if (val === null || val === undefined) {
+          if (accumulatedProfile[key] != null) workingProfile[key] = accumulatedProfile[key];
+        }
+      }
+      context.accumulatedFamilyProfile = workingProfile;
+      Object.assign(conversationFamilyProfile, bridgeProfile);
       intentSignal = bridgeIntent;
       briefDelta = { additions: [], updates: [], removals: [] };
 
