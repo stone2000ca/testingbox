@@ -1248,7 +1248,7 @@ Object.assign(context, safeUpdatedContext);
         responseData = await handleDiscovery(base44, processMessage, workingProfile, context, conversationHistory, consultantName, currentSchools, flags, returningUserContextBlock);
         responseData.familyProfile = workingProfile;
         responseData.extractedEntities = workingProfile;
-        return Response.json(responseData);
+        return Response.json(responseData); // DISCOVERY returns early; workingProfile already set above
       }
 
       if (currentState === STATES.BRIEF) {
