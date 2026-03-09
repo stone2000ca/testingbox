@@ -1305,11 +1305,11 @@ Object.assign(context, safeUpdatedContext);
         // E13a: Check if debrief mode is set — if so, route to inlined handleVisitDebrief
         if (resolveResult.deepDiveMode === 'debrief') {
           console.log('[E13a] Routing RESULTS->DEBRIEF to inlined handleVisitDebrief');
-          const debriefResult = await handleVisitDebrief(base44, selectedSchoolId, processMessage, conversationFamilyProfile, context, consultantName, returningUserContextBlock, callOpenRouter);
+          const debriefResult = await handleVisitDebrief(base44, selectedSchoolId, processMessage, workingProfile, context, consultantName, returningUserContextBlock, callOpenRouter);
           if (debriefResult) {
             if (debriefResult.updatedContext) Object.assign(context, debriefResult.updatedContext);
             context.state = STATES.DEEP_DIVE;
-            return Response.json({ message: debriefResult.message, state: STATES.DEEP_DIVE, briefStatus, deepDiveMode: debriefResult.deepDiveMode, visitPrepKit: debriefResult.visitPrepKit, fitReEvaluation: debriefResult.fitReEvaluation || null, familyProfile: conversationFamilyProfile, conversationContext: context, extractedEntities: extractionResult?.extractedEntities || {}, schools: currentSchools || [] });
+            return Response.json({ message: debriefResult.message, state: STATES.DEEP_DIVE, briefStatus, deepDiveMode: debriefResult.deepDiveMode, visitPrepKit: debriefResult.visitPrepKit, fitReEvaluation: debriefResult.fitReEvaluation || null, familyProfile: workingProfile, conversationContext: context, extractedEntities: extractionResult?.extractedEntities || {}, schools: currentSchools || [] });
           }
           console.log('[E13a] handleVisitDebrief returned null, falling through to handleResults');
         }
