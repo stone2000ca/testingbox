@@ -364,7 +364,7 @@ function lightweightExtract(message, existingProfile) {
     if (!isNaN(grade)) bridgeProfile.childGrade = grade;
   }
 
-  // Location extraction: "in Boston", "near Toronto", "live in midtown Toronto", "around Vancouver"
+  // Location extraction
   const locMatch = message.match(/(?:live\s+)?(?:in|near|around|from)\s+([a-zA-Z\s]+?)(?:\s+(?:area|region|city|province|state)|\.|\s*$|,)/i);
   if (locMatch) {
     const loc = locMatch[1].trim();
@@ -373,17 +373,14 @@ function lightweightExtract(message, existingProfile) {
     }
   }
 
-  // Budget extraction: "30k", "$30k", "$30,000", "around 30k", "budget is 30k"
-  // Require either $ prefix OR k/K suffix to avoid matching bare numbers like "grade 9"
+  // Budget extraction
   const budgetMatches = message.matchAll(/(\$)\s*(\d{1,3}(?:,\d{3})*|\d+)\s*([kK])?|(\d{1,3}(?:,\d{3})*|\d+)\s*([kK])/g);
   for (const match of budgetMatches) {
     let numStr, hasKilo;
     if (match[1]) {
-      // Dollar-prefixed pattern
       numStr = match[2];
       hasKilo = !!match[3];
     } else {
-      // k/K-suffixed pattern
       numStr = match[4];
       hasKilo = !!match[5];
     }
@@ -397,11 +394,81 @@ function lightweightExtract(message, existingProfile) {
     }
   }
 
-  // Gender extraction: "son", "daughter", "boy", "girl"
-  // Only extract if not already known in existing profile
+  // Gender extraction
   if (!existingProfile?.childGender) {
     if (/\b(son|boy|he|him|his)\b/i.test(message)) bridgeProfile.childGender = 'male';
     else if (/\b(daughter|girl|she|her)\b/i.test(message)) bridgeProfile.childGender = 'female';
+  }
+
+  // S111-WC3: Child name extraction
+  if (!existingProfile?.childName) {
+    const nameMatch = message.match(/\b(?:my\s+)?(?:son|daughter|child|kid)\s+(?:is\s+)?(?:named\s+)?([A-Z][a-z]{1,15})\b/) ||
+                      message.match(/\b(?:named|name\s+is|call(?:ed)?)\s+([A-Z][a-z]{1,15})\b/);
+    if (nameMatch) {
+      const candidateName = nameMatch[1];
+      const CITY_NAMES = new Set(['Toronto', 'Vancouver', 'Ottawa', 'Montreal', 'Calgary', 'Edmonton', 'Winnipeg', 'Halifax', 'Victoria', 'London', 'Boston', 'Chicago']);
+      if (!CITY_NAMES.has(candidateName)) {
+        bridgeProfile.childName = candidateName;
+      }
+    }
+  }
+
+  // S111-WC3: Curriculum preference extraction
+  if (!existingProfile?.curriculumPreference || existingProfile.curriculumPreference.length === 0) {
+    const curriculumKeywords = message.match(/\b(montessori|waldorf|reggio|IB|international\s+baccalaureate|AP|advanced\s+placement|french\s+immersion|STEM)\b/gi);
+    if (curriculumKeywords) {
+      const normalized = curriculumKeywords.map(k => {
+        const lower = k.toLowerCase();
+        if (lower === 'international baccalaureate') return 'IB';
+        if (lower === 'advanced placement') return 'AP';
+        if (lower === 'french immersion') return 'French Immersion';
+        return k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
+      });
+      bridgeProfile.curriculumPreference = [...new Set(normalized)];
+    }
+  }
+
+  // S111-WC3: Dealbreakers extraction (negation-anchored)
+  const dealbreakers = [];
+  const negReligious = /(?:don'?t\s+want|no|not|avoid|never|without)\s+(?:a\s+)?(?:religious|religion|faith[- ]based)/i;
+  if (negReligious.test(message)) dealbreakers.push('religious');
+  const negSingleSex = /(?:don'?t\s+want|no|not|avoid|never|without)\s+(?:a\s+)?(?:single[- ]sex|all[- ]boys|all[- ]girls|boys[- ]only|girls[- ]only)/i;
+  if (negSingleSex.test(message)) dealbreakers.push('single-sex');
+  const negBoarding = /(?:don'?t\s+want|no|not|avoid|never|without)\s+(?:a\s+)?boarding/i;
+  if (negBoarding.test(message)) dealbreakers.push('boarding');
+  const negUniform = /(?:don'?t\s+want|no|not|avoid|never|without)\s+(?:a\s+)?uniform/i;
+  if (negUniform.test(message)) dealbreakers.push('uniform');
+  if (dealbreakers.length > 0) {
+    bridgeProfile.dealbreakers = dealbreakers;
+  }
+
+  // S111-WC3: School type extraction
+  if (!existingProfile?.schoolType) {
+    if (/\b(?:co-?ed|coed)\b/i.test(message)) bridgeProfile.schoolType = 'co-ed';
+    else if (/\ball[- ]?boys\b/i.test(message)) bridgeProfile.schoolType = 'all-boys';
+    else if (/\ball[- ]?girls\b/i.test(message)) bridgeProfile.schoolType = 'all-girls';
+  }
+
+  // S111-WC3: Interests extraction (verb-anchored)
+  const INTEREST_KEYWORDS = 'art|arts|music|sports|athletics|drama|theatre|theater|science|coding|robotics|swimming|hockey|soccer|basketball|dance|piano|guitar|reading|writing|math';
+  const interestVerbPattern = new RegExp(`\\b(?:loves?|likes?|enjoys?|interested\\s+in|passionate\\s+about|into)\\s+(${INTEREST_KEYWORDS})\\b`, 'gi');
+  const interestListPattern = new RegExp(`\\b(?:interests?|hobbies|activities)\\s*:?\\s*((?:(?:${INTEREST_KEYWORDS})(?:\\s*,\\s*|\\s+and\\s+|\\s+))+(?:${INTEREST_KEYWORDS}))`, 'gi');
+  const foundInterests = new Set();
+  let iMatch;
+  while ((iMatch = interestVerbPattern.exec(message)) !== null) {
+    foundInterests.add(iMatch[1].toLowerCase());
+  }
+  while ((iMatch = interestListPattern.exec(message)) !== null) {
+    const items = iMatch[1].split(/\s*,\s*|\s+and\s+/);
+    items.forEach(item => {
+      const trimmed = item.trim().toLowerCase();
+      if (new RegExp(`^(?:${INTEREST_KEYWORDS})$`).test(trimmed)) {
+        foundInterests.add(trimmed);
+      }
+    });
+  }
+  if (foundInterests.size > 0) {
+    bridgeProfile.interests = Array.from(foundInterests);
   }
 
   // Intent detection
