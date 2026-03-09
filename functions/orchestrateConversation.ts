@@ -1418,7 +1418,7 @@ Object.assign(context, safeUpdatedContext);
         const deepDiveResult = await base44.asServiceRole.functions.invoke('handleDeepDive', {
           selectedSchoolId,
           message: processMessage,
-          conversationFamilyProfile,
+          conversationFamilyProfile: workingProfile,
           context,
           conversationHistory,
           consultantName,
