@@ -1088,8 +1088,10 @@ Write a warm, natural 3-sentence welcome-back greeting. Acknowledge where they l
       };
 
       // FAST PATH: Synchronous lightweight extraction to unblock response
+      const accumulatedProfile = context.accumulatedFamilyProfile || {};
       const { bridgeProfile, bridgeIntent } = lightweightExtract(processMessage, conversationFamilyProfile);
-      const workingProfile = { ...conversationFamilyProfile, ...bridgeProfile }; // merged snapshot for DISCOVERY path
+      const workingProfile = { ...accumulatedProfile, ...conversationFamilyProfile, ...bridgeProfile }; // merged snapshot for DISCOVERY path — includes all prior turns
+      context.accumulatedFamilyProfile = workingProfile; // persist accumulated profile for next turn
       Object.assign(conversationFamilyProfile, bridgeProfile); // keep mutation for BRIEF/RESULTS/DEEP_DIVE paths
       intentSignal = bridgeIntent;
       briefDelta = { additions: [], updates: [], removals: [] };
