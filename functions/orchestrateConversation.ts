@@ -1089,7 +1089,8 @@ Write a warm, natural 3-sentence welcome-back greeting. Acknowledge where they l
 
       // FAST PATH: Synchronous lightweight extraction to unblock response
       const { bridgeProfile, bridgeIntent } = lightweightExtract(processMessage, conversationFamilyProfile);
-      Object.assign(conversationFamilyProfile, bridgeProfile);
+      const workingProfile = { ...conversationFamilyProfile, ...bridgeProfile }; // merged snapshot for DISCOVERY path
+      Object.assign(conversationFamilyProfile, bridgeProfile); // keep mutation for BRIEF/RESULTS/DEEP_DIVE paths
       intentSignal = bridgeIntent;
       briefDelta = { additions: [], updates: [], removals: [] };
 
