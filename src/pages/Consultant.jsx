@@ -494,6 +494,13 @@ export default function Consultant() {
   const loadFamilyProfile = async () => {
     if (!user?.id || !currentConversation?.id) return;
 
+    // Guard: if familyProfile already has meaningful data from orchestrateConversation, skip DB fetch to avoid overwriting it
+    if (familyProfile && Object.keys(familyProfile).length > 2) {
+      console.log('[loadFamilyProfile] Skipping DB fetch — meaningful data already in state');
+      await loadPreviousArtifacts(currentConversation.id);
+      return;
+    }
+
     try {
       const profiles = await base44.entities.FamilyProfile.filter({
         userId: user.id,
