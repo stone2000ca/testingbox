@@ -1158,13 +1158,13 @@ Object.assign(context, safeUpdatedContext);
       }
       
       const profileData = {
-        locationArea: conversationFamilyProfile?.locationArea || null,
-        childGrade: conversationFamilyProfile?.childGrade ?? null,
-        maxTuition: conversationFamilyProfile?.maxTuition || null,
-        priorities: conversationFamilyProfile?.priorities || [],
-        dealbreakers: conversationFamilyProfile?.dealbreakers || [],
-        curriculum: conversationFamilyProfile?.curriculumPreference || [],
-        schoolType: conversationFamilyProfile?.schoolType || null
+        locationArea: workingProfile?.locationArea || null,
+        childGrade: workingProfile?.childGrade ?? null,
+        maxTuition: workingProfile?.maxTuition || null,
+        priorities: workingProfile?.priorities || [],
+        dealbreakers: workingProfile?.dealbreakers || [],
+        curriculum: workingProfile?.curriculumPreference || [],
+        schoolType: workingProfile?.schoolType || null
       };
       
       const turnCount = (conversationHistory?.filter(m => m.role === 'user').length || 0) + 1;
