@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
       const prioritiesStr = priorities?.length > 0 ? priorities.join(', ') : '';
       const dealbreakersStr = dealbreakers?.length > 0 ? dealbreakers.join(', ') : '';
 
-      let budgetDisplay = '(not specified)';
+      let budgetDisplay = 'Not yet shared';
       if (maxTuition === 'unlimited') {
         budgetDisplay = 'Budget is flexible';
       } else if (maxTuition && typeof maxTuition === 'number') {
@@ -235,19 +235,19 @@ FIELD DISPLAY RULES: Include all non-empty fields from the profile. Omit any fie
 
 FAMILY DATA:
 - CHILD: ${briefChildDisplayName}
-- GRADE: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}
-- LOCATION: ${locationArea || '(not specified)'}
+- GRADE: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : 'Not yet shared'}
+- LOCATION: ${locationArea || 'Not yet shared'}
 - BUDGET: ${budgetDisplay}
-- PRIORITIES: ${prioritiesStr || '(not specified)'}
-- INTERESTS: ${interestsStr || '(not specified)'}
-- DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
+- PRIORITIES: ${prioritiesStr || 'Not yet shared'}
+- INTERESTS: ${interestsStr || 'Not yet shared'}
+- DEALBREAKERS: ${dealbreakersStr || 'Not yet shared'}
 
 Format:
 - Open with a warm 1-2 sentence intro
 - Then a numbered list:
   ${childGrade !== null && childGrade !== undefined ? '1. ' + briefChildDisplayName + ': Grade ' + childGrade : ''}
   ${locationArea ? '2. Location: ' + locationArea : ''}
-  ${budgetDisplay !== '(not specified)' ? '3. Budget: ' + budgetDisplay : ''}
+  ${budgetDisplay !== 'Not yet shared' ? '3. Budget: ' + budgetDisplay : ''}
   ${prioritiesStr ? '4. Top priorities: ' + prioritiesStr : ''}
   ${interestsStr ? '5. Interests: ' + interestsStr : ''}
   ${dealbreakersStr ? '6. Dealbreakers: ' + dealbreakersStr : ''}
@@ -267,12 +267,12 @@ YOU ARE LIAM — direct, strategic, no fluff.`;
 
 FAMILY DATA:
 - CHILD: ${briefChildDisplayName}
-- GRADE: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : '(not specified)'}
-- LOCATION: ${locationArea || '(not specified)'}
+- GRADE: ${childGrade !== null && childGrade !== undefined ? 'Grade ' + childGrade : 'Not yet shared'}
+- LOCATION: ${locationArea || 'Not yet shared'}
 - BUDGET: ${budgetDisplay}
-- PRIORITIES: ${prioritiesStr || '(not specified)'}
-- INTERESTS: ${interestsStr || '(not specified)'}
-- DEALBREAKERS: ${dealbreakersStr || '(not specified)'}
+- PRIORITIES: ${prioritiesStr || 'Not yet shared'}
+- INTERESTS: ${interestsStr || 'Not yet shared'}
+- DEALBREAKERS: ${dealbreakersStr || 'Not yet shared'}
 
 Format as a markdown bullet list with one field per line. Start the child field with "${briefChildDisplayName}:".`;
 
