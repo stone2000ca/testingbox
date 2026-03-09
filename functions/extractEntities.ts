@@ -25,8 +25,8 @@ async function callOpenRouter(options) {
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: userPrompt });
 
-  // Model waterfall: WC-2 upgrade — MiniMax M2.5 primary, GPT-4.1-mini fallback, Gemini Flash tertiary
-  const models = ['minimax/minimax-m2.5', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash'];
+  // Model waterfall: WC-2 upgrade — Gemini 3 Flash Preview primary, GPT-4.1-mini fallback, Gemini Flash tertiary
+  const models = ['google/gemini-3-flash-preview', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash'];
 
   const body = {
     models,
