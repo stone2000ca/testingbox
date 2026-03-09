@@ -31,23 +31,21 @@ function toTitleCase(str) {
   return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
+// S112-WC3: F7 P0 Fix
 function applyReligiousFilter(school, familyProfile, payload) {
   const dealbreakers = payload?.dealbreakers || familyProfile?.dealbreakers || [];
+  const religiousDealbreakTerms = ['religious', 'religion', 'secular only', 'non-religious', 'faith-based', 'faith based', 'catholic', 'christian', 'church', 'denominational', 'secular', 'islamic', 'jewish'];
   const hasReligiousDealbreaker = Array.isArray(dealbreakers) && dealbreakers.some(d =>
-    typeof d === 'string' && (
-      d.toLowerCase().includes('religious') ||
-      d.toLowerCase().includes('religion') ||
-      d.toLowerCase().includes('no religious') ||
-      d.toLowerCase().includes('secular only') ||
-      d.toLowerCase().includes('non-religious')
-    )
+    typeof d === 'string' && religiousDealbreakTerms.some(term => d.toLowerCase().includes(term))
   );
   if (hasReligiousDealbreaker) {
-    if (school.religiousAffiliation && school.religiousAffiliation !== 'None' && school.religiousAffiliation !== 'none' && school.religiousAffiliation !== 'Non-denominational' && school.religiousAffiliation !== 'Secular') {
+    const nonReligiousAffiliations = new Set(['none', 'secular', 'non-denominational', 'n/a', '']);
+    const affiliationNorm = (school.religiousAffiliation || '').toLowerCase().trim();
+    if (school.religiousAffiliation && !nonReligiousAffiliations.has(affiliationNorm)) {
       console.log(`[RELIGIOUS FILTER] Excluded ${school.name}: religious affiliation (${school.religiousAffiliation})`);
       return false;
     }
-    const religiousKeywords = ['christian', 'catholic', 'islamic', 'jewish', 'lutheran', 'baptist', 'adventist', 'anglican', 'saint', 'st.', 'st ', 'holy', 'sacred', 'blessed'];
+    const religiousKeywords = ['christian', 'catholic', 'islamic', 'jewish', 'lutheran', 'baptist', 'adventist', 'anglican', 'saint', 'st.', 'st. ', 'holy', 'sacred', 'blessed', 'bishop', 'trinity', 'yeshiva', 'hebrew', 'our lady', 'gospel', 'covenant', 'faith'];
     const schoolNameLower = school.name?.toLowerCase() || '';
     if (religiousKeywords.some(keyword => schoolNameLower.includes(keyword))) {
       console.log(`[RELIGIOUS FILTER] Excluded ${school.name}: name contains religious keyword`);
