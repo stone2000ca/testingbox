@@ -303,7 +303,7 @@ function resolveTransition(params) {
     }
   }
   if (currentState === STATES.DISCOVERY) {
-    if (tier1Complete && tier1CompletedTurn !== null && turnCount >= (tier1CompletedTurn + 2)) {
+    if (tier1Complete && tier1CompletedTurn !== null && turnCount >= (tier1CompletedTurn + 1)) {
       flags.FORCED_TRANSITION = true;
       return { nextState: STATES.BRIEF, sufficiency, flags, transitionReason: 'enrichment_cap', briefStatus: 'generating', tier1CompletedTurn };
     } else if (turnCount >= 10) {
