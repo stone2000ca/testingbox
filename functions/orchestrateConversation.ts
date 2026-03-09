@@ -1446,12 +1446,19 @@ Object.assign(context, safeUpdatedContext);
         return Response.json(responseData);
       }
 
+      // S108-WC3 Fix 1 (Post-branch): ensure workingProfile is reflected on any responseData
+      // that didn't return early (e.g. unexpected state fallthrough).
+      if (responseData) {
+        responseData.familyProfile = workingProfile;
+        responseData.extractedEntities = workingProfile;
+      }
+
       return Response.json({
         message: 'I encountered an unexpected state. Please try again.',
         state: currentState,
         briefStatus: briefStatus,
         schools: [],
-        familyProfile: conversationFamilyProfile,
+        familyProfile: workingProfile,
         conversationContext: context,
         extractedEntities: extractionResult?.extractedEntities || {}
       });
