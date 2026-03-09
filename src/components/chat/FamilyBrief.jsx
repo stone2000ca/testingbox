@@ -1,4 +1,4 @@
-import { X, User, MapPin, Target, AlertTriangle } from 'lucide-react';
+import { X, User, MapPin, Target, AlertTriangle, BookOpen, Heart } from 'lucide-react';
 
 const EMPTY = 'Not yet discussed';
 
@@ -32,6 +32,12 @@ function formatBudget(val) {
   const num = typeof val === 'number' ? val : parseInt(val);
   if (isNaN(num)) return toTitleCase(String(val));
   return `$${num.toLocaleString()}/yr`;
+}
+
+function formatSchoolType(type) {
+  if (!type) return null;
+  const map = { 'co-ed': 'Co-Ed', 'all-boys': 'All-Boys', 'all-girls': 'All-Girls' };
+  return map[type.toLowerCase()] || toTitleCase(type);
 }
 
 function Field({ label, value }) {
@@ -110,9 +116,42 @@ export default function FamilyBrief({ familyProfile, onClose, consultantName, ex
             label="Child"
             value={fp.childName || (fp.gender === 'male' ? 'Your son' : fp.gender === 'female' ? 'Your daughter' : 'Your child')}
           />
+          {fp.childName && <Field label="Name" value={fp.childName} />}
           <Field label="Grade" value={formatGrade(fp.childGrade)} />
           <Field label="Gender" value={fp.gender} />
           <Field label="Learning Needs" value={learningParts.length > 0 ? learningParts.join(', ') : null} />
+        </section>
+
+        <div className="border-t border-white/8" />
+
+        <section>
+          <div className="flex items-center gap-1.5 mb-3">
+            <MapPin className="h-3.5 w-3.5" style={{ color: accentColor }} />
+            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Logistics</span>
+          </div>
+          {fp.locationArea && <Field label="Location" value={fp.locationArea} />}
+          <Field label="Budget" value={formatBudget(fp.maxTuition || extractedEntities?.maxTuition)} />
+          {fp.schoolType && <Field label="School Type" value={formatSchoolType(fp.schoolType)} />}
+        </section>
+
+        <div className="border-t border-white/8" />
+
+        <section>
+          <div className="flex items-center gap-1.5 mb-3">
+            <BookOpen className="h-3.5 w-3.5" style={{ color: accentColor }} />
+            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Curriculum</span>
+          </div>
+          {fp.curriculumPreference && fp.curriculumPreference.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {fp.curriculumPreference.map((item, i) => (
+                <span key={i} className="text-xs bg-white/10 text-white/75 rounded px-2 py-0.5">
+                  {toTitleCase(item)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-white/30 text-sm italic">No preference yet</span>
+          )}
         </section>
 
         <div className="border-t border-white/8" />
@@ -123,18 +162,26 @@ export default function FamilyBrief({ familyProfile, onClose, consultantName, ex
             <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Priorities & Values</span>
           </div>
           <TagList label="Priorities" items={fp.priorities} />
-          <TagList label="Interests" items={fp.interests} />
         </section>
 
         <div className="border-t border-white/8" />
 
         <section>
           <div className="flex items-center gap-1.5 mb-3">
-            <MapPin className="h-3.5 w-3.5" style={{ color: accentColor }} />
-            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Logistics</span>
+            <Heart className="h-3.5 w-3.5" style={{ color: accentColor }} />
+            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Interests</span>
           </div>
-          <Field label="Location" value={fp.locationArea} />
-          <Field label="Budget" value={formatBudget(fp.maxTuition || extractedEntities?.maxTuition)} />
+          {fp.interests && fp.interests.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {fp.interests.map((item, i) => (
+                <span key={i} className="text-xs bg-white/10 text-white/75 rounded px-2 py-0.5">
+                  {toTitleCase(item)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-white/30 text-sm italic">None captured yet</span>
+          )}
         </section>
 
         <div className="border-t border-white/8" />
@@ -144,7 +191,17 @@ export default function FamilyBrief({ familyProfile, onClose, consultantName, ex
             <AlertTriangle className="h-3.5 w-3.5" style={{ color: accentColor }} />
             <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Dealbreakers</span>
           </div>
-          <TagList label="Dealbreakers" items={fp.dealbreakers} />
+          {fp.dealbreakers && fp.dealbreakers.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {fp.dealbreakers.map((item, i) => (
+                <span key={i} className="text-xs bg-white/10 text-white/75 rounded px-2 py-0.5">
+                  {toTitleCase(item)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-white/30 text-sm italic">None specified</span>
+          )}
         </section>
 
       </div>
