@@ -13,7 +13,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 // =============================================================================
 async function callOpenRouter(options) {
   // callOpenRouter v1.0 -- E25-S2 canonical
-  const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7, _logContext } = options;
+  const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.5, _logContext } = options;
   // _logContext = { base44, conversation_id, phase, is_test } — optional, used for LLMLog only
 
   const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
