@@ -1,8 +1,9 @@
 // Function: extractEntities
 // Purpose: Extract and persist family profile data from parent messages with intent classification
 // Entities: FamilyProfile
-// Last Modified: 2026-03-03
+// Last Modified: 2026-03-09
 // Dependencies: OpenRouter API, Base44 InvokeLLM fallback
+// WC-1: F11 FIX — strip non-schema keys before DB write to prevent Firestore rejection
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
