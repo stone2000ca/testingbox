@@ -1288,6 +1288,38 @@ Object.assign(context, safeUpdatedContext);
 
       console.log('[ORCH] resolveTransition:', { nextState: currentState, intentSignal, sufficiency: resolveResult.sufficiency });
 
+      // S113-WC1: Conditional extractEntities — await for BRIEF/RESULTS, fire-and-forget for DISCOVERY
+      if (currentState === STATES.BRIEF || currentState === STATES.RESULTS) {
+        try {
+          const extractRes = await base44.asServiceRole.functions.invoke('extractEntities', {
+            message: processMessage,
+            conversationFamilyProfile,
+            context,
+            conversationHistory
+          });
+          const extractData = extractRes?.data || {};
+          if (extractData.updatedFamilyProfile) {
+            Object.assign(conversationFamilyProfile, extractData.updatedFamilyProfile);
+            Object.assign(workingProfile, extractData.updatedFamilyProfile);
+            context.accumulatedFamilyProfile = { ...context.accumulatedFamilyProfile, ...extractData.updatedFamilyProfile };
+          }
+          if (extractData.extractedEntities) {
+            extractionResult.extractedEntities = extractData.extractedEntities;
+          }
+          console.log('[S113-WC1] extractEntities awaited for state:', currentState);
+        } catch (e) {
+          console.error('[S113-WC1] extractEntities await failed (non-blocking):', e.message);
+        }
+      } else {
+        // DISCOVERY and all other states: fire-and-forget
+        base44.asServiceRole.functions.invoke('extractEntities', {
+          message: processMessage,
+          conversationFamilyProfile,
+          context,
+          conversationHistory
+        }).catch(e => console.error('[ASYNC] extractEntities failed (non-blocking):', e.message));
+      }
+
       // GIBBERISH DETECTION: Catch nonsensical input before routing to handlers
       const normalizedMsg = (processMessage || '').toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
       const vowels = normalizedMsg.match(/[aeiou]/g) || [];
