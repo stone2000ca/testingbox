@@ -407,7 +407,13 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     }
     if (updatedFamilyProfile?.id) {
       try {
-        const persistedProfile = await base44.entities.FamilyProfile.update(updatedFamilyProfile.id, updatedFamilyProfile);
+        // F11 FIX: Strip non-schema keys before DB write to prevent Firestore rejection
+        const NON_SCHEMA_KEYS = ['intentSignal', 'briefDelta', 'remove_priorities', 'remove_interests', 'remove_dealbreakers'];
+        const profileToSave = { ...updatedFamilyProfile };
+        for (const key of NON_SCHEMA_KEYS) {
+          delete profileToSave[key];
+        }
+        const persistedProfile = await base44.entities.FamilyProfile.update(updatedFamilyProfile.id, profileToSave);
         Object.assign(updatedFamilyProfile, persistedProfile);
         console.log('[EXTRACT] FamilyProfile persisted successfully:', updatedFamilyProfile.id);
       } catch (e) {
