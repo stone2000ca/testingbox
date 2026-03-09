@@ -5,7 +5,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 // Entities: FamilyProfile, ChatHistory, FamilyJourney, SchoolJourney, GeneratedArtifact, LLMLog
 // Last Modified: 2026-03-09
 // Dependencies: OpenRouter API, extractEntities, handleBrief, handleResults, handleDeepDive, processDebriefCompletion
-// WC-2: LLM model upgrade — MiniMax M2.5 as primary model in callOpenRouter waterfall
+// WC-2: LLM model upgrade — google/gemini-3-flash-preview as primary model in callOpenRouter waterfall
 
 // =============================================================================
 // INLINED: callOpenRouter
