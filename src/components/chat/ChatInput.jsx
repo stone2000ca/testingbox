@@ -56,7 +56,6 @@ const ChatInput = forwardRef(({ onSend, disabled, tokenBalance, isPremium }, ref
            onKeyDown={handleKeyDown}
            placeholder="Tell me about your child and what you're looking for..."
            className="min-h-[44px] max-h-[120px] resize-none bg-teal-900/40 border-teal-700/50 text-white placeholder:text-white/50 focus:border-teal-400 focus:ring-teal-400"
-           disabled={disabled}
          />
         <Button 
           type="submit" 
