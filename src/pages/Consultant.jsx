@@ -131,6 +131,10 @@ export default function Consultant() {
   const [extractedEntitiesData, setExtractedEntitiesData] = useState({});
   // T046: Right-side rail panel state
   const [activePanel, setActivePanel] = useState(null); // 'brief' | 'shortlist' | null
+  // E30-006: Track how many dossier cards are expanded to widen the shortlist panel
+  const [expandedCardCount, setExpandedCardCount] = useState(0);
+  const handleDossierExpandChange = (isExpanding) =>
+    setExpandedCardCount(prev => isExpanding ? prev + 1 : Math.max(0, prev - 1));
 
   // BRIEF→RESULTS transition animation
   const [isTransitioning, setIsTransitioning] = useState(false);

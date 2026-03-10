@@ -6,7 +6,7 @@ import { EVENT_TYPE_LABELS, EVENT_TYPE_COLORS, formatEventDate } from '@/compone
 import ApplicationTimeline from '@/components/schools/ApplicationTimeline';
 import SchoolDossierCard from '@/components/chat/SchoolDossierCard';
 
-export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSchool, familyProfile, schoolAnalyses, artifactCache, consultantName, onSendMessage, isPremiumUser }) {
+export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSchool, familyProfile, schoolAnalyses, artifactCache, consultantName, onSendMessage, isPremiumUser, onDossierExpandChange }) {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [eventsLoaded, setEventsLoaded] = useState(false);
   const [timelineExpanded, setTimelineExpanded] = useState(true);

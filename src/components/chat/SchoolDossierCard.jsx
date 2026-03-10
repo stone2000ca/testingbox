@@ -166,6 +166,7 @@ export default function SchoolDossierCard({
   school, familyProfile, schoolAnalyses, artifactCache,
   onRemove, onViewSchool,
   consultantName, onSendMessage, isPremiumUser,
+  onDossierExpandChange,
 }) {
   const [isExpanded,        setIsExpanded]        = useState(false);
   const [aiRecOpen,         setAiRecOpen]         = useState(true);
