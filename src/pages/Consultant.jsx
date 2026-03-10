@@ -552,11 +552,16 @@ export default function Consultant() {
       ]);
       
       // Build indexed map keyed by schoolId_artifactType
+      const TYPE_REMAP = {
+        deep_dive_recommendation: 'deep_dive_analysis',
+        visit_prep_kit: 'visit_prep',
+      };
       const map = {};
       for (const artifact of artifacts) {
         const schoolIds = artifact.schoolIds || [];
         for (const schoolId of schoolIds) {
-          const key = `${schoolId}_${artifact.artifactType}`;
+          const remappedType = TYPE_REMAP[artifact.artifactType] || artifact.artifactType;
+          const key = `${schoolId}_${remappedType}`;
           map[key] = artifact.content;
         }
       }
