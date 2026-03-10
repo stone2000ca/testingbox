@@ -1,7 +1,7 @@
 // Function: handleDeepDive
 // Purpose: Handle deep-dive school analysis with visit prep generation and debrief mode routing
 // Entities: School, SchoolAnalysis, GeneratedArtifact, SchoolEvent, User
-// Last Modified: 2026-03-10
+// Last Modified: 2026-03-09
 // Dependencies: OpenRouter API, Base44 InvokeLLM fallback, handleVisitDebrief function
 // WC-2: LLM model upgrade — MiniMax M2.5 as primary model in callOpenRouter waterfall
 // S115-WC2: E10b structured output parse fix
