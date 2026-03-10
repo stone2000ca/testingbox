@@ -1513,6 +1513,9 @@ export default function Consultant() {
               familyProfile={familyProfile}
               schoolAnalyses={schoolAnalyses}
               artifactCache={artifactCache}
+              consultantName={selectedConsultant}
+              onSendMessage={handleSendMessage}
+              isPremiumUser={isPremium}
               onViewSchool={(id) => {
                 handleViewSchoolDetail(id);
                 setActivePanel(null);
