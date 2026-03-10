@@ -1563,6 +1563,8 @@ export default function Consultant() {
                 handleViewSchoolDetail(id);
                 setActivePanel(null);
               }}
+              autoExpandSchoolId={autoExpandSchoolId}
+              onClearAutoExpand={() => setAutoExpandSchoolId(null)}
             />
           </div>
         )}

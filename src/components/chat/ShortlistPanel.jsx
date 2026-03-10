@@ -6,12 +6,21 @@ import { EVENT_TYPE_LABELS, EVENT_TYPE_COLORS, formatEventDate } from '@/compone
 import ApplicationTimeline from '@/components/schools/ApplicationTimeline';
 import SchoolDossierCard from '@/components/chat/SchoolDossierCard';
 
-export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSchool, familyProfile, schoolAnalyses, artifactCache, consultantName, onSendMessage, isPremiumUser, onDossierExpandChange, onConfirmDeepDive, pendingDeepDiveSchoolIds }) {
+export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSchool, familyProfile, schoolAnalyses, artifactCache, consultantName, onSendMessage, isPremiumUser, onDossierExpandChange, onConfirmDeepDive, pendingDeepDiveSchoolIds, autoExpandSchoolId, onClearAutoExpand }) {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [eventsLoaded, setEventsLoaded] = useState(false);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
+  const [expandedSchoolId, setExpandedSchoolId] = useState(null);
   // E16a-019: Reminded events loaded from localStorage
   const [remindedEvents, setRemindedEvents] = useState(new Set());
+
+  // E30-012 + E30-013: Auto-expand school after deep dive
+  useEffect(() => {
+    if (autoExpandSchoolId) {
+      setExpandedSchoolId(autoExpandSchoolId);
+      onClearAutoExpand?.();
+    }
+  }, [autoExpandSchoolId]);
 
   // E16a-019: Load reminded events from localStorage on mount
   useEffect(() => {
@@ -130,6 +139,8 @@ export default function ShortlistPanel({ shortlist, onClose, onRemove, onViewSch
                 onDossierExpandChange={onDossierExpandChange}
                 onConfirmDeepDive={onConfirmDeepDive}
                 pendingDeepDiveSchoolIds={pendingDeepDiveSchoolIds}
+                isExpanded={expandedSchoolId === school.id}
+                onToggleExpand={() => setExpandedSchoolId(prev => prev === school.id ? null : school.id)}
               />
             ))}
           </div>
