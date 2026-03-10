@@ -488,7 +488,7 @@ export default function Consultant() {
         console.error('[E29-012] SchoolJourney shortlist hydration failed:', e.message);
       }
     })();
-  }, [isAuthenticated, user?.id, sessionIdParam]);
+  }, [isAuthenticated, user?.id, sessionIdParam, currentConversation?.id]);
 
 
 
