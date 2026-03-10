@@ -431,8 +431,8 @@ function lightweightExtract(message, existingProfile) {
   // Gender extraction
   const strongGenderKw = /\b(son|daughter)\b/i.test(message);
   if (strongGenderKw || !existingProfile?.childGender) {
-    if (/\b(son|boy|he|him|his)\b/i.test(message)) bridgeProfile.childGender = 'male';
-    else if (/\b(daughter|girl|she|her)\b/i.test(message)) bridgeProfile.childGender = 'female';
+    if (/\b(son|boy|he|him|his)\b/i.test(message)) { bridgeProfile.childGender = 'male'; bridgeProfile.gender = 'male'; }
+    else if (/\b(daughter|girl|she|her)\b/i.test(message)) { bridgeProfile.childGender = 'female'; bridgeProfile.gender = 'female'; }
   }
 
   // S111-WC3: Child name extraction
@@ -486,7 +486,7 @@ function lightweightExtract(message, existingProfile) {
 
   // S111-WC3: Interests extraction (verb-anchored)
   const INTEREST_KEYWORDS = 'art|arts|music|sports|athletics|drama|theatre|theater|science|coding|robotics|swimming|hockey|soccer|basketball|dance|piano|guitar|reading|writing|math';
-  const interestVerbPattern = new RegExp(`\\b(?:loves?|likes?|enjoys?|interested\\s+in|passionate\\s+about|into)\\s+(${INTEREST_KEYWORDS})\\b`, 'gi');
+  const interestVerbPattern = new RegExp(`\\b(?:loves?|likes?|enjoys?|plays?|interested\\s+in|passionate\\s+about|into)\\s+(${INTEREST_KEYWORDS})\\b`, 'gi');
   const interestListPattern = new RegExp(`\\b(?:interests?|hobbies|activities)\\s*:?\\s*((?:(?:${INTEREST_KEYWORDS})(?:\\s*,\\s*|\\s+and\\s+|\\s+))+(?:${INTEREST_KEYWORDS}))`, 'gi');
   const foundInterests = new Set();
   let iMatch;
@@ -502,7 +502,7 @@ function lightweightExtract(message, existingProfile) {
       }
     });
   }
-  const interestCommaPattern = new RegExp(`\\b(?:loves?|likes?|enjoys?|interested\\s+in|passionate\\s+about|into)\\s+(.+?)(?:[.!?]|$)`, 'gi');
+  const interestCommaPattern = new RegExp(`\\b(?:loves?|likes?|enjoys?|plays?|interested\\s+in|passionate\\s+about|into)\\s+(.+?)(?:[.!?]|$)`, 'gi');
   let cMatch;
   while ((cMatch = interestCommaPattern.exec(message)) !== null) {
     const items = cMatch[1].split(/\s*,\s*|\s+and\s+/);
