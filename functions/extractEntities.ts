@@ -5,6 +5,7 @@
 // Dependencies: OpenRouter API, Base44 InvokeLLM fallback
 // WC-1: F11 FIX — strip non-schema keys before DB write to prevent Firestore rejection
 // WC-2: LLM model upgrade — MiniMax M2.5 as primary model in callOpenRouter waterfall
+// WC-3: S122 extraction bug fixes — location false positive, interests list, gender keywords
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
@@ -153,6 +154,15 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
     if (/\b(son|boy|he|him|his)\b/i.test(message)) extractedGender = 'male';
     else if (/\b(daughter|girl|she|her|hers)\b/i.test(message)) extractedGender = 'female';
 
+    let extractedInterests = [];
+    const interestsMatch = message.match(/(?:loves?|enjoys?|into|interested in|passionate about|likes?)\s+(.+)/i);
+    if (interestsMatch) {
+      extractedInterests = interestsMatch[1]
+        .split(/,\s*|\s+and\s+/)
+        .map(s => s.trim().replace(/\.$/, ''))
+        .filter(s => s.length > 0 && s.length < 40);
+    }
+
     // Regex detection for explicit school gender preference / exclusions
     let extractedSchoolGenderPref = null;
     let extractedSchoolGenderExclusions = [];
@@ -172,7 +182,8 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
     };
 
     let extractedLocation = null;
-    const locationMatch = message.match(/\b(?:in|near|around|from)\s+([a-zA-Z]+(?:[\s-][a-zA-Z]+)?(?:,\s*[A-Za-z]{2,})?)/);
+    const NON_LOCATION_TERMS = /^(IB|AP|STEM|IGCSE|Montessori|Waldorf|Reggio|French|Programs?|Immersion|Curriculum|English|Math|Science|Art|Music|Drama|History|Swimming|Robotics|Coding|Hockey|Soccer|Basketball|Tennis|Debate)$/i;
+    const locationMatch = message.match(/(?<!interested\s)(?<!enrolled\s)(?<!participate\s)(?<!believe\s)\b(?:in|near|around|from)\s+([a-zA-Z]+(?:[\s-][a-zA-Z]+)?(?:,\s*[A-Za-z]{2,})?)/);
     if (locationMatch && locationMatch[1]) {
       const hasCapitalizedWord = /\b[A-Z]/.test(locationMatch[1]);
       if (!hasCapitalizedWord) {
@@ -309,7 +320,8 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     if (extractedGrade !== null && !finalResult.childGrade) {
       finalResult = { ...finalResult, childGrade: extractedGrade };
     }
-    if (extractedGender !== null && !finalResult.gender) {
+    const strongGenderKeyword = /\b(son|daughter|boy|girl)\b/i.test(message);
+    if (extractedGender !== null && (strongGenderKeyword || !finalResult.gender)) {
       finalResult = { ...finalResult, gender: extractedGender };
     }
     if (finalResult.gender) {
@@ -323,6 +335,9 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     }
     if ((finalResult.maxTuition === null || finalResult.maxTuition === undefined) && extractedBudget !== null) {
       finalResult = { ...finalResult, maxTuition: extractedBudget };
+    }
+    if (extractedInterests.length > 0 && (!finalResult.interests || finalResult.interests.length < extractedInterests.length)) {
+      finalResult = { ...finalResult, interests: [...new Set([...(finalResult.interests || []), ...extractedInterests])] };
     }
     let effectiveLocation = finalResult.locationArea;
     if (effectiveLocation) {
