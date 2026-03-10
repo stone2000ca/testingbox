@@ -1236,6 +1236,8 @@ export default function Consultant() {
     const wasRemoved = (removedSchoolIds || []).includes(schoolId);
     if (!alreadyShortlisted && !wasRemoved) {
       handleToggleShortlist(schoolId, { silent: true });
+      const schoolName = lastMsg.deepDiveAnalysis.schoolName || schoolAnalyses?.[schoolId]?.schoolName || 'School';
+      toast(`${schoolName} added to your shortlist`, { duration: 3000 });
     }
     setTimeout(() => {
       setAutoExpandSchoolId(schoolId);
