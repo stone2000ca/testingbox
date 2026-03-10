@@ -101,6 +101,17 @@ async function callOpenRouter(options) {
 }
 
 // =============================================================================
+// HELPER: extractConciseSummary — E30-009
+// =============================================================================
+function extractConciseSummary(fullProse) {
+  const sentences = fullProse.split(/(?<=[.!?])\s+/);
+  const meaningful = sentences.filter(s => s.trim().length > 0);
+  if (meaningful.length < 2) return fullProse;
+  const concise = meaningful.slice(0, 3).join(' ');
+  return concise + " I've saved the full breakdown to your shortlist -- tap the bookmark icon to see everything.";
+}
+
+// =============================================================================
 // MAIN: Deno.serve — handleDeepDive
 // =============================================================================
 Deno.serve(async (req) => {
@@ -570,7 +581,8 @@ Generate the DEEPDIVE card for this family-school match.`;
       }
     }
 
-    const finalMessage = sanitizedMessage + followUpPrompt;
+    const conciseMessage = extractConciseSummary(sanitizedMessage);
+    const finalMessage = conciseMessage + followUpPrompt;
 
     // E16a-015: Calculate tourRequestOffered
     const isPremium = selectedSchool.schoolTier === 'growth' || selectedSchool.schoolTier === 'pro';
