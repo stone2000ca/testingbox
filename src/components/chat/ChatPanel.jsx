@@ -7,10 +7,6 @@ import MessageBubble from '@/components/chat/MessageBubble';
 import ChatInput from '@/components/chat/ChatInput';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import DeepDiveConfirmation from '@/components/dialogs/DeepDiveConfirmation';
-import PremiumGate from '@/components/dialogs/PremiumGate';
-import SchoolAnalysisCard from '@/components/chat/SchoolAnalysisCard';
-import VisitPrepCard from '@/components/chat/VisitPrepCard';
-import FitReEvaluationCard from '@/components/chat/FitReEvaluationCard';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 

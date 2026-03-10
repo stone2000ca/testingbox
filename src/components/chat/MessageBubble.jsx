@@ -1,37 +1,7 @@
 import ReactMarkdown from 'react-markdown';
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-
-// Parse deep dive content into sections by markdown headers (## or ###)
-function parseDeepDiveSections(content) {
-  const lines = content.split('\n');
-  const sections = [];
-  let currentSection = null;
-
-  for (const line of lines) {
-    const headerMatch = line.match(/^(#{2,3})\s+(.+)$/);
-    if (headerMatch) {
-      if (currentSection) {
-        sections.push(currentSection);
-      }
-      currentSection = {
-        title: headerMatch[2].trim(),
-        content: ''
-      };
-    } else if (currentSection) {
-      currentSection.content += (currentSection.content ? '\n' : '') + line;
-    }
-  }
-
-  if (currentSection) {
-    sections.push(currentSection);
-  }
-
-  return sections;
-}
 
 export default function MessageBubble({ message, isUser, onViewSchoolProfile, schools, consultantName }) {
   const accentColor = consultantName === 'Jackie' ? '#C27B8A' : '#6B9DAD';
-  const isDeepDive = message.deepDiveAnalysis;
   
   return (
     <div className={`flex gap-2 sm:gap-3 ${isUser ? 'justify-end' : 'justify-start'} ${!isUser ? 'animate-fadeIn' : ''}`}>
