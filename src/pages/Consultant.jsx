@@ -1527,6 +1527,9 @@ export default function Consultant() {
               consultantName={selectedConsultant}
               onSendMessage={handleSendMessage}
               isPremiumUser={isPremium}
+              onDossierExpandChange={handleDossierExpandChange}
+              onConfirmDeepDive={handleDeepDiveFromDossier}
+              pendingDeepDiveSchoolIds={pendingDeepDiveSchoolIds}
               onViewSchool={(id) => {
                 handleViewSchoolDetail(id);
                 setActivePanel(null);
@@ -1751,6 +1754,8 @@ export default function Consultant() {
             onSendMessage={handleSendMessage}
             isPremiumUser={isPremium}
             onDossierExpandChange={handleDossierExpandChange}
+            onConfirmDeepDive={handleDeepDiveFromDossier}
+            pendingDeepDiveSchoolIds={pendingDeepDiveSchoolIds}
             onViewSchool={(id) => {
               handleViewSchoolDetail(id);
               setShowShortlistPanel(false);
