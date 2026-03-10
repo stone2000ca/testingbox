@@ -1733,8 +1733,12 @@ export default function Consultant() {
             shortlist={shortlistData}
             onClose={() => setShowShortlistPanel(false)}
             onRemove={handleToggleShortlist}
+            familyProfile={familyProfile}
             schoolAnalyses={schoolAnalyses}
             artifactCache={artifactCache}
+            consultantName={selectedConsultant}
+            onSendMessage={handleSendMessage}
+            isPremiumUser={isPremium}
             onViewSchool={(id) => {
               handleViewSchoolDetail(id);
               setShowShortlistPanel(false);
