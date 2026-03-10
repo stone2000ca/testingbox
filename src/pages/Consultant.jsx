@@ -1743,6 +1743,7 @@ export default function Consultant() {
             consultantName={selectedConsultant}
             onSendMessage={handleSendMessage}
             isPremiumUser={isPremium}
+            onDossierExpandChange={handleDossierExpandChange}
             onViewSchool={(id) => {
               handleViewSchoolDetail(id);
               setShowShortlistPanel(false);
