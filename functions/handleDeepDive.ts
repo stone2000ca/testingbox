@@ -539,7 +539,7 @@ Generate the DEEPDIVE card for this family-school match.`;
 
         const writes = [
           upsert('action_plan', { content: JSON.stringify(generatedActionPlan), isLocked: !isPremiumUser, metadata: { version: 'E30_V1' } }),
-          ...(aiMessageRaw ? [upsert('deep_dive_recommendation', { content: finalMessage, metadata: { rawAnalysis: aiMessageRaw, version: 'E30_V1' } })] : []),
+          ...(aiMessageRaw ? [upsert('deep_dive_recommendation', { content: sanitizedMessage, metadata: { rawAnalysis: aiMessageRaw, version: 'E30_V1' } })] : []),
           ...(fullVisitPrepKit ? [upsert('visit_prep_kit', { content: JSON.stringify(fullVisitPrepKit), isLocked: false, metadata: { version: 'E30_V1' } })] : [])
         ];
 
