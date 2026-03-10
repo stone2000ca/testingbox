@@ -1731,6 +1731,7 @@ export default function Consultant() {
             onClose={() => setShowShortlistPanel(false)}
             onRemove={handleToggleShortlist}
             schoolAnalyses={schoolAnalyses}
+            artifactCache={artifactCache}
             onViewSchool={(id) => {
               handleViewSchoolDetail(id);
               setShowShortlistPanel(false);
