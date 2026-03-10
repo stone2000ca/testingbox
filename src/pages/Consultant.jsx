@@ -136,6 +136,9 @@ export default function Consultant() {
   const handleDossierExpandChange = (isExpanding) =>
     setExpandedCardCount(prev => isExpanding ? prev + 1 : Math.max(0, prev - 1));
 
+  // E30-011: Auto-expand school ID in shortlist panel (set by dossier chip)
+  const [autoExpandSchoolId, setAutoExpandSchoolId] = useState(null);
+
   // E30-008: Track pending deep-dive school IDs (CTA spinner state)
   const [pendingDeepDiveSchoolIds, setPendingDeepDiveSchoolIds] = useState(new Set());
   const handleDeepDiveFromDossier = (school) => {

@@ -174,11 +174,6 @@ const ChatPanel = forwardRef(function ChatPanel({
             msg.role === 'assistant' &&
             index === messages.map(m => m.role).lastIndexOf('assistant');
 
-          // Anchor cards to the message that generated them (FIX 2)
-          const msgAnalysis = msg.deepDiveAnalysis || null;
-          const msgVisitPrepKit = msg.visitPrepKit || null;
-          const msgFitReEval = msg.fitReEvaluation || null;
-
           return (
             <div key={index}>
               <MessageBubble
@@ -188,52 +183,17 @@ const ChatPanel = forwardRef(function ChatPanel({
                 consultantName={selectedConsultant}
                 onViewSchoolProfile={handleViewSchoolProfile}
               />
-              {msgAnalysis && currentState === STATES.DEEP_DIVE && !isTyping && (
-                <SchoolAnalysisCard analysis={msgAnalysis} />
-              )}
-              {msgVisitPrepKit && currentState === STATES.DEEP_DIVE && !isTyping && (
-                <div className="relative">
-                  {msgVisitPrepKit.__gated ? (
-                    <PremiumGate
-                      feature="visit-prep"
-                      isPremium={false}
-                      schoolName={msgVisitPrepKit.schoolName}
-                      onUpgrade={onUpgrade}
-                    >
-                      <VisitPrepCard
-                        schoolName={msgVisitPrepKit.schoolName}
-                        visitQuestions={msgVisitPrepKit.visitQuestions}
-                        observations={msgVisitPrepKit.observations}
-                        redFlags={msgVisitPrepKit.redFlags}
-                        isPremium={isPremium}
-                        onUpgrade={onUpgrade}
-                      />
-                    </PremiumGate>
-                  ) : (
-                    <VisitPrepCard
-                      schoolName={msgVisitPrepKit.schoolName}
-                      visitQuestions={msgVisitPrepKit.visitQuestions}
-                      observations={msgVisitPrepKit.observations}
-                      redFlags={msgVisitPrepKit.redFlags}
-                      isPremium={isPremium}
-                      onUpgrade={onUpgrade}
-                    />
-                  )}
-                </div>
-              )}
-              {msgFitReEval && currentState === STATES.DEEP_DIVE && !isTyping && (
-                msgFitReEval.__gated ? (
-                  <PremiumGate
-                    feature="debrief-analysis"
-                    isPremium={false}
-                    schoolName={msgFitReEval.schoolName}
-                    onUpgrade={onUpgrade}
-                  >
-                    <FitReEvaluationCard fitReEvaluation={msgFitReEval} />
-                  </PremiumGate>
-                ) : (
-                  <FitReEvaluationCard fitReEvaluation={msgFitReEval} />
-                )
+              {msg.deepDiveAnalysis && msg.role === 'assistant' && !isTyping && onTogglePanel && onSetExpandedSchool && (
+                <button
+                  onClick={() => {
+                    onTogglePanel('shortlist');
+                    onSetExpandedSchool(msg.deepDiveAnalysis.schoolId);
+                  }}
+                  className="mt-1 ml-11 text-xs font-medium px-3 py-1 rounded-full transition-colors"
+                  style={{ background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.3)', color: '#2dd4bf' }}
+                >
+                  View full analysis →
+                </button>
               )}
             </div>
           );
