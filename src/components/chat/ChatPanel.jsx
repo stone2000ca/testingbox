@@ -45,9 +45,8 @@ const ChatPanel = forwardRef(function ChatPanel({
   familyProfile = null,
   showNewMessageIndicator = false,
   onScrollDownClick = null,
-  deepDiveAnalysis = null,
-  visitPrepKit = null,
-  fitReEvaluation = null,
+  onTogglePanel = null,
+  onSetExpandedSchool = null,
   // Slots
   heroContent = null,
   // Variant: 'intake' (light feedback) or 'sidebar' (dark feedback)

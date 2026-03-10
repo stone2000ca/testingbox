@@ -1180,10 +1180,9 @@ export default function Consultant() {
     feedbackPromptShown,
     showResponseChips,
     familyProfile,
-    deepDiveAnalysis: deepDiveAnalysis || null,
-    visitPrepKit: visitPrepKit || null,
-    fitReEvaluation: fitReEvaluation || null,
     onSendMessage: handleSendMessage,
+    onTogglePanel: setActivePanel,
+    onSetExpandedSchool: setAutoExpandSchoolId,
     onViewSchoolDetail: (school) => {
       setSelectedSchool(school);
       setCurrentView('detail');

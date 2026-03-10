@@ -18,43 +18,6 @@ export default function MessageBubble({ message, isUser, onViewSchoolProfile, sc
         }`}>
           {isUser ? (
            <p className="text-sm leading-relaxed">{message.content}</p>
-          ) : isDeepDive ? (
-           <Accordion type="single" collapsible className="w-full">
-              {parseDeepDiveSections(message.content).map((section, idx) => (
-                <AccordionItem key={idx} value={`section-${idx}`} className="border-white/20">
-                  <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2 px-0 text-white">
-                    {section.title}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-white/90 pt-2 pb-0">
-                    <ReactMarkdown 
-                      className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-                      components={{
-                        p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
-                        ul: ({ children }) => <ul className="my-1 ml-4 list-disc">{children}</ul>,
-                        ol: ({ children }) => <ol className="my-1 ml-4 list-decimal">{children}</ol>,
-                        li: ({ children }) => <li className="my-0.5">{children}</li>,
-                        strong: ({ children }) => <strong className="font-semibold" style={{ color: accentColor }}>{children}</strong>,
-                        a: ({ href, children }) => (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (href) window.open(href, '_blank');
-                            }}
-                            className="hover:underline cursor-pointer font-semibold inline bg-transparent border-none p-0"
-                            style={{ color: accentColor }}
-                          >
-                            {children}
-                          </button>
-                        )
-                      }}
-                    >
-                      {section.content}
-                    </ReactMarkdown>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
           ) : (
            <ReactMarkdown 
               className="text-sm prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
