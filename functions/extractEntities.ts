@@ -155,7 +155,7 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
     else if (/\b(daughter|girl|she|her|hers)\b/i.test(message)) extractedGender = 'female';
 
     let extractedInterests = [];
-    const interestsMatch = message.match(/(?:loves?|enjoys?|into|interested in|passionate about|likes?)\s+(.+)/i);
+    const interestsMatch = message.match(/(?:loves?|enjoys?|into|interested in|passionate about|likes?)\s+(.+?)(?:[.!?]|$)/i);
     if (interestsMatch) {
       extractedInterests = interestsMatch[1]
         .split(/,\s*|\s+and\s+/)
