@@ -258,14 +258,14 @@ export default function SchoolDossierCard({
   const analysis  = schoolAnalyses?.[school.id];
   const fitConfig = analysis?.fitLabel ? FIT_BADGE[analysis.fitLabel] : null;
 
-  const aiRecContent = artifactCache?.[`${school.id}_deep_dive_recommendation`] || null;
+  const aiRecContent = artifactCache?.[`${school.id}_deep_dive_analysis`] || null;
 
   const tradeOffs = Array.isArray(analysis?.tradeOffs) && analysis.tradeOffs.length > 0
     ? analysis.tradeOffs
     : null;
 
   let visitPrepData = null;
-  const visitPrepRaw = artifactCache?.[`${school.id}_visit_prep_kit`];
+  const visitPrepRaw = artifactCache?.[`${school.id}_visit_prep`];
   if (visitPrepRaw) {
     try {
       visitPrepData = typeof visitPrepRaw === 'string' ? JSON.parse(visitPrepRaw) : visitPrepRaw;
@@ -398,14 +398,35 @@ export default function SchoolDossierCard({
 
           {tradeOffs && (
             <AccordionSection title="Trade-offs" isOpen={tradeOffsOpen} onToggle={() => setTradeOffsOpen(v => !v)}>
-              <ul className="space-y-1">
-                {tradeOffs.map((item, i) => (
-                  <li key={i} className="text-xs text-slate-400 flex items-start gap-1.5">
-                    <span className="mt-0.5 flex-shrink-0 text-slate-500">•</span>
-                    <span>{typeof item === 'string' ? item : item.text || item.description || JSON.stringify(item)}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-1.5">
+                {tradeOffs.map((item, i) => {
+                  if (typeof item === 'string') {
+                    return (
+                      <div key={i} className="text-xs text-slate-400 flex items-start gap-1.5">
+                        <span className="mt-0.5 flex-shrink-0 text-slate-500">•</span>
+                        <span>{item}</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      key={i}
+                      className="rounded px-2 py-1.5 space-y-0.5"
+                      style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}
+                    >
+                      {item.dimension && (
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{item.dimension}</p>
+                      )}
+                      {item.strength && (
+                        <p className="text-xs text-emerald-400 leading-snug">{item.strength}</p>
+                      )}
+                      {item.concern && (
+                        <p className="text-xs text-amber-400 leading-snug">{item.concern}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </AccordionSection>
           )}
 
