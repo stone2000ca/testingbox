@@ -123,9 +123,7 @@ export default function Consultant() {
   // Family Brief panel
   const [briefExpanded, setBriefExpanded] = useState(false);
   const [lastTypingTime, setLastTypingTime] = useState(Date.now());
-  const [familyProfile, setFamilyProfile] = useState(null);
   const [showFamilyBrief, setShowFamilyBrief] = useState(false);
-  const [extractedEntitiesData, setExtractedEntitiesData] = useState({});
   // T046: Right-side rail panel state
   const [activePanel, setActivePanel] = useState(null); // 'brief' | 'shortlist' | null
 
