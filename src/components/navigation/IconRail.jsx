@@ -19,6 +19,10 @@ export default function IconRail({ currentState, activePanel, onTogglePanel }) {
   const shortlistOpacity = shortlistEnabled ? 1 : 0.35;
   const shortlistActive = activePanel === 'shortlist';
 
+  // Add School: enabled only in RESULTS/DEEPDIVE
+  const addSchoolEnabled = isResults;
+  const addSchoolActive = activePanel === 'addSchool';
+
   return (
     <nav
       className="hidden lg:flex flex-col items-center pt-4 gap-3 flex-shrink-0 border-l border-white/10"
@@ -83,6 +87,14 @@ export default function IconRail({ currentState, activePanel, onTogglePanel }) {
         onClick={() => shortlistEnabled && onTogglePanel('shortlist')}
         disabledTip="Available after finding schools"
         shortlistCount={0}
+      />
+      <RailIcon
+        icon={Search}
+        label="+ School"
+        enabled={addSchoolEnabled}
+        active={addSchoolActive}
+        onClick={() => addSchoolEnabled && onTogglePanel('addSchool')}
+        disabledTip="Available after finding schools"
       />
     </nav>
   );
