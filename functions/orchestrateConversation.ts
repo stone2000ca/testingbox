@@ -121,7 +121,7 @@ async function callOpenRouter(options) {
         phase: _logContext.phase || 'unknown',
         model: data.model || 'unknown',
         prompt_summary: fullPromptStr.substring(0, 500),
-        response_summary: content.substring(0, 500),
+        response_summary: (content || '').substring(0, 500),
         token_count_in: data.usage?.prompt_tokens || 0,
         token_count_out: data.usage?.completion_tokens || 0,
         latency_ms,
@@ -1605,8 +1605,8 @@ Object.assign(context, safeUpdatedContext);
         responseData.extractedEntities = extractionResult?.extractedEntities || {};
         // E32-001: Validate and attach actions
         const validSchoolIds_results = new Set((responseData.schools || currentSchools || []).map(s => s.id));
-        responseData.actions = responseData.toolCalls ? validateActions(responseData.toolCalls, validSchoolIds_results, base44, conversationId) : [];
-        delete responseData.toolCalls;
+        responseData.actions = responseData.rawToolCalls ? validateActions(responseData.rawToolCalls, validSchoolIds_results, base44, conversationId) : [];
+        delete responseData.rawToolCalls;
         return Response.json(responseData);
       }
 
@@ -1654,8 +1654,8 @@ Object.assign(context, safeUpdatedContext);
         responseData.extractedEntities = extractionResult?.extractedEntities || {};
         // E32-001: Validate and attach actions
         const validSchoolIds_deepdive = new Set((responseData.schools || currentSchools || []).map(s => s.id));
-        responseData.actions = responseData.toolCalls ? validateActions(responseData.toolCalls, validSchoolIds_deepdive, base44, conversationId) : [];
-        delete responseData.toolCalls;
+        responseData.actions = responseData.rawToolCalls ? validateActions(responseData.rawToolCalls, validSchoolIds_deepdive, base44, conversationId) : [];
+        delete responseData.rawToolCalls;
 
         // E29-010/E29-012: Fire-and-forget — next action + session summary + totalSessions increment
         fireJourneyUpdate(base44, journeyContext, context, conversationHistory, message, 'DEEP_DIVE');
