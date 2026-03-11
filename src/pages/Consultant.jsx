@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import School from '@/entities/School';
 import SchoolJourney from '@/entities/SchoolJourney';
@@ -127,6 +127,13 @@ export default function Consultant() {
   const [showFamilyBrief, setShowFamilyBrief] = useState(false);
   // T046: Right-side rail panel state
   const [activePanel, setActivePanel] = useState(null); // 'brief' | 'shortlist' | null
+
+  // E31-003: Load More Schools state
+  const [extraSchools, setExtraSchools] = useState([]);
+  const [extraSchoolsPage, setExtraSchoolsPage] = useState(1);
+  const [extraSchoolsHasMore, setExtraSchoolsHasMore] = useState(true);
+  const [extraSchoolsLoading, setExtraSchoolsLoading] = useState(false);
+  const [extraSchoolsError, setExtraSchoolsError] = useState(null);
 
   // BRIEF→RESULTS transition animation
   const [isTransitioning, setIsTransitioning] = useState(false);

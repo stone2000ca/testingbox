@@ -185,6 +185,12 @@ export default function SchoolGrid({
   onNarrateComparison = null,
   onOpenComparison = null,
   visitedSchoolIds = new Set(),
+  extraSchools = [],
+  onLoadMore = null,
+  extraSchoolsLoading = false,
+  extraSchoolsHasMore = true,
+  extraSchoolsError = null,
+  userLocationAvailable = false,
 }) {
   // Guard: ensure schools is always an array
   if (!schools || !Array.isArray(schools)) {
@@ -363,6 +369,64 @@ export default function SchoolGrid({
           Showing {totalVisible} of {totalVisible + tier3Count} schools
           {tier3Count > 0 && !tier3Expanded && ` · ${tier3Count} more available`}
         </div>
+
+        {/* E31-003: Load More Schools - Distance-Based Discovery */}
+        {onLoadMore && (
+          <div className="mt-6">
+            {extraSchools.length > 0 && (
+              <div className="mb-4">
+                <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-slate-800">More Schools Nearby</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Sorted by distance from your location</p>
+                </div>
+                <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', alignItems: 'stretch' }}>
+                  {extraSchools.map((school, index) => (
+                    <div key={school.id} className="flex">
+                      <SchoolCard
+                        school={school}
+                        index={index}
+                        onViewDetails={() => onViewDetails(school.id)}
+                        onToggleShortlist={onToggleShortlist}
+                        isShortlisted={shortlistedIds.includes(school.id)}
+                        familyProfile={familyProfile}
+                        accentColor={accentColor}
+                        showDistance={true}
+                        isVisited={visitedSchoolIds.has(school.id)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!userLocationAvailable ? (
+              <div className="text-center py-4 text-sm text-slate-500">
+                Share your location to discover nearby schools
+              </div>
+            ) : extraSchoolsError === 'fetch_failed' ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-red-500 mb-2">Could not load more schools</p>
+                <button onClick={onLoadMore} className="text-sm text-teal-600 hover:text-teal-700 font-medium">Try again</button>
+              </div>
+            ) : !extraSchoolsHasMore && extraSchools.length > 0 ? (
+              <div className="text-center py-4 text-sm text-slate-400">
+                You've seen all nearby schools
+              </div>
+            ) : (
+              <button
+                onClick={onLoadMore}
+                disabled={extraSchoolsLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-teal-200 hover:border-teal-300 bg-teal-50 hover:bg-teal-100 text-sm text-teal-700 font-medium transition-colors disabled:opacity-60"
+              >
+                {extraSchoolsLoading ? (
+                  <><div className="h-4 w-4 border-2 border-teal-300 border-t-teal-600 rounded-full animate-spin" /> Loading...</>
+                ) : (
+                  <><Pin className="h-4 w-4" /> Load more schools nearby</>
+                )}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   }
