@@ -25,6 +25,7 @@ import { validateBriefContent, generateProgrammaticBrief } from '../components/u
 import { buildTiers } from '../components/utils/tierEngine';
 import { useUserLocation } from '../components/hooks/useUserLocation';
 import { useShortlist } from '../components/hooks/useShortlist';
+import { useDataLoader } from '../components/hooks/useDataLoader';
 import { extractAndSaveMemories } from '../components/utils/memoryManager';
 import { restoreSessionFromParam } from '@/components/chat/SessionRestorer';
 import ConsultantDialogs from '@/components/chat/ConsultantDialogs';
