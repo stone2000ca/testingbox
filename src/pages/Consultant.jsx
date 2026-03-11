@@ -1496,9 +1496,9 @@ export default function Consultant() {
               </div>
               <div className="flex-1 overflow-auto p-3 sm:p-4">
                 <SchoolGrid
-                key={`${schoolsAnimKey}-${sortMode}-${JSON.stringify(priorityOverrides)}`}
+                key={`${schoolsAnimKey}-${JSON.stringify(priorityOverrides)}`}
                 schools={filteredSchools}
-                tieredSchools={buildTiers(filteredSchools, familyProfile, sortMode, priorityOverrides)}
+                tieredSchools={buildTiers(filteredSchools, familyProfile, priorityOverrides)}
                 onViewDetails={handleViewSchoolDetail}
                 onToggleShortlist={handleToggleShortlist}
                 shortlistedIds={user?.shortlist || []}
