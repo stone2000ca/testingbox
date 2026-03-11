@@ -267,21 +267,7 @@ export default function Consultant() {
   // Override: show split layout if schools exist (from session restore)
   const showSchoolGrid = schools.length > 0;
 
-  // E13a-WC4: Load visited school IDs when in RESULTS or DEEP_DIVE
-  useEffect(() => {
-    if (![STATES.RESULTS, STATES.DEEP_DIVE].includes(currentState)) return;
-    if (!currentConversation?.id) return;
 
-    base44.entities.GeneratedArtifact.filter({
-      conversationId: currentConversation.id,
-      artifactType: 'visit_debrief'
-    }).then(artifacts => {
-      const ids = new Set(
-        artifacts.flatMap(a => a.schoolIds || [])
-      );
-      setVisitedSchoolIds(ids);
-    }).catch(e => console.error('[E13a-WC4] Failed to load visited schools:', e));
-  }, [currentState, currentConversation?.id]);
 
   // School filtering/sorting via extracted hook
   const {
