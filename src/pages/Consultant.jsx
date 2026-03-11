@@ -187,7 +187,23 @@ export default function Consultant() {
   // Determine UI phase based on state and schools
   const currentState = currentConversation?.conversationContext?.state || STATES.WELCOME;
 
-  // Shortlist hook — must come after currentState is defined
+  // Data loader hook — must come before useShortlist so familyProfile is available
+  const {
+    familyProfile, setFamilyProfile,
+    artifactCache, setArtifactCache,
+    schoolAnalyses, setSchoolAnalyses,
+    visitedSchoolIds, setVisitedSchoolIds,
+    activeJourney, setActiveJourney,
+    extractedEntitiesData, setExtractedEntitiesData,
+    restoredSessionData, setRestoredSessionData,
+    loadFamilyProfile,
+    loadPreviousArtifacts,
+  } = useDataLoader({
+    user, currentConversation, isAuthenticated, base44,
+    setShortlistData,
+  });
+
+  // Shortlist hook — must come after useDataLoader so familyProfile is defined
   const {
     shortlistData, setShortlistData,
     removedSchoolIds, setRemovedSchoolIds,
@@ -204,22 +220,6 @@ export default function Consultant() {
     user, setUser, isAuthenticated, schools, currentState,
     selectedConsultant, familyProfile, setMessages, trackEvent, setShowLoginGate, base44,
     onConfirmDeepDive: (school) => handleConfirmDeepDive(school),
-  });
-
-  // Data loader hook — family profile, artifacts, journey, visited schools
-  const {
-    familyProfile, setFamilyProfile,
-    artifactCache, setArtifactCache,
-    schoolAnalyses, setSchoolAnalyses,
-    visitedSchoolIds, setVisitedSchoolIds,
-    activeJourney, setActiveJourney,
-    extractedEntitiesData, setExtractedEntitiesData,
-    restoredSessionData, setRestoredSessionData,
-    loadFamilyProfile,
-    loadPreviousArtifacts,
-  } = useDataLoader({
-    user, currentConversation, isAuthenticated, base44,
-    setShortlistData,
   });
 
   // Whether the Family Brief toggle should be visible
