@@ -526,6 +526,7 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
     context.state = STATES.RESULTS;
 
     let aiMessage = '';
+    const rawToolCalls = [];
     try {
       if (!matchingSchools || matchingSchools.length === 0) {
         aiMessage = "I don't have any schools matching your criteria yet. Try a nearby city or broader criteria.";
@@ -604,7 +605,6 @@ ${schoolIdContext}`;
         const resultsUserPrompt = `Recent chat:\n${conversationSummary}\n${schoolContext}\n\nParent: "${message}"\n\nRespond as ${consultantName}. ONE question max.`;
 
         let messageWithLinks = 'Here are the schools I found:';
-        const rawToolCalls = [];
         // E32-002b: InvokeLLM primary, callOpenRouter fallback (tools wiring deferred)
         try {
           const fastResponse = await base44.integrations.Core.InvokeLLM({
@@ -655,7 +655,7 @@ ${schoolIdContext}`;
     });
 
   } catch (error) {
-    console.error('[handleResults] FATAL:', error?.message, error?.stack);
-    return Response.json({ message: 'handleResults error: ' + (error?.message || String(error)), state: 'RESULTS', briefStatus: 'confirmed', schools: [], familyProfile: {}, conversationContext: {}, rawToolCalls: [], _debug_error: error?.message || String(error) });
+    console.error('[handleResults] FATAL:', error);
+    return Response.json({ error: error.message || String(error) }, { status: 500 });
   }
 });
