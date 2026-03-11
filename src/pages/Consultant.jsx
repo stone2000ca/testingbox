@@ -9,7 +9,7 @@ import { handleNarrateComparison as narrateComparison } from '@/components/chat/
 // Import searchSchools function
 const searchSchools = (params) => base44.functions.invoke('searchSchools', params);
 import { Button } from "@/components/ui/button";
-import { Plus, Heart, FileText, Sparkles, Trash2, Star, ClipboardList } from "lucide-react";
+import { Plus, Heart, FileText, Trash2, Star, ClipboardList } from "lucide-react";
 import { toast } from "sonner"; // E16a-019
 import IconRail from '@/components/navigation/IconRail';
 import FamilyBrief from '@/components/chat/FamilyBrief';
@@ -35,7 +35,7 @@ import { createPageUrl } from '../utils';
 import Navbar from '@/components/navigation/Navbar';
 import { useSchoolFiltering } from '@/components/hooks/useSchoolFiltering';
 import { useMessageHandler } from '@/components/hooks/useMessageHandler';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
 
 const PLAN_NAMES = { FREE: 'free', BASIC: 'basic', PREMIUM: 'premium', PRO: 'pro', ENTERPRISE: 'enterprise' };
 
