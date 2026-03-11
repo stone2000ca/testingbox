@@ -233,6 +233,11 @@ async function callOpenRouter(options) {
 }
 
 // =============================================================================
+// E32-002b: ACTION_TOOL_SCHEMA — inlined copy (cannot import from orchestrateConversation.ts)
+// =============================================================================
+const ACTION_TOOL_SCHEMA = [{ type: 'function', function: { name: 'execute_ui_action', description: 'Execute UI actions alongside your text response when the user wants to add schools to shortlist, open panels, or expand school details', parameters: { type: 'object', properties: { actions: { type: 'array', items: { type: 'object', properties: { type: { type: 'string', enum: ['ADD_TO_SHORTLIST', 'OPEN_PANEL', 'EXPAND_SCHOOL'] }, schoolId: { type: 'string', description: 'School entity ID' }, panel: { type: 'string', enum: ['shortlist', 'comparison', 'brief'] } }, required: ['type'] } } }, required: ['actions'] } } }];
+
+// =============================================================================
 // MAIN: Deno.serve — handleResults
 // =============================================================================
 Deno.serve(async (req) => {
