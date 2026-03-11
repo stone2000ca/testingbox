@@ -206,6 +206,22 @@ export default function Consultant() {
     onConfirmDeepDive: (school) => handleConfirmDeepDive(school),
   });
 
+  // Data loader hook — family profile, artifacts, journey, visited schools
+  const {
+    familyProfile, setFamilyProfile,
+    artifactCache, setArtifactCache,
+    schoolAnalyses, setSchoolAnalyses,
+    visitedSchoolIds, setVisitedSchoolIds,
+    activeJourney, setActiveJourney,
+    extractedEntitiesData, setExtractedEntitiesData,
+    restoredSessionData, setRestoredSessionData,
+    loadFamilyProfile,
+    loadPreviousArtifacts,
+  } = useDataLoader({
+    user, currentConversation, isAuthenticated, base44,
+    setShortlistData,
+  });
+
   // Whether the Family Brief toggle should be visible
   const isBriefState = true; // T045: FamilyBrief visible in all states
   const hasFamilyProfileData = familyProfile && Object.entries(familyProfile).some(
