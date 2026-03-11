@@ -1033,6 +1033,8 @@ export default function Consultant() {
             const alreadyHandledByDeepDive = lastMsg.deepDiveAnalysis?.schoolId === action.payload.schoolId;
             if (!alreadyShortlisted && !wasRemoved && !alreadyHandledByDeepDive) {
               handleToggleShortlist(action.payload.schoolId, { silent: true });
+              const schoolName = [...(schools || []), ...(shortlistData || [])].find(s => s.id === action.payload.schoolId)?.name || 'School';
+              toast.success(`${schoolName} added to your shortlist`, { style: { borderLeft: '4px solid #14b8a6' } });
             }
             break;
           }
