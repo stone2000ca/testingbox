@@ -522,25 +522,30 @@ Generate the DEEPDIVE card for this family-school match.`;
 
     let deepDiveAnalysis = null;
     const rawToolCalls = [];
-    // E32-006b: InvokeLLM primary with structured actions schema, callOpenRouter fallback
+    // MERGED: Single LLM call combining conversational prose + structured analysis
     try {
-      const fastResponse = await base44.integrations.Core.InvokeLLM({
+      const mergedResponse = await base44.integrations.Core.InvokeLLM({
         prompt: deepDiveSystemPrompt + '\n\n' + deepDiveUserPrompt,
         model: 'gpt_5_mini',
-        response_json_schema: ACTIONS_RESPONSE_SCHEMA
+        response_json_schema: MERGED_RESPONSE_SCHEMA
       });
       try {
-        const parsed = typeof fastResponse === 'object' ? fastResponse : JSON.parse(fastResponse);
+        const parsed = typeof mergedResponse === 'object' ? mergedResponse : JSON.parse(mergedResponse);
         aiMessage = parsed.message || '';
         if (Array.isArray(parsed.actions) && parsed.actions.length > 0) {
           rawToolCalls.push(...parsed.actions.map(a => ({ function: { name: 'execute_ui_action', arguments: JSON.stringify(a) } })));
-          console.log('[E32-006b] Actions parsed from InvokeLLM:', rawToolCalls.length);
+          console.log('[MERGED] Actions parsed from InvokeLLM:', rawToolCalls.length);
+        }
+        if (parsed.schoolAnalysis) {
+          deepDiveAnalysis = parsed.schoolAnalysis;
+          console.log('[MERGED] schoolAnalysis extracted from merged response');
         }
       } catch (parseError) {
-        console.log('[E32-006b]: malformed actions in InvokeLLM response:', parseError.message);
-        aiMessage = typeof fastResponse === 'string' ? fastResponse : (fastResponse?.response || '');
+        console.log('[MERGED]: malformed response from InvokeLLM:', parseError.message);
+        aiMessage = typeof mergedResponse === 'string' ? mergedResponse : (mergedResponse?.response || mergedResponse?.message || '');
+        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null };
       }
-      if (aiMessage) console.log('[DEEPDIVE] AI card generated via InvokeLLM (primary)');
+      if (aiMessage) console.log('[DEEPDIVE] AI card generated via InvokeLLM (merged)');
     } catch (llmError) {
       console.error('[DEEPDIVE] InvokeLLM failed, falling back to callOpenRouter:', llmError.message);
       try {
@@ -548,67 +553,42 @@ Generate the DEEPDIVE card for this family-school match.`;
           systemPrompt: deepDiveSystemPrompt,
           userPrompt: deepDiveUserPrompt,
           maxTokens: 2000,
-          temperature: 0.6
+          temperature: 0.6,
+          responseSchema: {
+            name: 'merged_response',
+            schema: MERGED_RESPONSE_SCHEMA
+          }
         });
         if (aiResponse) {
           console.log('[DEEPDIVE] AI card generated via callOpenRouter (fallback)');
-          aiMessage = aiResponse;
+          const parsed = typeof aiResponse === 'object' ? aiResponse : JSON.parse(aiResponse);
+          aiMessage = parsed.message || '';
+          if (Array.isArray(parsed.actions) && parsed.actions.length > 0) {
+            rawToolCalls.push(...parsed.actions.map(a => ({ function: { name: 'execute_ui_action', arguments: JSON.stringify(a) } })));
+          }
+          if (parsed.schoolAnalysis) {
+            deepDiveAnalysis = parsed.schoolAnalysis;
+          } else {
+            deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null };
+          }
         }
       } catch (openrouterError) {
         console.error('[DEEPDIVE] OpenRouter fallback failed:', openrouterError.message);
         aiMessage = `**Great Fit for ${childDisplayName}**\n\n**Why ${selectedSchool.name} for ${childDisplayName}**\n${selectedSchool.description?.substring(0, 150) || 'School details available upon request.'}\n\n**Cost Reality**\nTuition: ${compressedSchoolData.tuitionFee}/year\n\nWhat would you like to know more about?`;
+        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null };
       }
     }
 
-    // E10b: Generate structured analysis in parallel
-    let rawAnalysisResponse = null;
-    try {
-      rawAnalysisResponse = await callOpenRouter({
-        systemPrompt: `You are a school analysis engine. Given a consultant's analysis of a school for a specific family, extract structured data. Return ONLY valid JSON matching the schema.`,
-        userPrompt: `Consultant's analysis: ${aiMessage}\n\nSchool data: ${JSON.stringify(compressedSchoolData)}\n\nFamily profile: child=${childDisplayName}, budget=${resolvedMaxTuition}, priorities=${resolvedPriorities?.join(', ') || 'None'}, interests=${conversationFamilyProfile?.interests?.join(', ') || 'None'}, academicStrengths=${conversationFamilyProfile?.academicStrengths?.join(', ') || 'None'}, learningStyle=${conversationFamilyProfile?.learningStyle || 'None'}, personalityTraits=${conversationFamilyProfile?.personalityTraits?.join(', ') || 'None'}\n\nIMPORTANT: Every school has trade-offs. You MUST return at least 3 items in tradeOffs[]. For each trade-off, include the dimension name, and either a strength (what this school does well for this family) or a concern (what might not fit), or both. Consider dimensions like: learning support, class size, arts/athletics programs, commute distance, budget fit, academic approach, campus facilities, community culture. If school data is missing for a dimension the family cares about, that itself is a trade-off with concern noting the data gap. Each dimension should appear only once in tradeOffs[]. Do not repeat dimensions. If a dimension has both a strength and a concern, include both in the same trade-off object.\n\nExtract: fitLabel (strong_match/good_match/worth_exploring), fitScore (0-100), tradeOffs (array with dimension, strength, concern, dataSource), dataGaps (array of field names with missing data relevant to this family), visitQuestions (array of 3-5 personalized questions for school visit), financialSummary (tuition, aidAvailable boolean, estimatedNetCost, budgetFit).`,
-        maxTokens: 1500,
-        temperature: 0.3,
-        responseSchema: {
-          name: 'school_analysis',
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              fitLabel: { type: 'string', enum: ['strong_match', 'good_match', 'worth_exploring'] },
-              fitScore: { type: 'number' },
-              tradeOffs: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['dimension', 'strength', 'concern', 'dataSource'], properties: { dimension: { type: 'string' }, strength: { type: 'string' }, concern: { type: 'string' }, dataSource: { type: 'string' } } } },
-              dataGaps: { type: 'array', items: { type: 'string' } },
-              visitQuestions: { type: 'array', items: { type: 'string' } },
-              financialSummary: { type: 'object', additionalProperties: false, required: ['tuition', 'aidAvailable', 'estimatedNetCost', 'budgetFit'], properties: { tuition: { type: 'number' }, aidAvailable: { type: 'boolean' }, estimatedNetCost: { type: 'number' }, budgetFit: { type: 'string' } } }
-            },
-            required: ['fitLabel', 'fitScore', 'tradeOffs', 'dataGaps', 'visitQuestions', 'financialSummary']
-          }
-        }
-      });
-      deepDiveAnalysis = typeof rawAnalysisResponse === 'object' ? rawAnalysisResponse : JSON.parse(rawAnalysisResponse);
-      console.log('[E10b] Structured analysis extracted successfully');
-
-      // Save to SchoolAnalysis entity (non-blocking, fire-and-forget)
-      if (userId && selectedSchoolId && deepDiveAnalysis) {
-        (async () => {
-          try {
-            const existing = await base44.entities.SchoolAnalysis.filter({ userId, schoolId: selectedSchoolId });
-            if (existing && existing.length > 0) {
-              await base44.entities.SchoolAnalysis.update(existing[0].id, { ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
-              console.log('[E10b] SchoolAnalysis updated:', existing[0].id);
-              const prevVisitQuestions = existing[0].visitQuestions;
-              if (!prevVisitQuestions || prevVisitQuestions.length === 0) {
-                const childName = conversationFamilyProfile?.childName || null;
-                const schoolName = selectedSchool.name;
-                if (consultantName === 'Jackie') {
-                  aiMessage += `\n\nBy the way — I can put together a personalized Visit Prep Kit for ${schoolName}, with specific questions to ask during your tour, things to watch for, and red flags based on everything you've told me about ${childName || 'your child'}. Want me to prepare that?`;
-                } else {
-                  aiMessage += `\n\nI can prepare a Visit Prep Kit for ${schoolName} — targeted questions, observation checklist, and red flags specific to your priorities. Want me to put that together?`;
-                }
-              }
-            } else {
-              const created = await base44.entities.SchoolAnalysis.create({ userId, schoolId: selectedSchoolId, ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
-              console.log('[E10b] SchoolAnalysis created:', created.id);
+    // Save to SchoolAnalysis entity (non-blocking, fire-and-forget)
+    if (userId && selectedSchoolId && deepDiveAnalysis) {
+      (async () => {
+        try {
+          const existing = await base44.entities.SchoolAnalysis.filter({ userId, schoolId: selectedSchoolId });
+          if (existing && existing.length > 0) {
+            await base44.entities.SchoolAnalysis.update(existing[0].id, { ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
+            console.log('[DEEPDIVE] SchoolAnalysis updated:', existing[0].id);
+            const prevVisitQuestions = existing[0].visitQuestions;
+            if (!prevVisitQuestions || prevVisitQuestions.length === 0) {
               const childName = conversationFamilyProfile?.childName || null;
               const schoolName = selectedSchool.name;
               if (consultantName === 'Jackie') {
@@ -617,25 +597,21 @@ Generate the DEEPDIVE card for this family-school match.`;
                 aiMessage += `\n\nI can prepare a Visit Prep Kit for ${schoolName} — targeted questions, observation checklist, and red flags specific to your priorities. Want me to put that together?`;
               }
             }
-          } catch (persistError) {
-            console.warn('[DEEPDIVE] SchoolAnalysis persist failed:', persistError.message);
+          } else {
+            const created = await base44.entities.SchoolAnalysis.create({ userId, schoolId: selectedSchoolId, ...deepDiveAnalysis, lastAnalyzedAt: new Date().toISOString() });
+            console.log('[DEEPDIVE] SchoolAnalysis created:', created.id);
+            const childName = conversationFamilyProfile?.childName || null;
+            const schoolName = selectedSchool.name;
+            if (consultantName === 'Jackie') {
+              aiMessage += `\n\nBy the way — I can put together a personalized Visit Prep Kit for ${schoolName}, with specific questions to ask during your tour, things to watch for, and red flags based on everything you've told me about ${childName || 'your child'}. Want me to prepare that?`;
+            } else {
+              aiMessage += `\n\nI can prepare a Visit Prep Kit for ${schoolName} — targeted questions, observation checklist, and red flags specific to your priorities. Want me to put that together?`;
+            }
           }
-        })();
-      }
-    } catch (analysisError) {
-      console.error('[E10b] deepDiveAnalysis generation failed:', analysisError.message, 'Raw response:', rawAnalysisResponse);
-      if (rawAnalysisResponse && typeof rawAnalysisResponse === 'string') {
-        try {
-          const stripped = rawAnalysisResponse.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-          deepDiveAnalysis = JSON.parse(stripped);
-          console.log('[E10b] Fallback JSON.parse succeeded');
-        } catch (parseError) {
-          console.error('[E10b] Fallback JSON.parse also failed:', parseError.message);
-          deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null };
+        } catch (persistError) {
+          console.warn('[DEEPDIVE] SchoolAnalysis persist failed:', persistError.message);
         }
-      } else {
-        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null };
-      }
+      })();
     }
 
     const aiMessageRaw = aiMessage; // E30-001: snapshot before sanitization
