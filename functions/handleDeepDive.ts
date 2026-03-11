@@ -11,17 +11,19 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // =============================================================================
 // INLINED: callOpenRouter
+// E32-002a: upgraded to v2 signature (tools/toolChoice/returnRaw/_logContext added)
 // =============================================================================
 async function callOpenRouter(options) {
-  // callOpenRouter v1.0 -- E25-S2 canonical
-  const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7 } = options;
-  
+  // callOpenRouter v2.0 -- E32-002a: v1→v2 upgrade (tools/toolChoice/returnRaw/_logContext)
+  const { systemPrompt, userPrompt, responseSchema, maxTokens = 1000, temperature = 0.7, _logContext, tools, toolChoice, returnRaw = false } = options;
+  // _logContext = { base44, conversation_id, phase, is_test } — optional, used for LLMLog only
+
   const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
   if (!OPENROUTER_API_KEY) {
     console.warn('[OPENROUTER] OPENROUTER_API_KEY not set');
     throw new Error('OPENROUTER_API_KEY not set');
   }
-  
+
   const messages = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: userPrompt });
@@ -29,13 +31,19 @@ async function callOpenRouter(options) {
   // Model waterfall: WC-2 upgrade — Gemini 3 Flash Preview primary, GPT-4.1-mini fallback, Gemini Flash tertiary
   const models = ['google/gemini-3-flash-preview', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash'];
 
-  const body = {
+  const body: any = {
     models,
     messages,
     max_tokens: maxTokens,
     temperature
   };
-  
+
+  // E32-001: Inject tools when provided
+  if (tools && tools.length > 0) {
+    body.tools = tools;
+    body.tool_choice = toolChoice || 'auto';
+  }
+
   if (responseSchema) {
     body.response_format = {
       type: 'json_schema',
@@ -46,16 +54,19 @@ async function callOpenRouter(options) {
       }
     };
   }
-  
+
   console.log('[OPENROUTER] Calling with models:', body.models, 'maxTokens:', maxTokens);
+
+  // E18c-002: Start timer
+  const startTime = Date.now();
+  const fullPromptStr = messages.map(m => `[${m.role}] ${m.content}`).join('\n');
 
   const controller = new AbortController();
   const TIMEOUT_MS = 30000;
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-  let response;
   try {
-    response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
@@ -66,38 +77,103 @@ async function callOpenRouter(options) {
       body: JSON.stringify(body),
       signal: controller.signal
     });
-  } catch (error) {
-    if (error.name === 'AbortError') {
+
+    clearTimeout(timeoutId);
+    const latency_ms = Date.now() - startTime;
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[OPENROUTER] API error:', response.status, errorText);
+
+      // E18c-002: Log error (fire-and-forget)
+      if (_logContext?.base44) {
+        const isTest = _logContext.is_test === true;
+        _logContext.base44.asServiceRole.entities.LLMLog.create({
+          conversation_id: _logContext.conversation_id || 'unknown',
+          phase: _logContext.phase || 'unknown',
+          model: 'unknown',
+          prompt_summary: fullPromptStr.substring(0, 500),
+          response_summary: errorText.substring(0, 500),
+          token_count_in: 0,
+          token_count_out: 0,
+          latency_ms,
+          status: 'error',
+          is_test: isTest,
+          ...(isTest ? { full_prompt: fullPromptStr } : {}),
+          error_message: `HTTP ${response.status}: ${errorText.substring(0, 300)}`
+        }).catch(e => console.error('[E18c-002] LLMLog write failed:', e.message));
+      }
+
+      throw new Error(`OpenRouter API error: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('[OPENROUTER] Response model used:', data.model, 'usage:', data.usage);
+
+    const content = data.choices?.[0]?.message?.content;
+    const toolCalls = data.choices?.[0]?.message?.tool_calls || [];
+    if (!content && toolCalls.length === 0) throw new Error('OpenRouter returned empty content');
+
+    // E18c-002: Log success (fire-and-forget)
+    if (_logContext?.base44) {
+      const isTest = _logContext.is_test === true;
+      _logContext.base44.asServiceRole.entities.LLMLog.create({
+        conversation_id: _logContext.conversation_id || 'unknown',
+        phase: _logContext.phase || 'unknown',
+        model: data.model || 'unknown',
+        prompt_summary: fullPromptStr.substring(0, 500),
+        response_summary: (content || '').substring(0, 500),
+        token_count_in: data.usage?.prompt_tokens || 0,
+        token_count_out: data.usage?.completion_tokens || 0,
+        latency_ms,
+        status: 'success',
+        is_test: isTest,
+        ...(isTest ? { full_prompt: fullPromptStr, full_response: content } : {})
+      }).catch(e => console.error('[E18c-002] LLMLog write failed:', e.message));
+    }
+
+    if (responseSchema) {
+      try {
+        return JSON.parse(content);
+      } catch (e) {
+        // NOTE: handleDeepDive preserves original v1.0 behaviour — return raw content for caller recovery
+        console.error('[OPENROUTER] JSON parse failed, returning raw content for caller recovery');
+        return content;
+      }
+    }
+
+    // E32-001: returnRaw returns { content, toolCalls } for callers that need tool_calls
+    if (returnRaw) return { content: content || '', toolCalls };
+
+    return content;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
       console.error(`[TIMEOUT] callOpenRouter timed out after ${TIMEOUT_MS}ms in handleDeepDive.ts`);
       throw new Error(`LLM request timed out after ${TIMEOUT_MS/1000}s`);
     }
-    console.error(`[callOpenRouter] Model call failed in handleDeepDive.ts:`, error.message);
-    throw error;
-  }
-  clearTimeout(timeoutId);
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[OPENROUTER] API error:', response.status, errorText);
-    throw new Error(`OpenRouter API error: ${response.status} ${errorText}`);
-  }
-  
-  const data = await response.json();
-  console.log('[OPENROUTER] Response model used:', data.model, 'usage:', data.usage);
-  
-  const content = data.choices?.[0]?.message?.content;
-  if (!content) throw new Error('OpenRouter returned empty content');
-  
-  if (responseSchema) {
-    try {
-      return JSON.parse(content);
-    } catch (e) {
-      console.error('[OPENROUTER] JSON parse failed, returning raw content for caller recovery');
-      return content;
+    console.error(`[callOpenRouter] Model call failed in handleDeepDive.ts:`, err.message);
+    const latency_ms = Date.now() - startTime;
+    const isNetworkError = !err.message?.startsWith('OpenRouter API error:') && err.message !== 'OpenRouter returned empty content' && err.message !== 'OpenRouter structured output parse failed';
+    if (isNetworkError && _logContext?.base44) {
+      const isTest = _logContext.is_test === true;
+      _logContext.base44.asServiceRole.entities.LLMLog.create({
+        conversation_id: _logContext.conversation_id || 'unknown',
+        phase: _logContext.phase || 'unknown',
+        model: 'unknown',
+        prompt_summary: fullPromptStr.substring(0, 500),
+        response_summary: '',
+        token_count_in: 0,
+        token_count_out: 0,
+        latency_ms,
+        status: 'timeout',
+        is_test: isTest,
+        ...(isTest ? { full_prompt: fullPromptStr } : {}),
+        error_message: err.message?.substring(0, 300)
+      }).catch(e => console.error('[E18c-002] LLMLog write failed:', e.message));
     }
+    throw err;
   }
-  
-  return content;
 }
 
 // =============================================================================
