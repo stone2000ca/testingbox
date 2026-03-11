@@ -36,6 +36,12 @@ async function callOpenRouter(options) {
     temperature
   };
   
+  // E32-001: Inject tools when provided
+  if (tools && tools.length > 0) {
+    body.tools = tools;
+    body.tool_choice = toolChoice || 'auto';
+  }
+
   if (responseSchema) {
     body.response_format = {
       type: 'json_schema',
