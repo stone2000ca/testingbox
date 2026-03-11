@@ -600,7 +600,9 @@ ABSOLUTE PROHIBITIONS in RESULTS state when a preference update is detected:
 If the parent is asking about the schools (not updating preferences), explain the matches. Focus on fit. Max 150 words.
 
 ${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic, experienced.' : 'YOU ARE LIAM - Direct, strategic, no-BS.'}
-${schoolIdContext}`;
+${schoolIdContext}
+
+ACTION INSTRUCTIONS: You have access to the execute_ui_action tool. When the user explicitly asks to shortlist, save, or keep a school, emit ADD_TO_SHORTLIST with the schoolId from the AVAILABLE SCHOOLS list above. When the user asks to see their shortlist, emit OPEN_PANEL with panel='shortlist'. EXPAND_SCHOOL can pair with ADD_TO_SHORTLIST. Do NOT emit REMOVE_FROM_SHORTLIST. Always include a natural text response alongside any actions. If user intent is unclear, respond with text only - no actions. ADD_TO_SHORTLIST timing is 'immediate'. OPEN_PANEL and EXPAND_SCHOOL timing is 'after_message'.`;
 
         const resultsUserPrompt = `Recent chat:\n${conversationSummary}\n${schoolContext}\n\nParent: "${message}"\n\nRespond as ${consultantName}. ONE question max.`;
 

@@ -405,7 +405,9 @@ ${consultantName === 'Jackie'
   : "LIAM PERSONA: Direct, strategic, no-BS."}
 
 Write naturally in conversational prose about why this school fits the family. Cover the student-school alignment (including how the school programs match the child interests, how the learning environment suits their personality and learning style, and whether the school can support any academic struggles or learning differences), any trade-offs or concerns, and the cost reality. Speak like a consultant would—no headers, labels, or formatting markers. Just natural, helpful conversation. End your response with a brief, clear sentence summarizing whether this school is a strong fit for this family and the primary reason why or why not, based on what they shared in their brief.
-${area4Instructions}`;
+${area4Instructions}
+
+ACTION INSTRUCTIONS: You have access to the execute_ui_action tool. When the user explicitly asks to shortlist, save, or keep a school, emit ADD_TO_SHORTLIST with the schoolId from the AVAILABLE SCHOOLS list above. When the user asks to see their shortlist, emit OPEN_PANEL with panel='shortlist'. EXPAND_SCHOOL can pair with ADD_TO_SHORTLIST. Do NOT emit REMOVE_FROM_SHORTLIST. Always include a natural text response alongside any actions. If user intent is unclear, respond with text only - no actions. ADD_TO_SHORTLIST timing is 'immediate'. OPEN_PANEL and EXPAND_SCHOOL timing is 'after_message'.`;
 
     const deepDiveUserPrompt = `FAMILY BRIEF:
 - Child: ${childDisplayName}
