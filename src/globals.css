@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 40 33% 94.5%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -26,6 +26,20 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+    /* NextSchool Niche-Inspired Design Tokens */
+    --ns-cream: #F5F2ED;
+    --ns-cream-dark: #EDE8E0;
+    --ns-teal-900: #134E4A;
+    --ns-teal-700: #0F766E;
+    --ns-teal-600: #0D9488;
+    --ns-teal-500: #14B8A6;
+    --ns-teal-100: #CCFBF1;
+    --ns-teal-50: #F0FDFA;
+    --ns-text-primary: #1A1A1A;
+    --ns-text-body: #4A4A4A;
+    --ns-text-secondary: #6B7280;
+    --ns-border: #E5E7EB;
+    --ns-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
