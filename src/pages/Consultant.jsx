@@ -719,6 +719,46 @@ export default function Consultant() {
     }
   };
 
+  // E31-003: Load More Schools handler
+  const conversationContext = currentConversation?.conversationContext;
+  const loadMoreSchools = useCallback(async () => {
+    const lat = conversationContext?.resolvedLat || userLocation?.lat;
+    const lng = conversationContext?.resolvedLng || userLocation?.lng;
+    if (!lat || !lng) {
+      setExtraSchoolsError('no_location');
+      return;
+    }
+    setExtraSchoolsLoading(true);
+    setExtraSchoolsError(null);
+    try {
+      const displayedIds = (schools || []).map(s => s.id);
+      const shortlistIds = shortlistData?.map(s => s.id) || user?.shortlist || [];
+      const extraIds = extraSchools.map(s => s.id);
+      const excludeIds = [...new Set([...displayedIds, ...shortlistIds, ...extraIds])];
+
+      const result = await base44.functions.invoke('getNearbySchools', {
+        lat, lng, excludeIds,
+        gradeMin: familyProfile?.childGrade || null,
+        maxTuition: familyProfile?.maxTuition || null,
+        dealbreakers: familyProfile?.dealbreakers || [],
+        familyGender: familyProfile?.childGender || null,
+        schoolGenderExclusions: familyProfile?.schoolGenderExclusions || [],
+        schoolGenderPreference: familyProfile?.schoolGenderPreference || null,
+        page: extraSchoolsPage,
+        pageSize: 20,
+      });
+      const data = result.data || result;
+      setExtraSchools(prev => [...prev, ...(data.schools || [])]);
+      setExtraSchoolsHasMore(data.hasMore || false);
+      setExtraSchoolsPage(prev => prev + 1);
+    } catch (err) {
+      console.error('[LOAD MORE] Error:', err);
+      setExtraSchoolsError('fetch_failed');
+    } finally {
+      setExtraSchoolsLoading(false);
+    }
+  }, [extraSchoolsPage, schools, shortlistData, user, extraSchools, familyProfile, conversationContext, userLocation]);
+
   const { handleSendMessage } = useMessageHandler({
     messages,
     setMessages,
