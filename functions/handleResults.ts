@@ -609,7 +609,7 @@ If the parent is asking about the schools (not updating preferences), explain th
 ${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic, experienced.' : 'YOU ARE LIAM - Direct, strategic, no-BS.'}
 ${schoolIdContext}
 
-ACTION INSTRUCTIONS: You have access to the execute_ui_action tool. When the user explicitly asks to shortlist, save, or keep a school, emit ADD_TO_SHORTLIST with the schoolId from the AVAILABLE SCHOOLS list above. When the user asks to see their shortlist, emit OPEN_PANEL with panel='shortlist'. EXPAND_SCHOOL can pair with ADD_TO_SHORTLIST. Do NOT emit REMOVE_FROM_SHORTLIST. Always include a natural text response alongside any actions. If user intent is unclear, respond with text only - no actions. ADD_TO_SHORTLIST timing is 'immediate'. OPEN_PANEL and EXPAND_SCHOOL timing is 'after_message'.`;
+ACTIONS (JSON output): Your response will be structured as JSON with a 'message' field and an 'actions' array. When the user EXPLICITLY asks to shortlist, save, or keep a school, include an ADD_TO_SHORTLIST action with the schoolId. When they ask to see their shortlist, include an OPEN_PANEL action with panel='shortlist'. Only emit actions when user intent is clear and explicit - do NOT auto-add schools. If no action is requested, return actions as an empty array [].`;
 
         const resultsUserPrompt = `Recent chat:\n${conversationSummary}\n${schoolContext}\n\nParent: "${message}"\n\nRespond as ${consultantName}. ONE question max.`;
 
@@ -625,7 +625,7 @@ ACTION INSTRUCTIONS: You have access to the execute_ui_action tool. When the use
             const parsed = typeof fastResponse === 'object' ? fastResponse : JSON.parse(fastResponse);
             messageWithLinks = parsed.message || 'Here are the schools I found:';
             if (Array.isArray(parsed.actions) && parsed.actions.length > 0) {
-              rawToolCalls.push(...parsed.actions.map(a => ({ function: { name: 'execute_ui_action', arguments: JSON.stringify(a) } })));
+              rawToolCalls.push({ function: { name: 'execute_ui_action', arguments: JSON.stringify({ actions: parsed.actions }) } });
               console.log('[E32-006] Actions parsed from InvokeLLM:', rawToolCalls.length);
             }
           } catch (parseError) {

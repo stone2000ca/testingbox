@@ -533,7 +533,7 @@ Generate the DEEPDIVE card for this family-school match.`;
         const parsed = typeof mergedResponse === 'object' ? mergedResponse : JSON.parse(mergedResponse);
         aiMessage = parsed.message || '';
         if (Array.isArray(parsed.actions) && parsed.actions.length > 0) {
-          rawToolCalls.push(...parsed.actions.map(a => ({ function: { name: 'execute_ui_action', arguments: JSON.stringify(a) } })));
+          rawToolCalls.push({ function: { name: 'execute_ui_action', arguments: JSON.stringify({ actions: parsed.actions }) } });
           console.log('[MERGED] Actions parsed from InvokeLLM:', rawToolCalls.length);
         }
         if (parsed.schoolAnalysis) {
@@ -564,7 +564,7 @@ Generate the DEEPDIVE card for this family-school match.`;
           const parsed = typeof aiResponse === 'object' ? aiResponse : JSON.parse(aiResponse);
           aiMessage = parsed.message || '';
           if (Array.isArray(parsed.actions) && parsed.actions.length > 0) {
-            rawToolCalls.push(...parsed.actions.map(a => ({ function: { name: 'execute_ui_action', arguments: JSON.stringify(a) } })));
+            rawToolCalls.push({ function: { name: 'execute_ui_action', arguments: JSON.stringify({ actions: parsed.actions }) } });
           }
           if (parsed.schoolAnalysis) {
             deepDiveAnalysis = parsed.schoolAnalysis;
