@@ -577,6 +577,10 @@ Max 160 words total.`;
           ? `\n\nCOMPARISON CONTEXT: The parent is currently viewing a side-by-side comparison of: ${context.comparingSchools.join(', ')}. If they ask questions about these schools, answer with that comparison context in mind.`
           : '';
 
+        // E32-002b: School ID context block so LLM can reference valid IDs in actions
+        const schoolIdContext = `\nSCHOOL IDs (use these exact IDs in execute_ui_action):\n` +
+          matchingSchools.map(s => `[ID:${s.id}] ${s.name}`).join('\n');
+
         const resultsSystemPrompt = `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}[STATE: RESULTS] You are currently showing school results to the parent.
 
 CRITICAL STATE RULE — READ THIS FIRST:
@@ -594,7 +598,8 @@ ABSOLUTE PROHIBITIONS in RESULTS state when a preference update is detected:
 
 If the parent is asking about the schools (not updating preferences), explain the matches. Focus on fit. Max 150 words.
 
-${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic, experienced.' : 'YOU ARE LIAM - Direct, strategic, no-BS.'}`;
+${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic, experienced.' : 'YOU ARE LIAM - Direct, strategic, no-BS.'}
+${schoolIdContext}`;
 
         const resultsUserPrompt = `Recent chat:\n${conversationSummary}\n${schoolContext}\n\nParent: "${message}"\n\nRespond as ${consultantName}. ONE question max.`;
 
