@@ -171,20 +171,7 @@ export default function Consultant() {
   // E30-012: Prevent double-processing the same deep dive school
   const deepDiveAutoAddedRef = useRef(new Set());
   
-  // WC6: Store restored session data for returning user context
-  const [restoredSessionData, setRestoredSessionData] = useState(null);
-  
-  // WC6: Artifact cache indexed by schoolId_artifactType (e.g., '123_visit_prep')
-  const [artifactCache, setArtifactCache] = useState(null);
 
-  // E29-007: Active journey context for returning users
-  const [activeJourney, setActiveJourney] = useState(null);
-
-  // E30-004: Minimal SchoolAnalysis loader. E30-007 replaces this with batch-optimized hydration.
-  const [schoolAnalyses, setSchoolAnalyses] = useState({});
-
-  // E13a-WC4: Track visited school IDs (schools with a visit_debrief artifact)
-  const [visitedSchoolIds, setVisitedSchoolIds] = useState(new Set());
   
   // Progressive loading states
   const [loadingStage, setLoadingStage] = useState(0);
