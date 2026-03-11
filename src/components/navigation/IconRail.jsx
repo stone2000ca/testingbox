@@ -1,4 +1,4 @@
-import { ClipboardList, Bookmark } from 'lucide-react';
+import { ClipboardList, Bookmark, Search } from 'lucide-react';
 import { STATES } from '@/pages/stateMachineConfig';
 
 // T046 Owner Override: Right-side rail, 3 icons, Family Brief as primary
