@@ -526,7 +526,7 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
     context.state = STATES.RESULTS;
 
     let aiMessage = '';
-    const rawToolCalls = [];
+    let rawToolCalls = [];
     try {
       if (!matchingSchools || matchingSchools.length === 0) {
         aiMessage = "I don't have any schools matching your criteria yet. Try a nearby city or broader criteria.";
@@ -607,7 +607,7 @@ ACTION INSTRUCTIONS: You have access to the execute_ui_action tool. When the use
         const resultsUserPrompt = `Recent chat:\n${conversationSummary}\n${schoolContext}\n\nParent: "${message}"\n\nRespond as ${consultantName}. ONE question max.`;
 
         let messageWithLinks = 'Here are the schools I found:';
-        // E32-002b: InvokeLLM primary, callOpenRouter fallback (tools wiring deferred)
+        // E32-006: InvokeLLM primary (no tool support), callOpenRouter fallback (tools enabled)
         try {
           const fastResponse = await base44.integrations.Core.InvokeLLM({
             prompt: resultsSystemPrompt + '\n\n' + resultsUserPrompt,
@@ -618,12 +618,17 @@ ACTION INSTRUCTIONS: You have access to the execute_ui_action tool. When the use
         } catch (invokeLLMError) {
           console.log('[RESULTS] InvokeLLM failed, falling back to callOpenRouter');
           try {
-            messageWithLinks = await callOpenRouter({
+            const rawResponse = await callOpenRouter({
               systemPrompt: resultsSystemPrompt,
               userPrompt: resultsUserPrompt,
               maxTokens: 800,
-              temperature: 0.7
-            }) || 'Here are the schools I found:';
+              temperature: 0.7,
+              tools: ACTION_TOOL_SCHEMA,
+              toolChoice: 'auto',
+              returnRaw: true
+            });
+            messageWithLinks = (typeof rawResponse === 'object' ? rawResponse.content : rawResponse) || 'Here are the schools I found:';
+            rawToolCalls = typeof rawResponse === 'object' ? (rawResponse.toolCalls || []) : [];
             console.log('[RESULTS] Response via callOpenRouter (fallback)');
           } catch (openrouterError) {
             console.error('[RESULTS] Both response methods failed:', openrouterError.message);

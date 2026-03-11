@@ -432,15 +432,20 @@ Generate the DEEPDIVE card for this family-school match.`;
     console.log('[DEEPDIVE] Attempting AI-generated card');
 
     let deepDiveAnalysis = null;
-    const rawToolCalls = [];
-    // E32-002b: tools wiring deferred — plain callOpenRouter, no tools param
+    let rawToolCalls = [];
+    // E32-006: tools wiring enabled
     try {
-      const aiResponse = await callOpenRouter({
+      const rawResponse = await callOpenRouter({
         systemPrompt: deepDiveSystemPrompt,
         userPrompt: deepDiveUserPrompt,
         maxTokens: 2000,
-        temperature: 0.6
+        temperature: 0.6,
+        tools: ACTION_TOOL_SCHEMA,
+        toolChoice: 'auto',
+        returnRaw: true
       });
+      const aiResponse = typeof rawResponse === 'object' ? rawResponse.content : rawResponse;
+      rawToolCalls = typeof rawResponse === 'object' ? (rawResponse.toolCalls || []) : [];
       if (aiResponse) {
         console.log('[DEEPDIVE] AI card generated successfully');
         aiMessage = aiResponse;
