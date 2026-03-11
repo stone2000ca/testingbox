@@ -233,7 +233,7 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
         try {
           const fastResponse = await base44.integrations.Core.InvokeLLM({ 
             prompt: 'You are a skilled education consultant writing warm, personalized school profile narratives. Keep it 2-3 sentences max.\n\n' + narrativePrompt,
-            model: 'gpt_5'
+            model: 'gpt-5'
           });
           aiNarrative = fastResponse?.response || fastResponse;
           console.log('[WC10] Narrative generated via InvokeLLM (fast path)');
@@ -522,7 +522,7 @@ ${consultantName === 'Jackie' ? 'YOU ARE JACKIE - Warm, empathetic, experienced.
         try {
           const fastResponse = await base44.integrations.Core.InvokeLLM({
             prompt: resultsSystemPrompt + '\n\n' + resultsUserPrompt,
-            model: 'gpt_5'
+            model: 'gpt-5'
           });
           messageWithLinks = fastResponse?.response || fastResponse || 'Here are the schools I found:';
           console.log('[RESULTS] Response via InvokeLLM (fast path)');
