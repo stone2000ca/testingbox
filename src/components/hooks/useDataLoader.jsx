@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-export function useDataLoader({ user, currentConversation, isAuthenticated, base44, setShortlistData }) {
+export function useDataLoader({ user, currentConversation, isAuthenticated, base44 }) {
   const [familyProfile, setFamilyProfile] = useState(null);
   const [artifactCache, setArtifactCache] = useState(null);
   const [schoolAnalyses, setSchoolAnalyses] = useState({});

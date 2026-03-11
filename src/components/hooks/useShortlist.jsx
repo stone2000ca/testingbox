@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { getShortlistNudge } from '@/components/utils/shortlistNudges';
 import { STATES } from '@/pages/stateMachineConfig';
