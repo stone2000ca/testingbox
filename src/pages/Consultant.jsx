@@ -201,6 +201,25 @@ export default function Consultant() {
   // Determine UI phase based on state and schools
   const currentState = currentConversation?.conversationContext?.state || STATES.WELCOME;
 
+  // Shortlist hook — must come after currentState is defined
+  const {
+    shortlistData, setShortlistData,
+    removedSchoolIds, setRemovedSchoolIds,
+    expandedCardCount, setExpandedCardCount,
+    autoExpandSchoolId, setAutoExpandSchoolId,
+    pendingDeepDiveSchoolIds, setPendingDeepDiveSchoolIds,
+    hasAutoPopulatedShortlist,
+    loadShortlist,
+    handleToggleShortlist,
+    injectShortlistNudge,
+    handleDossierExpandChange,
+    handleDeepDiveFromDossier,
+  } = useShortlist({
+    user, setUser, isAuthenticated, schools, currentState,
+    selectedConsultant, familyProfile, setMessages, trackEvent, setShowLoginGate, base44,
+    onConfirmDeepDive: (school) => handleConfirmDeepDive(school),
+  });
+
   // Whether the Family Brief toggle should be visible
   const isBriefState = true; // T045: FamilyBrief visible in all states
   const hasFamilyProfileData = familyProfile && Object.entries(familyProfile).some(
