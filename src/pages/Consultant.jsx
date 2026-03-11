@@ -670,24 +670,7 @@ export default function Consultant() {
     }
   };
 
-  const loadShortlist = async (userDataOrId) => {
-    try {
-      // Accept either a user object (with .shortlist) or fall back to current user state
-      const userData = typeof userDataOrId === 'object' && userDataOrId !== null ? userDataOrId : user;
-      const shortlistIds = userData?.shortlist || [];
-      if (shortlistIds.length > 0) {
-        const shortlistSchools = await base44.entities.School.filter({
-          id: { $in: shortlistIds }
-        });
-        setShortlistData(shortlistSchools);
-      } else {
-        setShortlistData([]);
-      }
-    } catch (error) {
-      console.error('Failed to load shortlist:', error);
-      setShortlistData([]);
-    }
-  };
+
 
   const createNewConversation = async () => {
     // If not authenticated, return to consultant selection
