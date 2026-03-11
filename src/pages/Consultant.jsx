@@ -178,6 +178,8 @@ export default function Consultant() {
 
   // E30-012: Prevent double-processing the same deep dive school
   const deepDiveAutoAddedRef = useRef(new Set());
+  // E32-003: Prevent double-processing the same UI action
+  const processedActionsRef = useRef(new Set());
   
 
   
@@ -1006,6 +1008,54 @@ export default function Consultant() {
       setAutoExpandSchoolId(schoolId);
       setActivePanel('shortlist');
     }, DOSSIER_AUTO_OPEN_DELAY_MS);
+  }, [messages, isTyping]);
+
+  // E32-003: Action processor - executes UI actions from backend
+  useEffect(() => {
+    if (isTyping) return;
+    const lastMsg = messages[messages.length - 1];
+    if (!lastMsg?.actions?.length || lastMsg.role !== 'assistant') return;
+
+    const timeouts = [];
+
+    for (const action of lastMsg.actions) {
+      const actionKey = `${action.type}_${JSON.stringify(action.payload)}`;
+      if (processedActionsRef.current.has(actionKey)) continue;
+      processedActionsRef.current.add(actionKey);
+
+      console.debug('[E32-003] Dispatching action:', action.type, action.payload);
+
+      const executeAction = () => {
+        switch (action.type) {
+          case 'ADD_TO_SHORTLIST': {
+            const alreadyShortlisted = (user?.shortlist || []).includes(action.payload.schoolId);
+            const wasRemoved = (removedSchoolIds || []).includes(action.payload.schoolId);
+            const alreadyHandledByDeepDive = lastMsg.deepDiveAnalysis?.schoolId === action.payload.schoolId;
+            if (!alreadyShortlisted && !wasRemoved && !alreadyHandledByDeepDive) {
+              handleToggleShortlist(action.payload.schoolId, { silent: true });
+            }
+            break;
+          }
+          case 'OPEN_PANEL':
+            setActivePanel(action.payload.panel);
+            break;
+          case 'EXPAND_SCHOOL':
+            setAutoExpandSchoolId(action.payload.schoolId);
+            setActivePanel('shortlist');
+            break;
+          default:
+            break;
+        }
+      };
+
+      if (action.timing === 'after_message') {
+        timeouts.push(setTimeout(executeAction, 800));
+      } else {
+        executeAction();
+      }
+    }
+
+    return () => timeouts.forEach(t => clearTimeout(t));
   }, [messages, isTyping]);
 
   const handleScrollDownClick = () => {

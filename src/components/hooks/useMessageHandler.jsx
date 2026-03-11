@@ -501,6 +501,7 @@ export const useMessageHandler = ({
         deepDiveAnalysis: response.data?.deepDiveAnalysis ? { ...response.data.deepDiveAnalysis, schoolId: selectedSchool?.id } : null,
         visitPrepKit: response.data?.visitPrepKit || null,
         fitReEvaluation: response.data?.fitReEvaluation || null,
+        actions: response.data?.actions || [],
       };
 
       const finalMessages = [...updatedMessages, aiMessage];
