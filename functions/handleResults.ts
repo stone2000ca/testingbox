@@ -237,6 +237,8 @@ async function callOpenRouter(options) {
 // =============================================================================
 const ACTION_TOOL_SCHEMA = [{ type: 'function', function: { name: 'execute_ui_action', description: 'Execute UI actions alongside your text response when the user wants to add schools to shortlist, open panels, or expand school details', parameters: { type: 'object', properties: { actions: { type: 'array', items: { type: 'object', properties: { type: { type: 'string', enum: ['ADD_TO_SHORTLIST', 'OPEN_PANEL', 'EXPAND_SCHOOL'] }, schoolId: { type: 'string', description: 'School entity ID' }, panel: { type: 'string', enum: ['shortlist', 'comparison', 'brief'] } }, required: ['type'] } } }, required: ['actions'] } } }];
 
+const ACTIONS_RESPONSE_SCHEMA = { type: 'object', properties: { message: { type: 'string', description: 'The consultant response text to show the user' }, actions: { type: 'array', items: { type: 'object', properties: { type: { type: 'string', enum: ['ADD_TO_SHORTLIST', 'OPEN_PANEL', 'EXPAND_SCHOOL'] }, schoolId: { type: 'string' }, panel: { type: 'string', enum: ['shortlist', 'comparison', 'brief'] } }, required: ['type'] }, description: 'UI actions to execute. Empty array if no actions needed.' } }, required: ['message', 'actions'] };
+
 // =============================================================================
 // MAIN: Deno.serve — handleResults
 // =============================================================================
@@ -358,7 +360,8 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
         briefStatus: briefStatus,
         schools: [],
         familyProfile: conversationFamilyProfile,
-        conversationContext: { ...context, state: 'DEEP_DIVE' }
+        conversationContext: { ...context, state: 'DEEP_DIVE' },
+        rawToolCalls: []
       });
     }
 
@@ -373,7 +376,8 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
         briefStatus: briefStatus,
         schools: [],
         familyProfile: conversationFamilyProfile || {},
-        conversationContext: context
+        conversationContext: context,
+        rawToolCalls: []
       });
     }
 
@@ -390,7 +394,8 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
         briefStatus: briefStatus,
         schools: [],
         familyProfile: conversationFamilyProfile,
-        conversationContext: context
+        conversationContext: context,
+        rawToolCalls: []
       });
     }
 
@@ -490,7 +495,8 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
           briefStatus: briefStatus,
           schools: [],
           familyProfile: conversationFamilyProfile,
-          conversationContext: context
+          conversationContext: context,
+          rawToolCalls: []
         });
       }
       
@@ -507,7 +513,8 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
         briefStatus: briefStatus,
         schools: [],
         familyProfile: conversationFamilyProfile,
-        conversationContext: context
+        conversationContext: context,
+        rawToolCalls: []
       });
     }
 
@@ -607,13 +614,24 @@ ACTION INSTRUCTIONS: You have access to the execute_ui_action tool. When the use
         const resultsUserPrompt = `Recent chat:\n${conversationSummary}\n${schoolContext}\n\nParent: "${message}"\n\nRespond as ${consultantName}. ONE question max.`;
 
         let messageWithLinks = 'Here are the schools I found:';
-        // E32-002b: InvokeLLM primary, callOpenRouter fallback (tools wiring deferred)
+        // E32-006: InvokeLLM primary with structured actions schema
         try {
           const fastResponse = await base44.integrations.Core.InvokeLLM({
             prompt: resultsSystemPrompt + '\n\n' + resultsUserPrompt,
-            model: 'gpt_5_mini'
+            model: 'gpt_5_mini',
+            response_json_schema: ACTIONS_RESPONSE_SCHEMA
           });
-          messageWithLinks = fastResponse?.response || fastResponse || 'Here are the schools I found:';
+          try {
+            const parsed = typeof fastResponse === 'object' ? fastResponse : JSON.parse(fastResponse);
+            messageWithLinks = parsed.message || 'Here are the schools I found:';
+            if (Array.isArray(parsed.actions) && parsed.actions.length > 0) {
+              rawToolCalls.push(...parsed.actions.map(a => ({ function: { name: 'execute_ui_action', arguments: JSON.stringify(a) } })));
+              console.log('[E32-006] Actions parsed from InvokeLLM:', rawToolCalls.length);
+            }
+          } catch (parseError) {
+            console.log('[E32-006]: malformed actions in InvokeLLM response:', parseError.message);
+            messageWithLinks = typeof fastResponse === 'string' ? fastResponse : (fastResponse?.response || 'Here are the schools I found:');
+          }
           console.log('[RESULTS] Response via InvokeLLM (primary)');
         } catch (invokeLLMError) {
           console.log('[RESULTS] InvokeLLM failed, falling back to callOpenRouter');
