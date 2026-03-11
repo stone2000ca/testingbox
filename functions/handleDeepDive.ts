@@ -379,7 +379,8 @@ AREA 4 — EVENT-AWARE NEXT STEP (include naturally at the end of your response,
 ${upcomingEvents.length > 0
   ? `There are upcoming events at this school. Mention the nearest one naturally in conversation. Use the confidence tag to set expectations: events tagged [confirmed] can be stated as fact; events tagged [estimated — verify with school] should be presented as "I believe they have..." or "there may be a..." and always suggest verifying directly with the school.${subscriptionTier === 'premium' ? ` This school is a premium partner — you may also offer to send a tour request on the parent's behalf, explaining their priorities will be shared in advance.` : ''}`
   : `No upcoming events are in our system for this school. Use the Honesty Pattern: clearly say you don't have event dates on file, and suggest the parent contact admissions directly.${schoolContactEmail ? ` Their admissions contact is: ${schoolContactEmail}.` : ' Direct them to the school website for contact info.'}`
-}`;
+}
+${schoolIdContext}`;
 
     // E32-002b: School ID context block so LLM can reference valid IDs in actions
     const schoolIdContext = currentSchools?.length > 0
