@@ -169,8 +169,6 @@ export default function Consultant() {
   // T047: Auto-refresh animation trigger
   const [schoolsAnimKey, setSchoolsAnimKey] = useState(0);
 
-  // Track whether shortlist has ever been auto-populated (prevents re-populating after user manually empties)
-  const hasAutoPopulatedShortlist = useRef(false);
   // E30-012: Prevent double-processing the same deep dive school
   const deepDiveAutoAddedRef = useRef(new Set());
   
