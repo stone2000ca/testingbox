@@ -20,7 +20,6 @@ import SchoolDetailPanel from '@/components/schools/SchoolDetailPanel';
 import ShortlistPanel from '@/components/chat/ShortlistPanel';
 import NotesPanel from '@/components/chat/NotesPanel';
 import ComparisonView from '@/components/schools/ComparisonView';
-import SortControl from '@/components/schools/SortControl';
 import { getTuitionBand, buildPriorityChecks } from '@/components/schools/SchoolCard';
 import { validateBriefContent, generateProgrammaticBrief } from '../components/utils/briefUtils';
 import { buildTiers } from '../components/utils/tierEngine';
@@ -151,9 +150,6 @@ export default function Consultant() {
   // BRIEF→RESULTS transition animation
   const [isTransitioning, setIsTransitioning] = useState(false);
   const prevIsIntakePhaseRef = useRef(true);
-
-  // T-RES-005: Sort mode
-  const [sortMode, setSortMode] = useState('bestFit');
 
   // T-RES-006: Priority overrides { [rowId]: 'musthave' | 'nicetohave' | 'dontcare' }
   const [priorityOverrides, setPriorityOverrides] = useState({});
@@ -1497,7 +1493,6 @@ export default function Consultant() {
                     Results ({filteredSchools.length})
                   </h2>
                 </div>
-                <SortControl sortMode={sortMode} onSortChange={setSortMode} />
               </div>
               <div className="flex-1 overflow-auto p-3 sm:p-4">
                 <SchoolGrid
