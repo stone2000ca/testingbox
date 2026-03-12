@@ -158,8 +158,6 @@ export const useMessageHandler = ({
         consultantName: selectedConsultant,
         currentOnboardingPhase: onboardingPhase,
         currentSchools: isBriefConfirmingForResults ? [] : schools,
-        userNotes,
-        shortlistedSchools,
         userLocation: userLocation ? {
           lat: userLocation.lat,
           lng: userLocation.lng,
