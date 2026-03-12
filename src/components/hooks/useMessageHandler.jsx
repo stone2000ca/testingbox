@@ -119,19 +119,6 @@ export const useMessageHandler = ({
     setLastTypingTime(Date.now());
 
     try {
-      // Fetch user notes and shortlist for AI context
-      let userNotes = [];
-      let shortlistedSchools = [];
-      if (isAuthenticated && user) {
-        try {
-          const notes = await base44.entities.Notes.filter({ userId: user.id });
-          userNotes = notes.filter(n => n?.content).map(n => n.content);
-          shortlistedSchools = shortlistData.map(s => s.name);
-        } catch (e) {
-          console.error('Failed to fetch notes/shortlist:', e);
-        }
-      }
-
       // CRITICAL FIX: When confirming brief, pass empty array to force fresh search
       const isBriefConfirmingForResults = isBriefConfirmation ||
                                           (briefStatus === BRIEF_STATUS.PENDING_REVIEW &&
