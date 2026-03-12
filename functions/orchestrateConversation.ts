@@ -656,25 +656,27 @@ YOU ARE LIAM - Senior education strategist, 10+ years in private school placemen
 
   let discoveryMessageRaw = 'Tell me more about your child.';
   try {
-    const fastResponse = await base44.integrations.Core.InvokeLLM({ 
-      prompt: personaInstructions + '\n\nRecent chat:\n' + conversationSummary + '\n\nParent: "' + message + '"\n\nRespond as ' + consultantName + '. 2-3 questions max. No filler.',
-      model: 'gpt_5_mini'
+    discoveryMessageRaw = await callOpenRouter({
+      systemPrompt: personaInstructions,
+      userPrompt: discoveryUserPrompt,
+      maxTokens: 300,
+      temperature: 0.7
     });
-    discoveryMessageRaw = fastResponse?.response || fastResponse || 'Tell me more about your child.';
-    console.log('[DISCOVERY] Response via InvokeLLM (fast path)');
-  } catch (invokeLLMError) {
-    console.log('[DISCOVERY] InvokeLLM failed, falling back to OpenRouter');
+    console.log('[DISCOVERY] Response via callOpenRouter (primary)');
+  } catch (openRouterError) {
+    console.log('[DISCOVERY] callOpenRouter failed, falling back to InvokeLLM with 8s timeout');
     try {
-      const aiResponse = await callOpenRouter({
-        systemPrompt: personaInstructions,
-        userPrompt: discoveryUserPrompt,
-        maxTokens: 500,
-        temperature: 0.7
-      });
-      discoveryMessageRaw = aiResponse || 'Tell me more about your child.';
-      console.log('[DISCOVERY] Response via OpenRouter (fallback)');
-    } catch (openrouterError) {
-      console.error('[DISCOVERY] Both LLM providers failed');
+      const invokeResult = await Promise.race([
+        base44.integrations.Core.InvokeLLM({
+          prompt: personaInstructions + '\n\nRecent chat:\n' + conversationSummary + '\n\nParent: "' + message + '"\n\nRespond as ' + consultantName + '. 2-3 questions max. No filler.',
+          model: 'gpt_5_mini'
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('InvokeLLM timed out after 8s')), 8000))
+      ]);
+      discoveryMessageRaw = invokeResult?.response || invokeResult || 'Tell me more about your child.';
+      console.log('[DISCOVERY] Response via InvokeLLM (fallback)');
+    } catch (invokeLLMError) {
+      console.error('[DISCOVERY] Both LLM providers failed:', invokeLLMError.message);
     }
   }
   
