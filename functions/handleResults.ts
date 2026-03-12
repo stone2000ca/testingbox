@@ -618,19 +618,32 @@ ACTIONS (JSON output): Your response will be structured as JSON with a 'message'
 
         const resultsUserPrompt = `Recent chat:\n${conversationSummary}\n${schoolContext}\n\nParent: "${message}"\n\nRespond as ${consultantName}. ONE question max.`;
 
-        if (autoRefresh && autoRefreshEntitiesStr) {
-          aiMessage = "I've refreshed your matches based on the new info — here's what changed.";
-        } else if (isThinResults) {
-          aiMessage = `I found ${schoolCount} school${schoolCount === 1 ? '' : 's'} that fit your criteria. Want me to adjust the search to find more options?`;
-        } else if (isFirstResults) {
-          aiMessage = "Here are your strongest matches based on everything you've told me. Take your time browsing — when a school catches your eye, save it to your shortlist.";
-        } else {
-          aiMessage = "Got it — I've updated your matches.";
-        }
+        const llmResult = await callOpenRouter({
+          systemPrompt: resultsSystemPrompt,
+          userPrompt: resultsUserPrompt,
+          maxTokens: 300,
+          temperature: 0.7,
+          tools: ACTION_TOOL_SCHEMA,
+          toolChoice: 'auto',
+          returnRaw: true,
+          _logContext: { base44, conversation_id: conversationId, phase: 'RESULTS', is_test: false }
+        });
+        aiMessage = llmResult.content || "Here are your matches.";
+        if (llmResult.toolCalls?.length > 0) rawToolCalls.push(...llmResult.toolCalls);
       }
     } catch (e) {
       console.error('[ERROR] RESULTS response failed:', e.message);
-      aiMessage = matchingSchools.length > 0 ? 'Here are the schools I found:' : "I don't have matching schools.";
+      if (autoRefresh && Object.keys(extractedEntities || {}).filter(k =>
+        !['intentSignal', 'briefDelta', 'remove_priorities', 'remove_interests', 'remove_dealbreakers', 'gender'].includes(k)
+      ).length > 0) {
+        aiMessage = "I've refreshed your matches based on the new info — here's what changed.";
+      } else if (matchingSchools.length < 5 && matchingSchools.length > 0) {
+        aiMessage = `I found ${matchingSchools.length} school${matchingSchools.length === 1 ? '' : 's'} that fit your criteria. Want me to adjust the search to find more options?`;
+      } else if (!conversationHistory?.filter(m => m.role === 'assistant' && m.content?.includes('school')).length) {
+        aiMessage = "Here are your strongest matches based on everything you've told me. Take your time browsing — when a school catches your eye, save it to your shortlist.";
+      } else {
+        aiMessage = "Got it — I've updated your matches.";
+      }
     }
 
     return Response.json({
