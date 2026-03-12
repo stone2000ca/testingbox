@@ -109,38 +109,36 @@ export default function Home() {
       <Navbar />
 
       {/* HERO SECTION */}
-      <section className="relative overflow-hidden min-h-[70vh] flex items-center justify-center">
-        {/* Video Background */}
-        <video
-          autoPlay
-          muted
-          loop
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ zIndex: 0 }}
+      <section className="flex flex-col lg:flex-row min-h-[70vh]">
+        {/* LEFT: Image Panel */}
+        <div
+          className="lg:w-[55%] w-full min-h-[300px] relative"
+          style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1523050854058-8df90110c8f1?w=1200&q=80)', backgroundSize: 'cover', backgroundPosition: 'center' }}
         >
-          <source src="https://jamesshi.com/wp-content/uploads/2026/02/nextschool_hero_video.mp4" type="video/mp4" />
-        </video>
-        
-        {/* Overlay for text readability */}
-        <div className="absolute inset-0 bg-black/40" style={{ zIndex: 1 }} />
-        
-        <div id="main-content" className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" style={{ zIndex: 2 }}>
-          <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-            You Know Your Child.<br /> We Know the Schools.
-          </h1>
-          <p className="text-lg sm:text-xl lg:text-2xl text-slate-200 mb-8 sm:mb-10 max-w-3xl mx-auto font-light">
-            Tell us what matters to your family, and we'll narrow hundreds of options down to the few that actually fit.
-          </p>
-          <Link to={createPageUrl('Consultant')}>
-            <Button 
-              size="lg" 
-              className="bg-teal-500 hover:bg-teal-600 text-white px-6 sm:px-8 py-5 sm:py-7 text-base sm:text-lg focus:ring-2 focus:ring-teal-400 focus:ring-offset-2"
-              aria-label="Start conversation with AI consultant"
-            >
-              Start a Conversation
-              <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
-            </Button>
-          </Link>
+          <div className="absolute inset-0 bg-black/10" />
+        </div>
+
+        {/* RIGHT: Content Panel */}
+        <div
+          className="lg:w-[45%] w-full flex flex-col justify-center px-8 lg:px-16 py-16"
+          style={{ backgroundColor: 'var(--ns-cream)' }}
+        >
+          <div id="main-content">
+            <p className="ns-label mb-3" style={{ color: 'var(--ns-teal-600)' }}>FIND THE SCHOOL</p>
+            <h1 className="ns-display mb-6" style={{ color: 'var(--ns-text-primary)' }}>That Fits Your Child Best</h1>
+            <p className="text-lg mb-10 max-w-md" style={{ color: 'var(--ns-text-body)' }}>
+              Tell us what matters to your family, and we'll match you with the right private schools in Canada.
+            </p>
+            <div className="flex flex-row gap-4 flex-wrap">
+              <Link to={createPageUrl('Consultant')}><button className="ns-btn-primary">Chat with Jackie</button></Link>
+              <Link to={createPageUrl('Consultant')}><button className="ns-btn-primary">Chat with Liam</button></Link>
+            </div>
+            <div className="mt-6">
+              <Link to={createPageUrl('SchoolDirectory')} className="text-sm font-medium" style={{ color: 'var(--ns-teal-600)' }}>
+                Or Browse Schools →
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
