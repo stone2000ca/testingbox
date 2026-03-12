@@ -436,8 +436,8 @@ Deno.serve(async (req) => {
     }
 
     // E32-002b: School ID context block — must be defined before area4Instructions
-    const schoolIdContext = currentSchools?.length > 0
-      ? `\nSCHOOL IDs (use these exact IDs in execute_ui_action):\n` + currentSchools.map(s => `[ID:${s.id}] ${s.name}`).join('\n')
+    const schoolIdContext = selectedSchoolId && selectedSchool
+      ? `\nSCHOOL IDs (use these exact IDs in execute_ui_action):\n[ID:${selectedSchoolId}] ${selectedSchool.name}`
       : '';
 
     const area4Instructions = `
