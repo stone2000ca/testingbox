@@ -285,6 +285,7 @@ Deno.serve(async (req) => {
     // WC10: Generate AI narrative if transitioning from BRIEF to RESULTS
     // =========================================================================
     if (context.previousState === STATES.BRIEF && briefStatus === 'confirmed' && conversationId) {
+      (async () => {
       try {
         console.log('[WC10] Generating AI narrative for ChatSession');
 
