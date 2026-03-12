@@ -627,11 +627,8 @@ async function handleDiscovery(base44, message, conversationFamilyProfile, conte
     tier1Guidance = `TIER 1 PRIORITY: We still need: ${missingFields[0]}. Work this in naturally.`;
   }
 
-  const stopIntentConstraint = `CRITICAL HARD CONSTRAINT — HIGHEST PRIORITY — OVERRIDES ALL OTHER INSTRUCTIONS:
-  If the user signals they are done with questions (e.g. "show me schools", "no more questions", "stop asking", "that's enough", "I'm done", "just show me results", "skip", "go ahead", "let's see", "move on"), you MUST immediately stop asking questions. Do NOT ask any clarifying or follow-up question. Do NOT explain what information is missing. Your ONLY job at that point is to acknowledge their request in one warm sentence and confirm the brief is being prepared. Do NOT say 'I'll prepare the brief' or promise a brief unless the system has actually transitioned to BRIEF state. This rule overrides all instructions about thoroughness, completeness, or missing Tier 1 data.\n\n`;
-
   const personaInstructions = consultantName === 'Jackie'
-    ? `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}${stopIntentConstraint}[STATE: DISCOVERY] You are gathering family info to find the right school. Your primary goal is to collect Tier 1 data: child's grade/age, preferred location, and budget — in that priority order.
+    ? `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}[STATE: DISCOVERY] You are gathering family info to find the right school. Your primary goal is to collect Tier 1 data: child's grade/age, preferred location, and budget — in that priority order.
 ${knownSummary}
 ${tier1Guidance}
 TURN MANAGEMENT: Transition to BRIEF within 5 turns maximum. If Tier 1 (grade, location, budget) is complete, do not exceed 1 enrichment turn — move to BRIEF on the next turn.
@@ -641,7 +638,7 @@ CRITICAL: Do NOT generate a brief, summary, or any bullet-point summary of the f
 CRITICAL: NEVER ask the user to confirm or repeat information they have already provided in this conversation. If they said their daughter is in grade 9, do not ask what grade again.
 NEVER repeat a question verbatim that the user ignored or didn't answer. If they skip a question, either rephrase it completely or move on to the next priority. Never make the conversation feel like a form.${briefOfferInstruction}
 YOU ARE JACKIE - Senior education consultant, 10+ years placing families in private schools. You're warm but efficient.`
-    : `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}${stopIntentConstraint}[STATE: DISCOVERY] You are gathering family info to find the right school. Your primary goal is to collect Tier 1 data: child's grade/age, preferred location, and budget — in that priority order.
+    : `${returningUserContextBlock ? returningUserContextBlock + '\n\n' : ''}[STATE: DISCOVERY] You are gathering family info to find the right school. Your primary goal is to collect Tier 1 data: child's grade/age, preferred location, and budget — in that priority order.
 ${knownSummary}
 ${tier1Guidance}
 TURN MANAGEMENT: Transition to BRIEF within 5 turns maximum. If Tier 1 (grade, location, budget) is complete, do not exceed 1 enrichment turn — move to BRIEF on the next turn.
@@ -660,7 +657,8 @@ YOU ARE LIAM - Senior education strategist, 10+ years in private school placemen
       systemPrompt: personaInstructions,
       userPrompt: discoveryUserPrompt,
       maxTokens: 300,
-      temperature: 0.7
+      temperature: 0.7,
+      _logContext: { base44, conversation_id: context.conversationId || 'unknown', phase: 'DISCOVERY', is_test: false }
     });
     console.log('[DISCOVERY] Response via callOpenRouter (primary)');
   } catch (openRouterError) {
