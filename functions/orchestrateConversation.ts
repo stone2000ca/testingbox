@@ -669,7 +669,8 @@ YOU ARE LIAM - Senior education strategist, 10+ years in private school placemen
       const invokeResult = await Promise.race([
         base44.integrations.Core.InvokeLLM({
           prompt: personaInstructions + '\n\nRecent chat:\n' + conversationSummary + '\n\nParent: "' + message + '"\n\nRespond as ' + consultantName + '. 2-3 questions max. No filler.',
-          model: 'gpt_5_mini'
+          model: 'gpt_5_mini',
+          maxTokens: 200
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('InvokeLLM timed out after 8s')), 8000))
       ]);
