@@ -187,7 +187,7 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
             remove_interests: { type: 'array', items: { type: 'string' } },
             remove_dealbreakers: { type: 'array', items: { type: 'string' } },
             intentSignal: { type: 'string', enum: ['continue', 'request-brief', 'request-results', 'edit-criteria', 'ask-about-school', 'back-to-results', 'restart', 'off-topic', 'confirm-brief', 'visit_prep_request', 'visit_debrief'] },
-            briefDelta: { type: 'object', properties: { additions: { type: 'array' }, updates: { type: 'array' }, removals: { type: 'array' } } }
+            briefDelta: { type: 'object', properties: { additions: { type: 'array', items: { type: 'string' } }, updates: { type: 'array', items: { type: 'string' } }, removals: { type: 'array', items: { type: 'string' } } } }
           },
           required: ['intentSignal', 'briefDelta']
         },
