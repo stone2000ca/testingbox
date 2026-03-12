@@ -85,7 +85,7 @@ export default function Navbar({ variant = "default" }) {
 
   // Default variant for other pages
   return (
-    <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50" style={{ borderColor: 'var(--ns-border)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <Link to={createPageUrl('Home')} className="flex items-center gap-2">
           <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699717aa28903550c09d4d26/c65068e60_logo_NextSchool_full.png" alt="NextSchool" className="h-10" />
