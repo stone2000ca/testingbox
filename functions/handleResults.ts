@@ -626,7 +626,8 @@ ${schoolIdContext}`;
           returnRaw: true,
           _logContext: { base44, conversation_id: conversationId, phase: 'RESULTS', is_test: false }
         });
-        aiMessage = llmResult.content || "Here are your matches.";
+        let rawContent = llmResult.content || '';
+        try { const parsed = JSON.parse(rawContent); aiMessage = parsed.message || rawContent || "Here are your matches."; } catch { aiMessage = rawContent || "Here are your matches."; }
         if (llmResult.toolCalls?.length > 0) rawToolCalls.push(...llmResult.toolCalls);
       }
     } catch (e) {
