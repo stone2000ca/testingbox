@@ -567,37 +567,6 @@ function lightweightExtract(message, existingProfile) {
     bridgeProfile.interests = Array.from(foundInterests);
   }
 
-  // E35-REC3: Priority keyword extraction (school requirements)
-  const PRIORITY_KEYWORDS = {
-    'small class sizes': /\bsmall\s+class(?:es|\s+size)?/i,
-    'learning support': /\b(?:learning\s+support|learning\s+disabilities?|LD\s+support|special\s+needs)/i,
-    'structured environment': /\bstructured\s+(?:environment|learning|program)/i,
-    'STEM focus': /\bSTEM/i,
-    'French immersion': /\bfrench\s+immersion/i,
-    'strong academics': /\b(?:strong|rigorous|excellent)\s+academics?/i,
-    'diversity': /\b(?:diversity|diverse|inclusive|inclusion)/i,
-    'outdoor education': /\boutdoor\s+(?:education|learning|program)/i,
-    'arts program': /\b(?:strong|good|excellent)?\s*arts?\s+program/i,
-    'sports program': /\b(?:strong|good|excellent)?\s*sports?\s+program/i,
-    'college prep': /\b(?:college|university)\s+prep/i,
-    'gifted program': /\bgifted/i,
-    'hands-on learning': /\bhands[- ]on\s+learning/i,
-    'project-based learning': /\bproject[- ]based/i,
-    'experiential learning': /\bexperiential/i,
-    'faith-based': /\b(?:faith[- ]based|christian|catholic|jewish|islamic|religious\s+school)/i,
-    'boarding': /\bboarding\s+(?:school|option|program)/i,
-    'co-ed': /\bco[- ]?ed/i,
-    'single-sex': /\b(?:all[- ]?boys|all[- ]?girls|single[- ]sex)/i,
-    'technology focus': /\b(?:technology|tech)\s+(?:focus|program|integration)/i
-  };
-  const foundPriorities = [];
-  for (const [label, pattern] of Object.entries(PRIORITY_KEYWORDS)) {
-    if (pattern.test(message)) foundPriorities.push(label);
-  }
-  if (foundPriorities.length > 0) {
-    bridgeProfile.priorities = foundPriorities;
-  }
-
   // Intent detection
   if (/\b(brief|summary|that'?s all|that'?s it)\b/i.test(message)) bridgeIntent = 'request-brief';
   else if (/\b(that looks right|show me schools|looks good|looks right|confirmed?|yes please)\b/i.test(message)) bridgeIntent = 'confirm-brief';
@@ -1415,13 +1384,13 @@ Object.assign(context, safeUpdatedContext);
 
       console.log('[ORCH] resolveTransition:', { nextState: currentState, intentSignal, sufficiency: resolveResult.sufficiency });
 
-      // E35-REC1: extractEntities fire-and-forget for ALL states (was awaited for BRIEF/RESULTS)
+      // S136-WC1: E35-REC1 — fire-and-forget for ALL states (no await, no post-merge)
       base44.asServiceRole.functions.invoke('extractEntities', {
         message: processMessage,
         conversationFamilyProfile,
         context,
         conversationHistory
-      }).catch(e => console.error('[E35-REC1] extractEntities failed (non-blocking):', e.message));
+      }).catch(e => console.error('[S136-WC1] extractEntities fire-and-forget failed:', e.message));
 
       // GIBBERISH DETECTION: Catch nonsensical input before routing to handlers
       const normalizedMsg = (processMessage || '').toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
