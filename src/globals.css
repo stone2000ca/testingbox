@@ -191,6 +191,28 @@
   .ns-btn-outline:hover {
     background-color: var(--ns-teal-50);
   }
+
+  .ns-card {
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid var(--ns-border);
+    box-shadow: var(--ns-card-shadow);
+    overflow: hidden;
+  }
+
+  .ns-card-interactive {
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid var(--ns-border);
+    box-shadow: var(--ns-card-shadow);
+    overflow: hidden;
+    transition: all 200ms ease-out;
+    cursor: pointer;
+  }
+  .ns-card-interactive:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+  }
 }
 
 @keyframes fadeIn {
