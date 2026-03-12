@@ -470,26 +470,7 @@ In your JSON response, also include a schoolAnalysis object with:
 - visitQuestions: array of 3-5 personalized questions for a school visit
 - financialSummary: {tuition (number), aidAvailable (boolean), estimatedNetCost (number), budgetFit (string)}
 
-ACTION INSTRUCTIONS:
-After each response, output a JSON block to emit any actions the user explicitly requested.
-
-\`\`\`json
-{
-  "actions": [
-    {
-      "type": "ADD_TO_SHORTLIST",
-      "schoolName": "<exact school name from database>",
-      "reason": "<why this school fits>"
-    }
-  ]
-}
-\`\`\`
-
-Rules:
-- ONLY emit an action when the user explicitly asks (e.g., "add to shortlist", "save this school", "add it").
-- General interest ("tell me more", "sounds interesting") is NOT a request to add.
-- If no action is requested, output: {"actions": []}
-- Always include the JSON block at the end of every response.`;
+`;
 
     const deepDiveUserPrompt = `FAMILY BRIEF:
 - Child: ${childDisplayName}
