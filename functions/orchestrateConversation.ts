@@ -925,7 +925,8 @@ ${isDebriefComplete ? 'They\'ve shared their impressions. Wrap up warmly, valida
               const qaPairs = debriefArtifacts?.[0]?.content?.qaPairs || [];
               if (qaPairs.length > 0) {
                 const qaText = qaPairs.map((qa, i) => `Q${i+1}: ${qa.question}\nA${i+1}: ${qa.answer}`).join('\n\n');
-                const debriefAnalysis = await base44.integrations.Core.InvokeLLM({
+                const debriefAnalysis = await Promise.race([
+                  base44.integrations.Core.InvokeLLM({
                   prompt: `A parent just completed a post-visit debrief for ${school?.name || 'a school'}. Analyze their responses and return JSON only.
 
 Debrief Q&A:
