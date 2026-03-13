@@ -338,6 +338,7 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
             updatedFamilyProfile[key] = value;
           }
         } else if (value !== '') {
+          // CRT-S109-F11 FIX: Always overwrite scalar values with fresh extraction (don't preserve stale data)
           updatedFamilyProfile[key] = value;
         }
       }
