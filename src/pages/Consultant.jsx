@@ -39,6 +39,7 @@ import Navbar from '@/components/navigation/Navbar';
 import TourRequestModal from '../components/schools/TourRequestModal';
 import { useSchoolFiltering } from '@/components/hooks/useSchoolFiltering';
 import { useMessageHandler } from '@/components/hooks/useMessageHandler';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 
 
 const PLAN_NAMES = { FREE: 'free', BASIC: 'basic', PREMIUM: 'premium', PRO: 'pro', ENTERPRISE: 'enterprise' };
