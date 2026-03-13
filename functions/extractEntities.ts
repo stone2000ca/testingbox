@@ -291,15 +291,18 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
   if (!updatedContext.extractedEntities) {
     updatedContext.extractedEntities = {};
   }
+  // CRT-S109-F11 FIX: Merge extracted data directly into context for FamilyBrief display
   for (const [key, value] of Object.entries(extractedData)) {
     if (value !== null && value !== undefined) {
-      if (Array.isArray(value) && Array.isArray(updatedContext.extractedEntities[key]) && updatedContext.extractedEntities[key].length > 0) {
-        if (Array.isArray(updatedContext.extractedEntities[key]) && Array.isArray(value)) {
+      // For arrays, merge with existing; for scalars, always overwrite with fresh extraction
+      if (Array.isArray(value)) {
+        if (Array.isArray(updatedContext.extractedEntities[key]) && updatedContext.extractedEntities[key].length > 0) {
           updatedContext.extractedEntities[key] = [...new Set([...updatedContext.extractedEntities[key], ...value])];
         } else {
           updatedContext.extractedEntities[key] = value;
         }
       } else {
+        // Scalar value: always use fresh extraction (don't skip if context already has it)
         updatedContext.extractedEntities[key] = value;
       }
     }
