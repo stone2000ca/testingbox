@@ -280,6 +280,9 @@ export default function Consultant() {
   // Override: show split layout if schools exist (from session restore)
   const showSchoolGrid = schools.length > 0;
 
+  // E37: Show loading overlay when brief confirmed and consultant is typing
+  const showLoadingOverlay = briefStatus === 'confirmed' && isTyping;
+
 
 
   // School filtering/sorting via extracted hook
