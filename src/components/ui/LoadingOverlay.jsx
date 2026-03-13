@@ -296,13 +296,15 @@ export default function LoadingOverlay({ visible, statusMessage = 'Finding Your 
             background: 'rgba(51,65,85,0.05)',
             borderRadius: '8px',
             fontSize: '13px',
-            color: '#64748b',
+            color: '#555',
             minHeight: '50px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             position: 'relative',
             border: '1px solid rgba(24,150,138,0.15)',
+            width: '100%',
+            boxSizing: 'border-box',
           }}
         >
           <div
@@ -312,7 +314,7 @@ export default function LoadingOverlay({ visible, statusMessage = 'Finding Your 
             }}
           >
             <span style={{ color: '#18968a', fontWeight: 'bold', marginRight: '4px' }}>Did you know?</span>
-            <span>{FUN_FACTS[factIndex]}</span>
+            <span style={{ color: '#555' }}>{FUN_FACTS[factIndex]}</span>
           </div>
         </div>
 
