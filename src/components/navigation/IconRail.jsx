@@ -23,6 +23,10 @@ export default function IconRail({ currentState, activePanel, onTogglePanel }) {
   const addSchoolEnabled = isResults;
   const addSchoolActive = activePanel === 'addSchool';
 
+  // Timeline: enabled only in RESULTS/DEEPDIVE
+  const timelineEnabled = isResults;
+  const timelineActive = activePanel === 'timeline';
+
   return (
     <nav
       className="hidden lg:flex flex-col items-center pt-4 gap-3 flex-shrink-0 border-l border-white/10"
