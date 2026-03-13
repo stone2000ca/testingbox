@@ -1148,6 +1148,9 @@ export default function Consultant() {
       {/* Header */}
       <Navbar variant="minimal" />
 
+      {/* E37: Loading overlay on brief confirmation */}
+      {showLoadingOverlay && <LoadingOverlay isVisible={showLoadingOverlay} />}
+
       {(isIntakePhase && !showSchoolGrid) ? (
          /* INTAKE PHASE - Centered Layout */
          <div id="main-content" className="flex-1 flex bg-[#1E1E2E] overflow-hidden">
