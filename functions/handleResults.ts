@@ -379,9 +379,14 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
     const shortlistFastPathRegex = /\b(add|save|shortlist|bookmark|keep)\b.{0,40}\b(school|academy|college|it|that|this|one)\b|\b(shortlist|save|add)\s+(it|that|this)\b|\badd\b.{0,30}\bto\b.{0,20}\b(shortlist|list|saved)\b/i;
     const isShortlistAction = extractedEntities?.intentSignal === 'shortlist-action' || shortlistFastPathRegex.test(message);
     if (isShortlistAction) {
-      const schoolPool = (previousSchools && previousSchools.length > 0)
-        ? previousSchools
-        : (context.lastMatchedSchools || []);
+      const shortlistPool = previousSchools || [];
+      const matchPool = context.lastMatchedSchools || [];
+      const seenIds = new Set();
+      const schoolPool = [...shortlistPool, ...matchPool].filter(s => {
+        if (seenIds.has(s.id)) return false;
+        seenIds.add(s.id);
+        return true;
+      });
 
       // Extract the school name fragment from the message for scoring
       // Strip common command words to isolate the school name portion
