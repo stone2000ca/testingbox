@@ -34,7 +34,7 @@ export default function AddSchoolPanel({ onClose, onToggleShortlist, shortlisted
   }, [query]);
 
   const handleAdd = (school) => {
-    onToggleShortlist(school.id);
+    onToggleShortlist(school.id, { school });
     toast(`${school.name} added to shortlist`);
     onClose();
   };
