@@ -51,8 +51,16 @@ export function useShortlist({
     try {
       const currentShortlist = user.shortlist || [];
       let updatedShortlist;
-      const school = schools.find(s => s.id === schoolId) || shortlistData.find(s => s.id === schoolId);
+      let school = schools.find(s => s.id === schoolId) || shortlistData.find(s => s.id === schoolId) || extraSchools?.find(s => s.id === schoolId);
       const isRemoving = currentShortlist.includes(schoolId);
+      if (!school && !isRemoving) {
+        try {
+          const fetched = await base44.entities.School.filter({ id: schoolId });
+          school = fetched?.[0] || null;
+        } catch (e) {
+          console.error('[SHORTLIST] Failed to fetch school for toggle:', e.message);
+        }
+      }
 
       if (isRemoving) {
         updatedShortlist = currentShortlist.filter(id => id !== schoolId);
