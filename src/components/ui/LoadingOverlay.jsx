@@ -145,28 +145,28 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
           </div>
 
           {/* Gold Dots */}
-          {[0, 1, 2, 3, 4].map((i) => {
-            const angle = (i * 72) * Math.PI / 180; // 5 dots evenly spaced
-            const x = 80 * Math.cos(angle);
-            const y = 80 * Math.sin(angle);
-            return (
-              <div
-                key={i}
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '50%',
-                  background: '#d4a017',
-                  animation: `pulse 2s ease-in-out infinite`,
-                  animationDelay: `${i * 0.2}s`,
-                }}
-              />
-            );
-          })}
+          {[
+            { top: '5px', left: '75px', delay: '0s' },
+            { top: '30px', left: '140px', delay: '0.4s' },
+            { top: '115px', left: '145px', delay: '0.8s' },
+            { top: '140px', left: '55px', delay: '1.2s' },
+            { top: '40px', left: '10px', delay: '1.6s' },
+          ].map((dot, i) => (
+            <div
+              key={i}
+              style={{
+                position: 'absolute',
+                top: dot.top,
+                left: dot.left,
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: '#d4a017',
+                animation: `pulse 2s ease-in-out infinite`,
+                animationDelay: dot.delay,
+              }}
+            />
+          ))}
         </div>
 
         {/* Progress Steps */}
