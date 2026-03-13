@@ -119,8 +119,6 @@ Deno.serve(async (req) => {
     const localProfile = JSON.parse(JSON.stringify(rawProfile || {}));
     let context = rawContext || {};
 
-    console.log('[HANDLEBRIEF-DEPLOY-CHECK] v2 — S141 fix active', { briefStatus, msgLower: (message || '').toLowerCase() });
-
     // S108-WC3 Fix 2: Belt-and-suspenders fallback — merge accumulatedFamilyProfile into localProfile
     // for any key that is null/undefined/empty in localProfile but present in accumulated context.
     const accumulated = context.accumulatedFamilyProfile || {};
@@ -144,8 +142,6 @@ Deno.serve(async (req) => {
 
     const isInitialAdjustRequest = /\b(change|adjust|edit|actually|wait|hold on|no|not right|different|let me|redo)\b/i.test(msgLower) &&
                                     !/budget|grade|location|school|curriculum|priority/i.test(msgLower);
-
-    console.log('[ADJUST-DIAG]', { updatedBriefStatus, isInitialAdjustRequest, msgLower });
 
     if ((updatedBriefStatus === BRIEF_STATUS.EDITING || updatedBriefStatus === BRIEF_STATUS.PENDING_REVIEW) && isInitialAdjustRequest) {
       const adjustSystemPrompt = consultantName === 'Jackie'
