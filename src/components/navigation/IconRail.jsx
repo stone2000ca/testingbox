@@ -100,6 +100,14 @@ export default function IconRail({ currentState, activePanel, onTogglePanel }) {
         onClick={() => addSchoolEnabled && onTogglePanel('addSchool')}
         disabledTip="Available after finding schools"
       />
+      <RailIcon
+        icon={CalendarDays}
+        label="Timeline"
+        enabled={timelineEnabled}
+        active={timelineActive}
+        onClick={() => timelineEnabled && onTogglePanel('timeline')}
+        disabledTip="Available after finding schools"
+      />
     </nav>
   );
 }
