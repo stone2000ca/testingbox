@@ -742,8 +742,7 @@ ${schoolIdContext}`;
         }
 
         // Fix B: Deterministic shortlist fallback — if LLM didn't fire the tool at all for a shortlist-action intent
-        const detectedIntent = extractedEntities?.intentSignal;
-        if (detectedIntent === 'shortlist-action' && rawToolCalls.length === 0) {
+        if (isShortlistAction && rawToolCalls.length === 0) {
           // Fuzzy-match school name from message against matchingSchools
           const msgNorm = message.toLowerCase().replace(/[^a-z0-9\s]/g, '');
           const matched = matchingSchools.find(s => {
