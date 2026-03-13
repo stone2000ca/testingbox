@@ -1174,8 +1174,14 @@ export default function Consultant() {
       {/* Header */}
       <Navbar variant="minimal" />
 
-      {/* E37: Loading overlay on brief confirmation */}
-      {showLoadingOverlay && <LoadingOverlay isVisible={showLoadingOverlay} onTransitionComplete={() => setIsTransitioning(true)} />}
+      {/* E37: Loading overlay on brief confirmation with 5-second minimum */}
+      {showLoadingOverlay && (
+        <LoadingOverlay 
+          isVisible={showLoadingOverlay} 
+          visible={briefConfirmTimeRef.current && Date.now() - briefConfirmTimeRef.current >= 5000 ? false : true}
+          onTransitionComplete={() => setIsTransitioning(true)} 
+        />
+      )}
 
       {(isIntakePhase && !showSchoolGrid) ? (
          /* INTAKE PHASE - Centered Layout */
