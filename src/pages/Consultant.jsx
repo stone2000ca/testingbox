@@ -1175,13 +1175,14 @@ export default function Consultant() {
       <Navbar variant="minimal" />
 
       {/* E37: Loading overlay on brief confirmation with 5-second minimum */}
-      {showLoadingOverlay && (
-        <LoadingOverlay 
-          isVisible={showLoadingOverlay} 
-          visible={briefConfirmTimeRef.current && Date.now() - briefConfirmTimeRef.current >= 5000 ? false : true}
-          onTransitionComplete={() => setIsTransitioning(true)} 
-        />
-      )}
+      <LoadingOverlay 
+        visible={showLoadingOverlay && !(briefConfirmTimeRef.current && Date.now() - briefConfirmTimeRef.current > 5000 && !isTyping)}
+        statusMessage="Finding Your Matches..."
+        onTransitionComplete={() => {
+          setBriefStatus(null);
+          setIsTyping(false);
+        }} 
+      />
 
       {(isIntakePhase && !showSchoolGrid) ? (
          /* INTAKE PHASE - Centered Layout */
