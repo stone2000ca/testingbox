@@ -472,6 +472,31 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
       }
       if (jMatched) {
         console.log(`[TOUR-FAST-PATH] Matched "${jMatched.name}" (${jMatched.id})`);
+        // E29-005-AC7: Create TourRequest entity immediately for tour booking intent
+        (async () => {
+          try {
+            if (!userId || !conversationId) return;
+            const me = await base44.auth.me();
+            if (!me?.id) return;
+            
+            await base44.asServiceRole.entities.TourRequest.create({
+              parentUserId: userId,
+              schoolId: jMatched.id,
+              requestedAt: new Date().toISOString(),
+              status: 'pending',
+              parentName: me.full_name || '',
+              parentEmail: me.email || '',
+              tourType: 'in_person', // Default to in_person, user can change in modal
+              message: `Tour request initiated from RESULTS state for ${jMatched.name}`,
+              conversationId: conversationId,
+              childGrade: conversationFamilyProfile?.childGrade || undefined,
+            });
+            console.log('[E29-005-AC7] TourRequest created for school:', jMatched.id);
+          } catch (err) {
+            console.error('[E29-005-AC7] TourRequest creation failed:', err?.message);
+          }
+        })();
+        
         return Response.json({ message: `Great choice! Let me pull up the tour request form for ${jMatched.name}.`, state: STATES.RESULTS, briefStatus: briefStatus, schools: jSchoolPool, familyProfile: conversationFamilyProfile, conversationContext: context, actions: [{ type: 'INITIATE_TOUR', payload: { schoolId: jMatched.id }, timing: 'immediate' }] });
       }
       console.log('[TOUR-FAST-PATH] No school match — falling through to LLM');
