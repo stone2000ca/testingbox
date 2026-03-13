@@ -337,37 +337,22 @@ export default function SchoolGrid({
         )}
 
         {tier3Count > 0 && (
-          <div>
-            <button
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 text-sm text-slate-600 font-medium transition-colors mb-4"
-              onClick={() => setTier3Expanded(e => !e)}
-            >
-              {tier3Expanded ? (
-                <><ChevronUp className="h-4 w-4" /> Hide extended matches</>
-              ) : (
-                <><ChevronDown className="h-4 w-4" /> Show all {tier3Count} more matches</>
-              )}
-            </button>
-            {tier3Expanded && (
-              <TierSection
-                title="See All Matches"
-                subtitle="Sorted by distance"
-                schools={displayedSeeAll}
-                onViewDetails={onViewDetails}
-                onToggleShortlist={onToggleShortlist}
-                shortlistedIds={shortlistedIds}
-                familyProfile={familyProfile}
-                accentColor={accentColor}
-                priorityOverrides={priorityOverrides}
-                onPriorityToggle={onPriorityToggle}
-                visitedSchoolIds={visitedSchoolIds}
-              />
-            )}
-          </div>
+          <TierSection
+            title="See All Matches"
+            subtitle="Sorted by distance"
+            schools={displayedSeeAll}
+            onViewDetails={onViewDetails}
+            onToggleShortlist={onToggleShortlist}
+            shortlistedIds={shortlistedIds}
+            familyProfile={familyProfile}
+            accentColor={accentColor}
+            priorityOverrides={priorityOverrides}
+            onPriorityToggle={onPriorityToggle}
+            visitedSchoolIds={visitedSchoolIds}
+          />
         )}
         <div className="text-xs text-slate-400 mt-2">
-          Showing {totalVisible} of {totalVisible + tier3Count} schools
-          {tier3Count > 0 && !tier3Expanded && ` · ${tier3Count} more available`}
+          Showing {totalVisible + tier3Count} schools
         </div>
 
         {/* E31-003: Load More Schools - Distance-Based Discovery */}
