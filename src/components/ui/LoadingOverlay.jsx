@@ -59,6 +59,7 @@ export default function LoadingOverlay({ visible, statusMessage = 'Finding Your 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'auto',
         opacity: fadeOut ? 0 : 1,
         transition: 'opacity 0.4s ease',
       }}
