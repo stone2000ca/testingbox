@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const FUN_FACTS = [
   "Private school students average 8 more library visits per year.",
