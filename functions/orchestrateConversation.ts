@@ -1305,7 +1305,12 @@ Write a warm, natural 3-sentence welcome-back greeting. Acknowledge where they l
       // Merge order: accumulated < DB < bridgeProfile (fresh extraction always wins)
       // For-loop patches any DB nulls that accumulated already knew.
       const { bridgeProfile, bridgeIntent } = lightweightExtract(processMessage, conversationFamilyProfile);
-      const accumulatedProfile = context.accumulatedFamilyProfile || {};
+      let accumulatedProfile = context.accumulatedFamilyProfile || {};
+      if (Object.keys(accumulatedProfile).filter(k => accumulatedProfile[k] != null).length === 0 && conversationFamilyProfile?.id) {
+        accumulatedProfile = { ...conversationFamilyProfile };
+        context.accumulatedFamilyProfile = accumulatedProfile;
+        console.log('[RESUME-FIX] Seeded accumulatedFamilyProfile from DB FamilyProfile');
+      }
       const workingProfile = mergeProfile(mergeProfile(accumulatedProfile, conversationFamilyProfile), bridgeProfile);
       for (const [key, val] of Object.entries(workingProfile)) {
         if (val === null || val === undefined) {
