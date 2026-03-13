@@ -654,10 +654,11 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
 
     let aiMessage = '';
     const rawToolCalls = [];
-    try {
-      if (!matchingSchools || matchingSchools.length === 0) {
-        aiMessage = "I don't have any schools matching your criteria yet. Try a nearby city or broader criteria.";
-      } else {
+    
+    if (!matchingSchools || matchingSchools.length === 0) {
+      aiMessage = "I don't have any schools matching your criteria yet. Try a nearby city or broader criteria.";
+    } else {
+      try {
         const history = conversationHistory || [];
         const recentMessages = history.slice(-10);
         const conversationSummary = recentMessages
@@ -840,19 +841,19 @@ ${schoolIdContext}`;
             console.log(`[SHORTLIST-FALLBACK] Programmatically constructed ADD_TO_SHORTLIST for "${matched.name}" (${matched.id})`);
           }
         }
-      }
-    } catch (e) {
-      console.error('[ERROR] RESULTS response failed:', e.message);
-      if (autoRefresh && Object.keys(extractedEntities || {}).filter(k =>
-        !['intentSignal', 'briefDelta', 'remove_priorities', 'remove_interests', 'remove_dealbreakers', 'gender'].includes(k)
-      ).length > 0) {
-        aiMessage = "I've refreshed your matches based on the new info — here's what changed.";
-      } else if (matchingSchools.length < 5 && matchingSchools.length > 0) {
-        aiMessage = `I found ${matchingSchools.length} school${matchingSchools.length === 1 ? '' : 's'} that fit your criteria. Want me to adjust the search to find more options?`;
-      } else if (!conversationHistory?.some(m => m.role === 'assistant' && m.content?.includes('your matches'))) {
-        aiMessage = consultantName === 'Jackie' ? "Based on everything you've shared, I've put together an initial list of schools for you to explore. Let me know what catches your eye!" : "Based on your criteria, here's your initial shortlist. Take a look and tell me which ones stand out.";
-      } else {
-        aiMessage = consultantName === 'Jackie' ? "Got it — I've refreshed your matches with that in mind." : "Noted. I've updated your matches accordingly.";
+      } catch (e) {
+        console.error('[ERROR] RESULTS response failed:', e.message);
+        if (autoRefresh && Object.keys(extractedEntities || {}).filter(k =>
+          !['intentSignal', 'briefDelta', 'remove_priorities', 'remove_interests', 'remove_dealbreakers', 'gender'].includes(k)
+        ).length > 0) {
+          aiMessage = "I've refreshed your matches based on the new info — here's what changed.";
+        } else if (matchingSchools.length < 5 && matchingSchools.length > 0) {
+          aiMessage = `I found ${matchingSchools.length} school${matchingSchools.length === 1 ? '' : 's'} that fit your criteria. Want me to adjust the search to find more options?`;
+        } else if (!conversationHistory?.some(m => m.role === 'assistant' && m.content?.includes('your matches'))) {
+          aiMessage = consultantName === 'Jackie' ? "Based on everything you've shared, I've put together an initial list of schools for you to explore. Let me know what catches your eye!" : "Based on your criteria, here's your initial shortlist. Take a look and tell me which ones stand out.";
+        } else {
+          aiMessage = consultantName === 'Jackie' ? "Got it — I've refreshed your matches with that in mind." : "Noted. I've updated your matches accordingly.";
+        }
       }
     }
 
