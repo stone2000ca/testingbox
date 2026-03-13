@@ -70,6 +70,32 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
       form.specialRequests ? `Special requests: ${form.specialRequests}` : null,
     ].filter(Boolean).join('\n');
 
+    // E29-005-AC7: Create TourRequest entity (primary) for runtime verification
+    const tourRequest = await base44.entities.TourRequest.create({
+      parentUserId: user.id,
+      schoolId: school.id,
+      requestedAt: new Date().toISOString(),
+      status: 'pending',
+      parentName: user.full_name || '',
+      parentEmail: user.email || '',
+      tourType: form.tourType,
+      message: messageParts,
+      preferredDate: preferredDate || undefined,
+      preferredDateAlt: preferredDateAlt || undefined,
+      eventId: primaryEvent?.id || undefined,
+      numberOfVisitors: Number(form.numberOfVisitors),
+      childGrade: form.childGrade !== '' ? Number(form.childGrade) : undefined,
+      specialRequests: form.specialRequests || undefined,
+      // E16c: Family context snapshot fields (only if profile exists)
+      ...(familyProfile && {
+        maxTuition: familyProfile.maxTuition || undefined,
+        prioritiesSnapshot: familyProfile.priorities ? JSON.stringify(familyProfile.priorities) : undefined,
+        boardingPreference: familyProfile.boardingPreference || undefined,
+        profileSnapshotAt: new Date().toISOString(),
+      }),
+    });
+
+    // Also create SchoolInquiry for backward compatibility and school notifications
     const inquiry = await base44.entities.SchoolInquiry.create({
       parentUserId: user.id,
       schoolId: school.id,
@@ -85,7 +111,6 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
       numberOfVisitors: Number(form.numberOfVisitors),
       childGrade: form.childGrade !== '' ? Number(form.childGrade) : undefined,
       specialRequests: form.specialRequests || undefined,
-      // E16c: Family context snapshot fields (only if profile exists)
       ...(familyProfile && {
         maxTuition: familyProfile.maxTuition || undefined,
         prioritiesSnapshot: familyProfile.priorities ? JSON.stringify(familyProfile.priorities) : undefined,
@@ -93,6 +118,8 @@ export default function TourRequestModal({ school, onClose, upcomingEvents = [] 
         profileSnapshotAt: new Date().toISOString(),
       }),
     });
+    
+    console.log('[E29-005-AC7] TourRequest created:', tourRequest.id);
 
     // E29-005: Fire-and-forget — sync tour request to SchoolJourney entity
     ;(async () => {
