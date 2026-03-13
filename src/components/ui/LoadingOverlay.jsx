@@ -1,34 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const FUN_FACTS = [
-  "NextSchool users find their perfect school 40% faster on average.",
-  "Over 500 schools across Canada and the US are profiled in NextSchool.",
-  "Families save an average of 15 hours of research using NextSchool.",
-  "Our matching algorithm considers 40+ school attributes.",
-  "Private school tuition ranges from $5K to $50K+ annually.",
-  "IB and AP programs are available at 35% of profiled schools.",
-  "Co-ed schools make up 62% of our database.",
-  "The average student spends 6 hours per week at school.",
-  "Boarding schools offer immersive educational experiences.",
-  "Virtual tours are now available for 80% of schools.",
-  "Financial aid is available at over 70% of private schools.",
-  "School culture matters more than you might think.",
-  "Test scores are just one factor in school fit.",
-  "Parent involvement positively impacts student outcomes.",
-  "STEM programs are growing rapidly in private schools.",
-  "Class sizes average 15-20 students in many schools.",
-  "School visits reveal what brochures cannot.",
-  "Your child's learning style is unique and valid.",
-  "The right school fit can transform a student's trajectory."
-];
-
-export default function LoadingOverlay({ isVisible, onComplete }) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [currentFactIndex, setCurrentFactIndex] = useState(0);
+export default function LoadingOverlay({ isVisible, onRetry }) {
   const [showError, setShowError] = useState(false);
-  const [factOpacity, setFactOpacity] = useState(1);
-  
+  const [tealFlash, setTealFlash] = useState(false);
   const timerRef = useRef({});
+  
   const cleanupTimers = useRef(() => {
     Object.values(timerRef.current).forEach(id => {
       if (typeof id === 'number') {
@@ -40,71 +16,50 @@ export default function LoadingOverlay({ isVisible, onComplete }) {
   });
 
   useEffect(() => {
-    if (!isVisible) return;
+    if (!isVisible) {
+      cleanupTimers.current();
+      return;
+    }
 
-    // Progress step advancement (every 2s)
-    let stepCounter = 0;
-    timerRef.current.stepInterval = setInterval(() => {
-      setCurrentStep(Math.min(stepCounter + 1, 2));
-      stepCounter = Math.min(stepCounter + 1, 2);
-    }, 2000);
+    setShowError(false);
+    setTealFlash(false);
 
-    // Rotating facts (every 4s with crossfade)
-    let factCounter = 0;
-    timerRef.current.factCrossfade = setInterval(() => {
-      setFactOpacity(0);
-      timerRef.current.factTransition = setTimeout(() => {
-        factCounter = (factCounter + 1) % FUN_FACTS.length;
-        setCurrentFactIndex(factCounter);
-        setFactOpacity(1);
-      }, 300);
-    }, 4000);
+    // Teal flash animation (0-100ms)
+    timerRef.current.flashTimeout = setTimeout(() => {
+      setTealFlash(true);
+    }, 0);
+    timerRef.current.flashClearTimeout = setTimeout(() => {
+      setTealFlash(false);
+    }, 100);
 
     // 30s timeout
-    timerRef.current.timeoutCheck = setTimeout(() => {
+    timerRef.current.errorTimeout = setTimeout(() => {
       setShowError(true);
     }, 30000);
 
     return () => cleanupTimers.current();
   }, [isVisible]);
 
-  if (!isVisible) return null;
-
-  const handleRetry = () => {
+  const handleRetryClick = () => {
     setShowError(false);
-    setCurrentStep(0);
-    setCurrentFactIndex(0);
-    setFactOpacity(1);
-    
+    setTealFlash(false);
     cleanupTimers.current();
-    
-    // Restart timers
-    let stepCounter = 0;
-    timerRef.current.stepInterval = setInterval(() => {
-      setCurrentStep(Math.min(stepCounter + 1, 2));
-      stepCounter = Math.min(stepCounter + 1, 2);
-    }, 2000);
 
-    let factCounter = 0;
-    timerRef.current.factCrossfade = setInterval(() => {
-      setFactOpacity(0);
-      timerRef.current.factTransition = setTimeout(() => {
-        factCounter = (factCounter + 1) % FUN_FACTS.length;
-        setCurrentFactIndex(factCounter);
-        setFactOpacity(1);
-      }, 300);
-    }, 4000);
-
-    timerRef.current.timeoutCheck = setTimeout(() => {
+    // Restart animation
+    timerRef.current.flashTimeout = setTimeout(() => {
+      setTealFlash(true);
+    }, 0);
+    timerRef.current.flashClearTimeout = setTimeout(() => {
+      setTealFlash(false);
+    }, 100);
+    timerRef.current.errorTimeout = setTimeout(() => {
       setShowError(true);
     }, 30000);
+
+    if (onRetry) onRetry();
   };
 
-  const steps = [
-    { label: 'Analyzing your preferences', active: currentStep >= 0 },
-    { label: 'Matching with schools', active: currentStep >= 1 },
-    { label: 'Ranking your top picks', active: currentStep >= 2 }
-  ];
+  if (!isVisible) return null;
 
   return (
     <>
@@ -119,24 +74,59 @@ export default function LoadingOverlay({ isVisible, onComplete }) {
         }
         @keyframes pulseDot {
           0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.2); }
+          50% { opacity: 1; transform: scale(1.3); }
         }
-        @keyframes fadeInOut {
+        @keyframes pulse-dot-0 {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
+        }
+        @keyframes pulse-dot-1 {
+          0%, 100% { opacity: 0.3; }
+          33%, 100% { opacity: 1; }
+        }
+        @keyframes pulse-dot-2 {
+          0%, 100% { opacity: 0.3; }
+          66%, 100% { opacity: 1; }
+        }
+        @keyframes tealFlash {
           0% { opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
+          50% { opacity: 1; }
           100% { opacity: 0; }
         }
-        .loading-overlay {
+
+        .teal-flash {
           position: fixed;
-          inset: 0;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: #18968a;
+          opacity: 0;
+          pointer-events: none;
+          z-index: 999;
+          animation: ${tealFlash ? 'tealFlash 0.1s ease-out' : 'none'};
+        }
+
+        .loader-screen {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
           background: #f8f9fb;
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 50;
-          flex-direction: column;
         }
+
+        .loader-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 48px;
+        }
+
         .status-badge {
           background: #18968a;
           color: white;
@@ -144,50 +134,77 @@ export default function LoadingOverlay({ isVisible, onComplete }) {
           border-radius: 9999px;
           font-size: 13px;
           font-weight: 600;
-          margin-bottom: 32px;
           letter-spacing: 0.5px;
         }
+
         .orbit-container {
           position: relative;
-          width: 200px;
-          height: 200px;
-          margin-bottom: 40px;
+          width: 280px;
+          height: 280px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
+
         .orbit-ring {
           position: absolute;
           border-radius: 50%;
-          border: 1px solid rgba(24, 150, 138, 0.2);
+          border: 1px solid rgba(24, 150, 138, 0.15);
         }
-        .orbit-ring-1 { width: 120px; height: 120px; }
-        .orbit-ring-2 { width: 160px; height: 160px; }
-        .orbit-ring-3 { width: 200px; height: 200px; }
-        .arc {
+
+        .ring-1 { width: 120px; height: 120px; }
+        .ring-2 { width: 160px; height: 160px; }
+        .ring-3 { width: 200px; height: 200px; }
+
+        .orbit-arc {
           position: absolute;
           width: 200px;
           height: 200px;
-          border-radius: 50%;
-        }
-        .arc-1 {
           border: 2px solid transparent;
+          border-radius: 50%;
+          top: 40px;
+          left: 40px;
+        }
+
+        .arc-1 {
           border-top: 2px solid #18968a;
           border-right: 2px solid #18968a;
           animation: spinClockwise 3s linear infinite;
         }
+
         .arc-2 {
-          border: 2px solid transparent;
           border-top: 2px solid #18968a;
           border-right: 2px solid #18968a;
-          animation: spinCounterClockwise 4.5s linear infinite;
           opacity: 0.6;
+          animation: spinCounterClockwise 4.5s linear infinite;
         }
-        .orbital-dots {
+
+        .center-icon {
+          position: absolute;
+          width: 80px;
+          height: 80px;
+          background: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+          z-index: 10;
+        }
+
+        .center-icon svg {
+          width: 52px;
+          height: 52px;
+        }
+
+        .orbit-dots {
           position: absolute;
           width: 200px;
           height: 200px;
+          top: 40px;
+          left: 40px;
         }
+
         .dot {
           position: absolute;
           width: 8px;
@@ -195,202 +212,107 @@ export default function LoadingOverlay({ isVisible, onComplete }) {
           background: #d4a017;
           border-radius: 50%;
         }
-        .dot-0 { top: 0; left: 50%; transform: translateX(-50%); animation: pulseDot 2s ease-in-out infinite 0s; }
-        .dot-1 { top: 25%; right: 0; animation: pulseDot 2s ease-in-out infinite 0.4s; }
-        .dot-2 { bottom: 25%; right: 0; animation: pulseDot 2s ease-in-out infinite 0.8s; }
-        .dot-3 { bottom: 0; left: 50%; transform: translateX(-50%); animation: pulseDot 2s ease-in-out infinite 1.2s; }
-        .dot-4 { top: 25%; left: 0; animation: pulseDot 2s ease-in-out infinite 1.6s; }
-        .orbit-center {
-          position: absolute;
-          width: 68px;
-          height: 68px;
-          background: white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          font-size: 32px;
-          font-weight: 700;
-          color: #1e293b;
-        }
-        .progress-steps {
-          display: flex;
-          gap: 32px;
-          margin-bottom: 48px;
-        }
-        .progress-step {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px;
-          transition: opacity 0.3s ease;
-        }
-        .progress-step.inactive {
-          opacity: 0.4;
-        }
-        .step-icon {
-          width: 40px;
-          height: 40px;
-          background: #18968a;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 20px;
-        }
-        .step-label {
-          font-size: 13px;
-          color: #1e293b;
-          font-weight: 500;
-          width: 80px;
-          text-align: center;
-          line-height: 1.3;
-        }
-        .step-fill {
-          width: 60px;
-          height: 3px;
-          background: #e2e8f0;
-          border-radius: 2px;
-          overflow: hidden;
-        }
-        .step-fill-bar {
-          height: 100%;
-          background: #d4a017;
-          border-radius: 2px;
-          transition: width 0.3s ease;
-        }
-        .step-fill-bar.active {
-          animation: fillBar 2s ease-out forwards;
-        }
-        @keyframes fillBar {
-          from { width: 0; }
-          to { width: 100%; }
-        }
-        .fact-pill {
-          background: rgba(24, 150, 138, 0.08);
-          border: 1px solid rgba(24, 150, 138, 0.2);
-          border-radius: 12px;
-          padding: 16px 24px;
-          text-align: center;
-          max-width: 380px;
-        }
-        .fact-label {
-          font-size: 11px;
-          font-weight: 700;
-          color: #18968a;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin-bottom: 8px;
-        }
-        .fact-text {
-          font-size: 14px;
-          color: #1e293b;
-          line-height: 1.5;
-          transition: opacity 0.3s ease;
-          min-height: 42px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
+
+        .dot-0 { top: 0; left: 50%; transform: translateX(-50%); animation: pulseDot 2.5s ease-in-out infinite; }
+        .dot-1 { top: 29.3%; right: 0; animation: pulseDot 2.5s ease-in-out infinite 0.5s; }
+        .dot-2 { bottom: 29.3%; right: 0; animation: pulseDot 2.5s ease-in-out infinite 1s; }
+        .dot-3 { bottom: 0; left: 50%; transform: translateX(-50%); animation: pulseDot 2.5s ease-in-out infinite 1.5s; }
+        .dot-4 { top: 29.3%; left: 0; animation: pulseDot 2.5s ease-in-out infinite 2s; }
+
         .error-overlay {
           position: fixed;
-          inset: 0;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
           background: rgba(0, 0, 0, 0.5);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 51;
         }
+
         .error-dialog {
           background: white;
           border-radius: 12px;
-          padding: 32px;
+          padding: 40px;
           text-align: center;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-          max-width: 360px;
+          max-width: 400px;
         }
+
         .error-title {
           font-size: 18px;
           font-weight: 600;
           color: #1e293b;
           margin-bottom: 12px;
         }
+
         .error-message {
           font-size: 14px;
           color: #64748b;
-          margin-bottom: 24px;
+          margin-bottom: 32px;
+          line-height: 1.5;
         }
+
         .retry-button {
           background: #18968a;
           color: white;
           border: none;
-          padding: 10px 24px;
+          padding: 10px 28px;
           border-radius: 6px;
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;
           transition: background 0.2s ease;
         }
+
         .retry-button:hover {
           background: #0f766e;
         }
       `}</style>
 
-      <div className="loading-overlay">
-        {/* Status Badge */}
-        <div className="status-badge">Finding Your Matches...</div>
+      <div className="teal-flash" id="tealFlash"></div>
 
-        {/* Orbit Animation */}
-        <div className="orbit-container">
-          <div className="orbit-ring orbit-ring-1"></div>
-          <div className="orbit-ring orbit-ring-2"></div>
-          <div className="orbit-ring orbit-ring-3"></div>
-          <div className="arc arc-1"></div>
-          <div className="arc arc-2"></div>
-          <div className="orbital-dots">
-            <div className="dot dot-0"></div>
-            <div className="dot dot-1"></div>
-            <div className="dot dot-2"></div>
-            <div className="dot dot-3"></div>
-            <div className="dot dot-4"></div>
-          </div>
-          <div className="orbit-center">🎓</div>
-        </div>
+      <div className="loader-screen" id="loaderScreen">
+        <div className="loader-content">
+          <div className="status-badge">Finding Your Matches...</div>
 
-        {/* Progress Steps */}
-        <div className="progress-steps">
-          {steps.map((step, idx) => (
-            <div key={idx} className={`progress-step ${step.active ? '' : 'inactive'}`}>
-              <div className="step-icon">{idx + 1}</div>
-              <div className="step-label">{step.label}</div>
-              <div className="step-fill">
-                <div className={`step-fill-bar ${step.active ? 'active' : ''}`}></div>
-              </div>
+          <div className="orbit-container">
+            <div className="orbit-ring ring-1"></div>
+            <div className="orbit-ring ring-2"></div>
+            <div className="orbit-ring ring-3"></div>
+
+            <div className="orbit-arc arc-1"></div>
+            <div className="orbit-arc arc-2"></div>
+
+            <div className="orbit-dots">
+              <div className="dot dot-0"></div>
+              <div className="dot dot-1"></div>
+              <div className="dot dot-2"></div>
+              <div className="dot dot-3"></div>
+              <div className="dot dot-4"></div>
             </div>
-          ))}
-        </div>
 
-        {/* Fun Fact */}
-        <div className="fact-pill">
-          <div className="fact-label">Did you know?</div>
-          <div className="fact-text" style={{ opacity: factOpacity }}>
-            {FUN_FACTS[currentFactIndex]}
+            <div className="center-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40.54 38.56">
+                <path fill="#18968a" d="M20.21,0h-11.7L0,8.48l7,10.78L0,30.05l8.52,8.52h12.76l19.26-19.3L21.28,0h-1.06ZM37.53,19.27l-16.26,16.29-.09-.09-5.7-5.7,6.06-9.34.75-1.16-.75-1.16-6.06-9.34,5.79-5.76.58.58,15.68,15.68Z"/>
+                <polygon fill="#ffffff" points="15.48 8.77 21.54 18.11 22.29 19.26 21.54 20.42 15.48 29.76 21.18 35.46 21.28 35.56 3.38 17.62 15.48 8.77"/>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Error State */}
       {showError && (
         <div className="error-overlay">
           <div className="error-dialog">
             <div className="error-title">Taking longer than expected</div>
             <div className="error-message">
-              This shouldn't usually take this long. Try refreshing or reach out for support.
+              This shouldn't usually take this long. Try clicking retry or reach out for support.
             </div>
-            <button className="retry-button" onClick={handleRetry}>
-              Try Again
+            <button className="retry-button" onClick={handleRetryClick}>
+              Retry
             </button>
           </div>
         </div>
