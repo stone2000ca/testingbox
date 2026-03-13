@@ -1330,6 +1330,17 @@ Write a warm, natural 3-sentence welcome-back greeting. Acknowledge where they l
       intentSignal = bridgeIntent;
       briefDelta = { additions: [], updates: [], removals: [] };
 
+      // EDIT-CRITERIA DETERMINISTIC OVERRIDE
+      // Fires when state is RESULTS and message matches known criteria-change patterns.
+      // Needed because extractEntities is fire-and-forget so intentSignal never arrives from it.
+      if (context.state === STATES.RESULTS) {
+        const EDIT_CRITERIA_RE = /budget changed|change my budget|new budget|budget is now|actually my budget|change location|moved to|we live in|change to|switch to|need french|want boarding|no boarding|no religious|add religious|change grade|going into grade|update my|change my criteria|change my preferences|revise|redo my brief|start over/i;
+        if (EDIT_CRITERIA_RE.test(processMessage || '')) {
+          intentSignal = 'edit-criteria';
+          console.log('[INTENT-OVERRIDE] edit-criteria detected from message regex');
+        }
+      }
+
       // S113-WC1: extractEntities stub — will be replaced conditionally after resolveTransition
       extractionResult = {
         extractedEntities: {},
