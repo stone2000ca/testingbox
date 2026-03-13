@@ -383,15 +383,34 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
         ? previousSchools
         : (context.lastMatchedSchools || []);
 
+      console.log(`[SHORTLIST-FAST-PATH] Pool size: ${schoolPool.length}`);
+
+      // Extract the school name fragment from the message for scoring
+      // Strip common command words to isolate the school name portion
       const msgNorm = message.toLowerCase().replace(/[^a-z0-9\s]/g, '');
-      const matched = schoolPool.find(s => {
+      const strippedMsg = msgNorm
+        .replace(/\b(add|save|shortlist|bookmark|keep|put|please|can you|i want to|to my|my|to the|the|shortlist|list|saved)\b/g, ' ')
+        .replace(/\s+/g, ' ').trim();
+      const msgWords = strippedMsg.split(' ').filter(w => w.length > 2);
+
+      // Score each school by word overlap count, pick highest
+      let bestMatch = null;
+      let bestScore = 0;
+      for (const s of schoolPool) {
         const nameNorm = s.name.toLowerCase().replace(/[^a-z0-9\s]/g, '');
-        const nameWords = nameNorm.split(' ').filter(w => w.length > 3);
-        return nameWords.some(w => msgNorm.includes(w)) || msgNorm.includes(nameNorm);
-      });
+        const nameWords = nameNorm.split(' ').filter(w => w.length > 2);
+        const overlapCount = msgWords.filter(w => nameWords.includes(w)).length;
+        console.log(`[SHORTLIST-FAST-PATH] "${s.name}" score=${overlapCount} (nameWords=[${nameWords.join(',')}])`);
+        if (overlapCount > bestScore) {
+          bestScore = overlapCount;
+          bestMatch = s;
+        }
+      }
+
+      const matched = bestScore >= 1 ? bestMatch : null;
 
       if (matched) {
-        console.log(`[SHORTLIST-FAST-PATH] Matched "${matched.name}" (${matched.id}) — skipping search & LLM`);
+        console.log(`[SHORTLIST-FAST-PATH] Best match: "${matched.name}" (${matched.id}) score=${bestScore} — skipping search & LLM`);
         return Response.json({
           message: `Done — ${matched.name} has been added to your shortlist.`,
           state: STATES.RESULTS,

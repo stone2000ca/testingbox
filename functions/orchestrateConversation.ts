@@ -1619,7 +1619,7 @@ Object.assign(context, safeUpdatedContext);
           autoRefresh,
           extractedEntities: extractionResult?.extractedEntities || {},
           returningUserContextBlock,
-          previousSchools: currentSchools || []
+          previousSchools: (currentSchools && currentSchools.length > 0) ? currentSchools : (context.lastMatchedSchools || [])
         });
         responseData = resultsResult.data;
         responseData.conversationContext = {
