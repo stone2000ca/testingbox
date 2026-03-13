@@ -58,9 +58,21 @@ function applyReligiousFilter(school, familyProfile, payload) {
 function applyGenderFilter(school, familyProfile) {
   const gp = school.genderPolicy || null;
   if (gp === null) return true;
+  
+  // HARD SAFETY: childGender vs genderPolicy - always enforced, never a fallback
+  const childGender = familyProfile?.childGender || null;
+  const gpLower = gp.toLowerCase();
+  if (childGender === 'male' && (gpLower === 'all-girls' || gpLower === 'girls only')) {
+    console.log(`[GENDER] Excluded (childGender=male) ${school.name}: genderPolicy="${gp}"`);
+    return false;
+  }
+  if (childGender === 'female' && (gpLower === 'all-boys' || gpLower === 'boys only')) {
+    console.log(`[GENDER] Excluded (childGender=female) ${school.name}: genderPolicy="${gp}"`);
+    return false;
+  }
+  
   const exclusions = familyProfile?.schoolGenderExclusions || [];
   if (Array.isArray(exclusions) && exclusions.length > 0) {
-    const gpLower = gp.toLowerCase();
     const excluded = exclusions.some(ex => {
       const exL = ex.toLowerCase();
       if (exL === 'all-girls') return gpLower === 'all-girls';
@@ -70,9 +82,9 @@ function applyGenderFilter(school, familyProfile) {
     });
     if (excluded) { console.log(`[GENDER] Excluded (exclusion) ${school.name}: genderPolicy="${gp}"`); return false; }
   }
+  
   const genderPref = familyProfile?.schoolGenderPreference || null;
   if (genderPref) {
-    const gpLower = gp.toLowerCase();
     const prefLower = genderPref.toLowerCase();
     let matches = false;
     if (prefLower === 'all-girls') matches = gpLower === 'all-girls';
@@ -80,11 +92,7 @@ function applyGenderFilter(school, familyProfile) {
     else if (prefLower === 'co-ed') matches = gpLower === 'co-ed' || gpLower === 'co-ed with single-gender classes';
     if (!matches) { console.log(`[GENDER] Excluded (pref=${genderPref}) ${school.name}: genderPolicy="${gp}"`); return false; }
   }
-  if (!genderPref) {
-    const childGender = familyProfile?.childGender || null;
-    if (childGender === 'male' && gp.toLowerCase() === 'all-girls') return false;
-    if (childGender === 'female' && gp.toLowerCase() === 'all-boys') return false;
-  }
+  
   return true;
 }
 
