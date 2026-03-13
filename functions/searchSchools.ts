@@ -39,19 +39,19 @@ function applyReligiousFilter(school, familyProfile, payload) {
     typeof d === 'string' && religiousDealbreakTerms.some(term => d.toLowerCase().includes(term))
   );
   if (hasReligiousDealbreaker) {
-    const nonReligiousAffiliations = ['none', 'secular', 'non-denominational', 'nondenominational', 'non-sectarian', 'nonsectarian', 'non-religious', 'nonreligious', 'independent', 'no', 'no affiliation', 'no religion', 'not applicable', 'n/a', 'na', ''];
     const schoolAffiliation = (school.religiousAffiliation || '').toLowerCase().trim().replace(/[\s-]+/g, ' ');
-    const normalized = nonReligiousAffiliations.map(s => s.replace(/[\s-]+/g, ' '));
-    if (school.religiousAffiliation && !normalized.includes(schoolAffiliation)) {
-      console.log(`[RELIGIOUS FILTER] Excluded ${school.name}: religious affiliation (${school.religiousAffiliation})`);
+    const knownReligiousAffiliations = ['christian', 'catholic', 'islamic', 'jewish', 'lutheran', 'baptist', 'methodist', 'presbyterian', 'anglican', 'orthodox', 'evangelical', 'pentecostal', 'adventist', 'mormon', 'lds', 'quaker', 'mennonite', 'amish', 'hindu', 'buddhist', 'sikh', 'muslim'];
+    if (school.religiousAffiliation && knownReligiousAffiliations.includes(schoolAffiliation)) {
+      console.log(`[RELIGIOUS FILTER] Excluded ${school.name}: religious affiliation`);
       return false;
     }
-    const religiousKeywords = ['christian', 'catholic', 'islamic', 'jewish', 'lutheran', 'baptist', 'adventist', 'anglican', 'saint', 'st.', 'st. ', 'holy', 'sacred', 'blessed', 'bishop', 'trinity', 'yeshiva', 'hebrew', 'our lady', 'gospel', 'covenant', 'faith'];
-    const schoolNameLower = school.name?.toLowerCase() || '';
-    if (religiousKeywords.some(keyword => schoolNameLower.includes(keyword))) {
-      console.log(`[RELIGIOUS FILTER] Excluded ${school.name}: name contains religious keyword`);
-      return false;
-    }
+    // DISABLED S150: name-keyword check too aggressive
+    // const religiousKeywords = ['christian', 'catholic', 'islamic', 'jewish', 'lutheran', 'baptist', 'adventist', 'anglican', 'saint', 'st.', 'st. ', 'holy', 'sacred', 'blessed', 'bishop', 'trinity', 'yeshiva', 'hebrew', 'our lady', 'gospel', 'covenant', 'faith'];
+    // const schoolNameLower = school.name?.toLowerCase() || '';
+    // if (religiousKeywords.some(keyword => schoolNameLower.includes(keyword))) {
+    //   console.log(`[RELIGIOUS FILTER] Excluded ${school.name}: name contains religious keyword`);
+    //   return false;
+    // }
   }
   return true;
 }
