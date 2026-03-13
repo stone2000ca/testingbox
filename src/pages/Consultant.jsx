@@ -1055,6 +1055,13 @@ export default function Consultant() {
             setAutoExpandSchoolId(action.payload.schoolId);
             setActivePanel('shortlist');
             break;
+          case 'INITIATE_TOUR': {
+            const school = [...(schools || []), ...(shortlistData || [])].find(s => s.id === action.payload.schoolId);
+            if (school) {
+              setTourRequestSchool(school);
+            }
+            break;
+          }
           default:
             break;
         }
