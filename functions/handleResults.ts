@@ -632,6 +632,7 @@ INTENT: shortlist-action
 → Fire execute_ui_action with ADD_TO_SHORTLIST and the school's ID.
 → Confirm warmly in one sentence. Example: "Added — you can compare it anytime from your shortlist."
 → Do not explain what the shortlist is.
+→ IMPORTANT: You MUST provide BOTH a text response in your message content AND fire the execute_ui_action tool. Never leave your text response empty when calling a tool.
 
 INTENT: filter-refine
 → Acknowledge the filter in ONE sentence.
@@ -685,6 +686,17 @@ ${schoolIdContext}`;
         let rawContent = llmResult.content || '';
         try { const parsed = JSON.parse(rawContent); aiMessage = parsed.message || rawContent || "Here are your matches."; } catch { aiMessage = rawContent || "Here are your matches."; }
         if (llmResult.toolCalls?.length > 0) rawToolCalls.push(...llmResult.toolCalls);
+        // Fix A: Tool-call-aware fallback — LLM often returns empty content when firing a tool call
+        if ((!aiMessage || aiMessage === "Here are your matches.") && rawToolCalls.length > 0) {
+          const actionTypes = rawToolCalls.map(tc => { try { return JSON.parse(tc.function?.arguments || '{}').action; } catch { return ''; } });
+          if (actionTypes.includes('ADD_TO_SHORTLIST')) {
+            aiMessage = "Done — I've added that to your shortlist. You can compare your saved schools anytime.";
+          } else if (actionTypes.includes('OPEN_PANEL')) {
+            aiMessage = "Here you go — I've opened that for you.";
+          } else if (actionTypes.includes('EXPAND_SCHOOL')) {
+            aiMessage = "Let me pull up the details on that school.";
+          }
+        }
       }
     } catch (e) {
       console.error('[ERROR] RESULTS response failed:', e.message);
