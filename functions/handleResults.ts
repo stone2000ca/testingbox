@@ -240,6 +240,21 @@ const ACTION_TOOL_SCHEMA = [{ type: 'function', function: { name: 'execute_ui_ac
 const ACTIONS_RESPONSE_SCHEMA = { type: 'object', properties: { message: { type: 'string', description: 'The consultant response text to show the user' }, actions: { type: 'array', items: { type: 'object', properties: { type: { type: 'string', enum: ['ADD_TO_SHORTLIST', 'OPEN_PANEL', 'EXPAND_SCHOOL', 'INITIATE_TOUR'] }, schoolId: { type: 'string' }, panel: { type: 'string', enum: ['shortlist', 'comparison', 'brief'] } }, required: ['type'] }, description: 'UI actions to execute. Empty array if no actions needed.' } }, required: ['message', 'actions'] };
 
 // =============================================================================
+// Tour Request Detection
+// =============================================================================
+function detectJourneySubAction(message: string): { type: string; schoolName?: string } | null {
+  const TOUR_INTENT_RE = /\b(book|schedule|arrange|request|set\s*up|sign\s*up\s*for|register\s*for|plan)\b.{0,30}\b(tour|visit|open\s*house|campus\s*visit|school\s*tour|info\s*session)\b/i;
+  const WANT_VISIT_RE = /\b(want\s+to|like\s+to|ready\s+to|interested\s+in)\s+(visit|tour|see|check\s*out)\b/i;
+  const QUESTION_TOUR_RE = /\b(can\s+(?:we|i)|how\s+(?:do\s+i|can\s+i|to))\s+(?:book|schedule|arrange|visit|tour)\b/i;
+  const isTourIntent = TOUR_INTENT_RE.test(message) || WANT_VISIT_RE.test(message) || QUESTION_TOUR_RE.test(message);
+  if (!isTourIntent) return null;
+  const TOUR_COMMAND_WORDS = /\b(book|schedule|arrange|request|set\s*up|sign\s*up\s*for|register\s*for|plan|want\s*to|like\s*to|ready\s*to|interested\s*in|can\s*we|can\s*i|how\s*do\s*i|how\s*to|a|an|the|at|for|tour|visit|open\s*house|campus\s*visit|school\s*tour|info\s*session|please|i|we|me|my)\b/gi;
+  const stripped = message.replace(/[^a-zA-Z0-9\s'-]/g, '').replace(TOUR_COMMAND_WORDS, ' ').replace(/\s+/g, ' ').trim();
+  const schoolName = stripped.length >= 2 ? stripped : undefined;
+  return { type: 'INITIATE_TOUR', schoolName };
+}
+
+// =============================================================================
 // MAIN: Deno.serve — handleResults
 // =============================================================================
 Deno.serve(async (req) => {
@@ -432,6 +447,34 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
       }
       // If no fuzzy match found, fall through to normal search so we can still try
       console.log('[SHORTLIST-FAST-PATH] No school match found in pool — falling through to search');
+    }
+
+    const journeySubAction = detectJourneySubAction(message);
+    if (journeySubAction) {
+      const jShortlistPool = previousSchools || [];
+      const jMatchPool = context.lastMatchedSchools || [];
+      const jSeenIds = new Set();
+      const jSchoolPool = [...jShortlistPool, ...jMatchPool].filter(s => { if (jSeenIds.has(s.id)) return false; jSeenIds.add(s.id); return true; });
+      let jMatched = null;
+      if (journeySubAction.schoolName) {
+        const jMsgNorm = journeySubAction.schoolName.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+        const jMsgWords = jMsgNorm.split(' ').filter(w => w.length > 2);
+        const jSignificantWords = jMsgWords.filter(w => w.length >= 4);
+        const jRequiredScore = jSignificantWords.length > 0 ? jSignificantWords.length : 1;
+        let jBestMatch = null; let jBestScore = 0;
+        for (const s of jSchoolPool) {
+          const nameNorm = s.name.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+          const nameWords = nameNorm.split(' ').filter(w => w.length > 2);
+          const overlapCount = jSignificantWords.length > 0 ? jSignificantWords.filter(w => nameWords.includes(w)).length : jMsgWords.filter(w => nameWords.includes(w)).length;
+          if (overlapCount > jBestScore) { jBestScore = overlapCount; jBestMatch = s; }
+        }
+        jMatched = jBestScore >= jRequiredScore ? jBestMatch : null;
+      }
+      if (jMatched) {
+        console.log(`[TOUR-FAST-PATH] Matched "${jMatched.name}" (${jMatched.id})`);
+        return Response.json({ message: `Great choice! Let me pull up the tour request form for ${jMatched.name}.`, state: STATES.RESULTS, briefStatus: briefStatus, schools: jSchoolPool, familyProfile: conversationFamilyProfile, conversationContext: context, actions: [{ type: 'INITIATE_TOUR', payload: { schoolId: jMatched.id }, timing: 'immediate' }] });
+      }
+      console.log('[TOUR-FAST-PATH] No school match — falling through to LLM');
     }
 
     console.log('[SEARCH] Running fresh school search in RESULTS state');
