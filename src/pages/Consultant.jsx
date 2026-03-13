@@ -19,6 +19,7 @@ import SchoolGrid from '@/components/schools/SchoolGrid';
 import SchoolDetailPanel from '@/components/schools/SchoolDetailPanel';
 import ShortlistPanel from '@/components/chat/ShortlistPanel';
 import AddSchoolPanel from '@/components/chat/AddSchoolPanel';
+import TimelinePanel from '@/components/chat/TimelinePanel';
 import NotesPanel from '@/components/chat/NotesPanel';
 import ComparisonView from '@/components/schools/ComparisonView';
 import { getTuitionBand, buildPriorityChecks } from '@/components/schools/SchoolCard';
