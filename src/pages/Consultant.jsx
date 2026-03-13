@@ -142,9 +142,6 @@ export default function Consultant() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const prevIsIntakePhaseRef = useRef(true);
 
-  // E37: Show loading overlay when brief confirmed and consultant is typing
-  const showLoadingOverlay = briefStatus === 'confirmed' && isTyping;
-
   // T-RES-006: Priority overrides { [rowId]: 'musthave' | 'nicetohave' | 'dontcare' }
   const [priorityOverrides, setPriorityOverrides] = useState({});
 
