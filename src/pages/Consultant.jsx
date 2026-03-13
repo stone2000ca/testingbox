@@ -1412,6 +1412,17 @@ export default function Consultant() {
             />
           </div>
         )}
+        {activePanel === 'timeline' && (
+          <div
+            className="flex-shrink-0 h-full overflow-hidden"
+            style={{ width: 320, animation: 'slideInFromRight 200ms ease-out', background: '#1A1A2A', borderLeft: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <TimelinePanel
+              shortlist={shortlistData}
+              onClose={() => setActivePanel(null)}
+            />
+          </div>
+        )}
 
         {/* T046: Right-side Icon Rail */}
         <IconRail
