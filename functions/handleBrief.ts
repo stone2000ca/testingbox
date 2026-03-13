@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     const isInitialAdjustRequest = /\b(change|adjust|edit|actually|wait|hold on|no|not right|different|let me|redo)\b/i.test(msgLower) &&
                                     !/budget|grade|location|school|curriculum|priority/i.test(msgLower);
 
-    if (updatedBriefStatus === BRIEF_STATUS.EDITING && isInitialAdjustRequest) {
+    if ((updatedBriefStatus === BRIEF_STATUS.EDITING || updatedBriefStatus === BRIEF_STATUS.PENDING_REVIEW) && isInitialAdjustRequest) {
       const adjustSystemPrompt = consultantName === 'Jackie'
         ? `You are Jackie, a warm and encouraging education consultant. The parent wants to adjust something in their brief. Ask them a warm, open-ended question about what they'd like to change. Max 50 words.`
         : `You are Liam, a direct and strategic education consultant. The parent wants to adjust their brief. Ask them directly what needs to change. Max 50 words.`;
