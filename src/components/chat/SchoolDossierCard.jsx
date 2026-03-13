@@ -380,7 +380,7 @@ export default function SchoolDossierCard({
             style={{ background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.3)', color: '#2dd4bf' }}
           >
             <Sparkles className="w-3 h-3 flex-shrink-0" />
-            Ask {consultantName || 'your consultant'} to analyze {school.name}
+            Get insight on {school.name}
           </button>
         ) : null
       )}
