@@ -1630,9 +1630,12 @@ Object.assign(context, safeUpdatedContext);
         };
         responseData.extractedEntities = extractionResult?.extractedEntities || {};
         // E32-001: Validate and attach actions
-        const validSchoolIds_results = new Set((responseData.schools || currentSchools || []).map(s => s.id));
-        responseData.actions = responseData.rawToolCalls ? validateActions(responseData.rawToolCalls, validSchoolIds_results, base44, conversationId) : [];
-        delete responseData.rawToolCalls;
+        // Fast path returns pre-validated actions directly; normal path uses rawToolCalls
+        if (!responseData.actions) {
+          const validSchoolIds_results = new Set((responseData.schools || currentSchools || []).map(s => s.id));
+          responseData.actions = responseData.rawToolCalls ? validateActions(responseData.rawToolCalls, validSchoolIds_results, base44, conversationId) : [];
+          delete responseData.rawToolCalls;
+        }
         return Response.json(responseData);
       }
 

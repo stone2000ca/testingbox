@@ -418,14 +418,7 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
           schools: schoolPool,
           familyProfile: conversationFamilyProfile,
           conversationContext: context,
-          rawToolCalls: [{
-            id: `synthetic-shortlist-${matched.id}`,
-            type: 'function',
-            function: {
-              name: 'execute_ui_action',
-              arguments: JSON.stringify({ action: 'ADD_TO_SHORTLIST', schoolId: matched.id })
-            }
-          }]
+          actions: [{ type: 'ADD_TO_SHORTLIST', payload: { schoolId: matched.id }, timing: 'immediate' }]
         });
       }
       // If no fuzzy match found, fall through to normal search so we can still try
