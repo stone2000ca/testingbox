@@ -242,6 +242,9 @@ Extract all factual data from the parent's message. Return ONLY valid JSON. Do N
     if (finalResult.gender) {
       finalResult.childGender = finalResult.gender;
     }
+    if (extractedChildName && (!finalResult.childName || PRONOUN_BLOCKLIST.has(finalResult.childName.toLowerCase()))) {
+      finalResult = { ...finalResult, childName: extractedChildName };
+    }
     if (extractedSchoolGenderPref && !finalResult.schoolGenderPreference) {
       finalResult = { ...finalResult, schoolGenderPreference: extractedSchoolGenderPref };
     }
