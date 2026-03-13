@@ -1243,6 +1243,27 @@ Write a warm, natural 3-sentence welcome-back greeting. Acknowledge where they l
           if (!conversationFamilyProfile) {
             conversationFamilyProfile = await base44.entities.FamilyProfile.create({ userId, conversationId });
             console.log('Created new FamilyProfile:', conversationFamilyProfile.id);
+
+            // S141-WC2: E29-HYDRATE — Seed new profile from journey briefSnapshot on session resume
+            if (journeyContext?.briefSnapshot) {
+              try {
+                const snapshot = typeof journeyContext.briefSnapshot === 'string' ? JSON.parse(journeyContext.briefSnapshot) : journeyContext.briefSnapshot;
+                const seedFields = ['childName','childGrade','childGender','gender','locationArea','maxTuition','interests','priorities','dealbreakers','curriculumPreference','schoolType','academicStrengths'];
+                const seedData: Record<string, any> = {};
+                for (const key of seedFields) {
+                  if (snapshot[key] != null && !conversationFamilyProfile[key]) {
+                    seedData[key] = snapshot[key];
+                  }
+                }
+                if (Object.keys(seedData).length > 0) {
+                  await base44.entities.FamilyProfile.update(conversationFamilyProfile.id, seedData);
+                  Object.assign(conversationFamilyProfile, seedData);
+                  console.log('[E29-HYDRATE] Seeded FamilyProfile from briefSnapshot:', Object.keys(seedData));
+                }
+              } catch (hydrateErr) {
+                console.error('[E29-HYDRATE] Failed to hydrate from briefSnapshot:', hydrateErr);
+              }
+            }
           }
         } catch (e) {
           console.error('FamilyProfile error:', e);
