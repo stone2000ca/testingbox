@@ -42,15 +42,23 @@ export default function LoadingOverlay({ visible, statusMessage = 'Finding Your 
     return () => clearInterval(interval);
   }, [visible]);
 
-  // Handle fade out
+  // Handle fade out with minimum 5-second display time
   useEffect(() => {
     if (!visible && showFlash) {
-      setFadeOut(true);
+      const elapsedTime = Date.now() - (showTimeRef.current || 0);
+      const remainingTime = Math.max(0, 5000 - elapsedTime);
+      
       const timer = setTimeout(() => {
-        setFadeOut(false);
-        setShowFlash(false);
-        if (onTransitionComplete) onTransitionComplete();
-      }, 400);
+        setFadeOut(true);
+        const fadeTimer = setTimeout(() => {
+          setFadeOut(false);
+          setShowFlash(false);
+          showTimeRef.current = null;
+          if (onTransitionComplete) onTransitionComplete();
+        }, 400);
+        return () => clearTimeout(fadeTimer);
+      }, remainingTime);
+      
       return () => clearTimeout(timer);
     }
   }, [visible, showFlash, onTransitionComplete]);
