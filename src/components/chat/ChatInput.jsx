@@ -15,7 +15,7 @@ const ChatInput = forwardRef(({ onSend, disabled, tokenBalance, isPremium }, ref
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (message.trim()) {
+    if (message.trim() && !disabled) {
       onSend(message);
       setMessage('');
     }
@@ -50,13 +50,14 @@ const ChatInput = forwardRef(({ onSend, disabled, tokenBalance, isPremium }, ref
 
       <form onSubmit={handleSubmit} className="flex gap-2 items-stretch">
          <Textarea
-           ref={textareaRef}
-           value={message}
-           onChange={(e) => setMessage(e.target.value)}
-           onKeyDown={handleKeyDown}
-           placeholder="Tell me about your child and what you're looking for..."
-           className="min-h-[44px] max-h-[120px] resize-none bg-teal-900/40 border-teal-700/50 text-white placeholder:text-white/50 focus:border-teal-400 focus:ring-teal-400"
-         />
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Tell me about your child and what you're looking for..."
+            disabled={disabled}
+            className={`min-h-[44px] max-h-[120px] resize-none bg-teal-900/40 border-teal-700/50 text-white placeholder:text-white/50 focus:border-teal-400 focus:ring-teal-400${disabled ? ' opacity-50 cursor-not-allowed' : ''}`}
+          />
         <Button 
           type="submit" 
           disabled={disabled || !message.trim()}
