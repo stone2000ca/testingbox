@@ -116,7 +116,6 @@ export default function FamilyBrief({ familyProfile, onClose, consultantName, ex
             label="Child"
             value={fp.childName || (fp.gender === 'male' ? 'Your son' : fp.gender === 'female' ? 'Your daughter' : 'Your child')}
           />
-          {fp.childName && <Field label="Name" value={fp.childName} />}
           <Field label="Grade" value={formatGrade(fp.childGrade)} />
           <Field label="Gender" value={fp.gender} />
           <Field label="Learning Needs" value={learningParts.length > 0 ? learningParts.join(', ') : null} />
