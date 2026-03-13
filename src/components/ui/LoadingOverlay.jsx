@@ -276,7 +276,6 @@ export default function LoadingOverlay({ visible, statusMessage = 'Finding Your 
         {/* Fun Fact Box */}
         <div
           style={{
-            marginTop: '40px',
             padding: '16px',
             background: 'rgba(51,65,85,0.05)',
             borderRadius: '8px',
