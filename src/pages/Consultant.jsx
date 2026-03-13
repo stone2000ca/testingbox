@@ -815,7 +815,15 @@ export default function Consultant() {
   });
 
   const handleViewSchoolDetail = async (schoolId) => {
-    const school = schools.find(s => s.id === schoolId) || shortlistData.find(s => s.id === schoolId) || extraSchools.find(s => s.id === schoolId);
+    let school = schools.find(s => s.id === schoolId) || shortlistData.find(s => s.id === schoolId) || extraSchools.find(s => s.id === schoolId);
+    if (school && !school.description && !school.website) {
+      try {
+        const fullRecords = await base44.entities.School.filter({ id: schoolId });
+        if (fullRecords[0]) school = fullRecords[0];
+      } catch (e) {
+        console.error('[SCHOOL DETAIL] Failed to fetch full record:', e.message);
+      }
+    }
     if (school) {
       trackEvent('school_clicked', { metadata: { schoolName: school.name } });
       setSelectedSchool(school);
