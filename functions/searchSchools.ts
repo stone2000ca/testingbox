@@ -82,8 +82,8 @@ function applyGenderFilter(school, familyProfile) {
   }
   if (!genderPref) {
     const childGender = familyProfile?.childGender || null;
-    if (childGender === 'male' && gp === 'All-Girls') return false;
-    if (childGender === 'female' && gp === 'All-Boys') return false;
+    if (childGender === 'male' && gp.toLowerCase() === 'all-girls') return false;
+    if (childGender === 'female' && gp.toLowerCase() === 'all-boys') return false;
   }
   return true;
 }
@@ -290,7 +290,7 @@ async function performSearch(req) {
        let sHigh = parseInt(school.highestGrade);
        if (!isNaN(sLow) && !isNaN(sHigh)) {
          const distanceOutsideRange = parsedMinGrade < sLow ? sLow - parsedMinGrade : (parsedMinGrade > sHigh ? parsedMinGrade - sHigh : 0);
-         if (distanceOutsideRange > 2) {
+         if (distanceOutsideRange > 0) {
            console.log(`[GRADE FILTER] Excluded ${school.name}: grades ${sLow}-${sHigh}, need ${parsedMinGrade} (${distanceOutsideRange} grades outside range)`);
            return false;
          }
