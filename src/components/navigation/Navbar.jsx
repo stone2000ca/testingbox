@@ -102,17 +102,15 @@ export default function Navbar({ variant = "default" }) {
         </nav>
         {isAuthenticated && user ? (
           <div className="flex items-center gap-2">
-            <Link to={createPageUrl('Dashboard')}>
-              <Button variant="outline" className="gap-2">
+            <Link to={createPageUrl('Dashboard')} title="Dashboard">
+              <Button variant="outline" size="icon">
                 <User className="h-4 w-4" />
-                Dashboard
               </Button>
             </Link>
             {isSchoolAdmin && (
-              <Link to={createPageUrl('SchoolAdmin')}>
-                <Button variant="outline" className="gap-2">
+              <Link to={createPageUrl('SchoolAdmin')} title="Manage School">
+                <Button variant="outline" size="icon">
                   <Building2 className="h-4 w-4" />
-                  Manage School
                 </Button>
               </Link>
             )}
