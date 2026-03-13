@@ -80,7 +80,7 @@ export default function IconRail({ currentState, activePanel, onTogglePanel }) {
 
       {/* --- Shortlist --- */}
       <RailIcon
-        icon={Bookmark}
+        icon={Heart}
         label="Shortlist"
         enabled={shortlistEnabled}
         active={shortlistActive}
