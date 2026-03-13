@@ -408,25 +408,8 @@ Example output: "Emma is a creative Grade 5 student who thrives in smaller, nurt
 
       let matched = bestScore >= 1 ? bestMatch : null;
 
-      // DB fallback: if no confident match in pool, query School entity directly
-      if ((!matched || bestScore < 2) && msgWords.length > 0) {
-        console.log(`[SHORTLIST-FAST-PATH] Pool match score=${bestScore} — querying DB for "${msgWords[0]}"`);
-        const dbSchools = await base44.asServiceRole.entities.School.filter({ name: { $contains: msgWords[0] } });
-        console.log(`[SHORTLIST-FAST-PATH] DB returned ${dbSchools.length} candidates`);
-        let dbBestMatch = null;
-        let dbBestScore = 0;
-        for (const s of dbSchools) {
-          const nameNorm = s.name.toLowerCase().replace(/[^a-z0-9\s]/g, '');
-          const nameWords = nameNorm.split(' ').filter(w => w.length > 2);
-          const overlapCount = msgWords.filter(w => nameWords.includes(w)).length;
-          console.log(`[SHORTLIST-FAST-PATH][DB] "${s.name}" score=${overlapCount}`);
-          if (overlapCount > dbBestScore) { dbBestScore = overlapCount; dbBestMatch = s; }
-        }
-        if (dbBestScore >= 1) {
-          matched = dbBestMatch;
-          console.log(`[SHORTLIST-FAST-PATH][DB] Best DB match: "${matched.name}" (${matched.id}) score=${dbBestScore}`);
-        }
-      }
+      // DB fallback removed: $contains is not a valid Base44 filter operator.
+      // Pool match (bestScore >= 1) is sufficient — only fall through to normal search if no pool match.
 
       if (matched) {
         console.log(`[SHORTLIST-FAST-PATH] Best match: "${matched.name}" (${matched.id}) score=${bestScore} — skipping search & LLM`);
