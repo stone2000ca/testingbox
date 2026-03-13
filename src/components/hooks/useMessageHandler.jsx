@@ -54,12 +54,22 @@ export const useMessageHandler = ({
   activeJourney,
   setActiveJourney,
 }, isPremiumParam = isPremium) => {
-    // S114-WC2: Processing guard to prevent concurrent message sends (F15 fix)
-  let isProcessing = false;
+    // CRT-S109-F15: Message queue to prevent message loss during rapid input
+    let isProcessing = false;
+    const messageQueue = [];
+    
+    const processQueuedMessages = async () => {
+      while (messageQueue.length > 0 && !isProcessing) {
+        const { messageText, explicitSchoolId, displayText } = messageQueue.shift();
+        await handleSendMessage(messageText, explicitSchoolId, displayText);
+      }
+    };
+
   const handleSendMessage = async (messageText, explicitSchoolId = null, displayText = null) => {
-        // S114-WC2: Prevent concurrent sends
+        // CRT-S109-F15: Queue messages if already processing
     if (isProcessing) {
-      console.warn('[F15-GUARD] Message send blocked - already processing');
+      console.log('[CRT-S109] Queueing message: "' + messageText.substring(0, 30) + '..."');
+      messageQueue.push({ messageText, explicitSchoolId, displayText });
       return;
     }
     isProcessing = true;
@@ -560,9 +570,10 @@ export const useMessageHandler = ({
       setMessages([...updatedMessages, errorMessage]);
     }
             finally {
-      // S114-WC2: Always reset processing guard
+      // CRT-S109-F15: Reset processing guard and process queued messages
       isProcessing = false;
-          }
+      await processQueuedMessages();
+           }
     
   };
 
