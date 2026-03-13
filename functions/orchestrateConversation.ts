@@ -1614,7 +1614,12 @@ Object.assign(context, safeUpdatedContext);
           returningUserContextBlock
         });
         responseData = resultsResult.data;
-        responseData.conversationContext = { ...(responseData.conversationContext || {}), autoRefreshed: autoRefresh };
+        responseData.conversationContext = {
+          ...(responseData.conversationContext || {}),
+          autoRefreshed: autoRefresh,
+          resolvedLat: responseData.resolvedLat || workingProfile?.resolvedLat || null,
+          resolvedLng: responseData.resolvedLng || workingProfile?.resolvedLng || null,
+        };
         responseData.extractedEntities = extractionResult?.extractedEntities || {};
         // E32-001: Validate and attach actions
         const validSchoolIds_results = new Set((responseData.schools || currentSchools || []).map(s => s.id));

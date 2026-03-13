@@ -814,7 +814,7 @@ export default function Consultant() {
   });
 
   const handleViewSchoolDetail = async (schoolId) => {
-    const school = schools.find(s => s.id === schoolId) || shortlistData.find(s => s.id === schoolId);
+    const school = schools.find(s => s.id === schoolId) || shortlistData.find(s => s.id === schoolId) || extraSchools.find(s => s.id === schoolId);
     if (school) {
       trackEvent('school_clicked', { metadata: { schoolName: school.name } });
       setSelectedSchool(school);
