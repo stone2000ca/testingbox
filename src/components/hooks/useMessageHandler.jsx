@@ -470,7 +470,8 @@ export const useMessageHandler = ({
       let aiMessageContent = response.data?.message || 'Here are your school matches based on your preferences.';
       if (response.data?.state === STATES.BRIEF) {
         const latestProfile = response.data?.familyProfile || familyProfile;
-        if (!validateBriefContent(aiMessageContent)) {
+        const isEditingBrief = response.data?.briefStatus === 'editing' || response.data?.conversationContext?.briefStatus === 'editing';
+        if (!isEditingBrief && !validateBriefContent(aiMessageContent)) {
           const fallback = generateProgrammaticBrief(latestProfile);
           if (fallback) {
             console.warn('[KI-52] Brief failed validation — using programmatic fallback');
