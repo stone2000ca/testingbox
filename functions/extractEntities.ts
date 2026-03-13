@@ -63,6 +63,22 @@ async function extractEntitiesLogic(base44, message, conversationFamilyProfile, 
     if (/\b(son|boy|he|him|his)\b/i.test(message)) extractedGender = 'male';
     else if (/\b(daughter|girl|she|her|hers)\b/i.test(message)) extractedGender = 'female';
 
+    let extractedChildName: string | null = null;
+    const namePatterns = [
+      /\bmy\s+(?:son|daughter|boy|girl|child|kid)\s+([A-Z][a-z]{1,20})\b/i,
+      /\b(?:son|daughter|boy|girl|child|kid)\s+(?:is\s+)?named\s+([A-Z][a-z]{1,20})\b/i,
+      /\b(?:name\s+is|named|called)\s+([A-Z][a-z]{1,20})\b/i,
+      /\b([A-Z][a-z]{1,20})\s+is\s+(?:my\s+)?(?:son|daughter|boy|girl|child|kid)\b/i,
+    ];
+    const PRONOUN_BLOCKLIST = new Set(['my', 'his', 'her', 'he', 'she', 'him', 'the', 'a', 'an', 'i', 'we', 'our', 'they', 'it', 'this', 'that']);
+    for (const pattern of namePatterns) {
+      const match = message.match(pattern);
+      if (match && match[1] && !PRONOUN_BLOCKLIST.has(match[1].toLowerCase())) {
+        extractedChildName = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+        break;
+      }
+    }
+
     let extractedInterests = [];
     const interestsMatch = message.match(/(?:loves?|enjoys?|into|interested in|passionate about|likes?)\s+(.+?)(?:[.!?]|$)/i);
     if (interestsMatch) {
