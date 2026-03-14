@@ -91,8 +91,8 @@ const PhoneIcon = () => (
   </svg>
 );
 
-const NsDiamond = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40.54 38.56" width="20" height="20">
+const NsDiamond = ({ width = 20, height = 20 }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40.54 38.56" width={width} height={height}>
     <path fill="#0d9488" d="M20.21,0h-11.7L0,8.48l7,10.78L0,30.05l8.52,8.52h12.76l19.26-19.3L21.28,0h-1.06ZM37.53,19.27l-16.26,16.29-.09-.09-5.7-5.7,6.06-9.34.75-1.16-.75-1.16-6.06-9.34,5.79-5.76.58.58,15.68,15.68Z"/>
     <polygon fill="white" points="15.48 8.77 21.54 18.11 22.29 19.26 21.54 20.42 15.48 29.76 21.18 35.46 21.28 35.56 37.53 19.27 21.85 3.59 21.27 3.01 15.48 8.77"/>
   </svg>
@@ -393,9 +393,9 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     }}>
       <style>{`
-        @keyframes pulse-ring {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(13,148,136,0.35); }
-          50% { box-shadow: 0 0 0 6px rgba(13,148,136,0); }
+        @keyframes ns-diamond-pulse {
+          0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(13,148,136,0)); }
+          50% { transform: scale(1.18); filter: drop-shadow(0 0 6px rgba(13,148,136,0.7)); }
         }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
       `}</style>
@@ -467,25 +467,29 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
                 {journey.map((step, i) => (
                   <React.Fragment key={i}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flex: 1 }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: '50%', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700,
-                        ...(step.status === 'completed' ? {
-                          background: '#dcfce7', border: '2px solid #16a34a', color: '#16a34a',
-                        } : step.status === 'active' ? {
-                          background: '#fff', border: '2px solid #0d9488', color: '#0d9488',
-                          animation: 'pulse-ring 1.8s infinite',
-                        } : {
+                      {step.status === 'completed' ? (
+                        <div style={{
+                          width: 30, height: 30, borderRadius: '50%', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center',
+                          background: '#dcfce7', border: '2px solid #16a34a',
+                        }}>
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                      ) : step.status === 'active' ? (
+                        <div style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ animation: 'ns-diamond-pulse 1.8s ease-in-out infinite', display: 'flex' }}>
+                            <NsDiamond width={30} height={30} />
+                          </span>
+                        </div>
+                      ) : (
+                        <div style={{
+                          width: 30, height: 30, borderRadius: '50%', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700,
                           background: '#f1f5f9', border: '2px solid #cbd5e1', color: '#94a3b8',
-                        }),
-                      }}>
-                        {step.status === 'completed'
-                          ? <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                          : step.status === 'active'
-                          ? <NsDiamond />
-                          : i + 1
-                        }
-                      </div>
+                        }}>
+                          {i + 1}
+                        </div>
+                      )}
                       <span style={{
                         fontSize: 9.5, fontWeight: 600, textAlign: 'center', lineHeight: 1.2,
                         color: step.status === 'completed' ? '#16a34a' : step.status === 'active' ? '#0d9488' : '#94a3b8',
