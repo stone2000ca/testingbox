@@ -280,6 +280,10 @@ export const useMessageHandler = ({
       if (newBriefStatus) {
         setBriefStatus(newBriefStatus);
         console.log('[BRIEF STATUS] Updated to:', newBriefStatus);
+      } else if (response.data?.state === STATES.RESULTS && briefStatus === 'confirmed') {
+        // S151-P0: Clear briefStatus when transitioning to RESULTS - prevents LoadingOverlay re-triggering
+        setBriefStatus(null);
+        console.log('[BRIEF STATUS] Cleared on RESULTS transition');
       }
 
       // CRITICAL FIX: Merge backend's full context (including extractedEntities) with frontend state
