@@ -24,6 +24,7 @@ export default function ConsultantDialogs({
   isDebugMode, extractedEntitiesData, currentConversation,
   // E39-S11: Deep dive & navigation data for Notepad tab
   deepDiveAnalysis, actionPlan, visitPrepKit, fitReEvaluation, journeySteps, selectedSchool, schoolsWithDeepDive,
+  hydrationSource,
 }) {
   return (
     <>
@@ -209,6 +210,7 @@ export default function ConsultantDialogs({
             journeySteps,
             selectedSchool: selectedSchool ? { id: selectedSchool.id, name: selectedSchool.name } : null,
             schoolsWithDeepDive: schoolsWithDeepDive ? [...schoolsWithDeepDive] : [],
+            hydrationSource: hydrationSource || null,
           }}
         />
       )}
