@@ -957,6 +957,22 @@ export default function Consultant() {
     handleBackToResults();
   };
 
+  const lastDeepDiveAt = useMemo(() => {
+    if (!selectedSchool?.id || !messages.length) return null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role === 'assistant' && msg.deepDiveAnalysis?.schoolId === selectedSchool.id) {
+        return msg.timestamp;
+      }
+    }
+    return null;
+  }, [messages, selectedSchool?.id]);
+
+  const handleRefreshDeepDive = () => {
+    if (!selectedSchool) return;
+    handleConfirmDeepDive(selectedSchool);
+  };
+
   // T047: No manual refresh handler needed — matches auto-refresh on entity extraction
 
   // Open full-screen comparison view and update conversationContext with compared school names
@@ -1492,29 +1508,31 @@ export default function Consultant() {
               ] : null;
               return (
                 <ResearchNotepad
-                  schoolData={{
-                    name: selectedSchool.name || selectedSchool.schoolName || 'Unknown School',
-                    location: `${selectedSchool.city || ''}, ${selectedSchool.provinceState || selectedSchool.province || ''}`.trim().replace(/^,\s*/, ''),
-                    grades: selectedSchool.gradesServed || `${selectedSchool.lowestGrade || 'K'}-${selectedSchool.highestGrade || '12'}`,
-                    type: selectedSchool.genderPolicy || selectedSchool.schoolType || '',
-                    students: selectedSchool.enrollment || 0,
-                    teacherRatio: selectedSchool.studentTeacherRatio || '',
-                    tuition: selectedSchool.tuitionDomesticDay ? `$${Number(selectedSchool.tuitionDomesticDay).toLocaleString()}` : 'Contact school',
-                  }}
-                  fitScore={deepDiveAnalysis.fitScore}
-                  fitLabel={deepDiveAnalysis.fitLabel}
-                  tradeOffs={deepDiveAnalysis.tradeOffs}
-                  aiInsight={deepDiveAnalysis.aiInsight}
-                  chatBubbles={null}
-                  preferences={null}
-                  journeySteps={journeySteps}
-                  keyDates={keyDates}
-                  visitPrepKit={visitPrepKit}
-                  contactLog={contactLog}
-                  researchNotes={researchNotes}
-                  onNotesChange={setResearchNotes}
-                  onSaveNotes={handleSaveNotes}
-                />
+                   schoolData={{
+                     name: selectedSchool.name || selectedSchool.schoolName || 'Unknown School',
+                     location: `${selectedSchool.city || ''}, ${selectedSchool.provinceState || selectedSchool.province || ''}`.trim().replace(/^,\s*/, ''),
+                     grades: selectedSchool.gradesServed || `${selectedSchool.lowestGrade || 'K'}-${selectedSchool.highestGrade || '12'}`,
+                     type: selectedSchool.genderPolicy || selectedSchool.schoolType || '',
+                     students: selectedSchool.enrollment || 0,
+                     teacherRatio: selectedSchool.studentTeacherRatio || '',
+                     tuition: selectedSchool.tuitionDomesticDay ? `$${Number(selectedSchool.tuitionDomesticDay).toLocaleString()}` : 'Contact school',
+                   }}
+                   fitScore={deepDiveAnalysis.fitScore}
+                   fitLabel={deepDiveAnalysis.fitLabel}
+                   tradeOffs={deepDiveAnalysis.tradeOffs}
+                   aiInsight={deepDiveAnalysis.aiInsight}
+                   chatBubbles={null}
+                   preferences={null}
+                   journeySteps={journeySteps}
+                   keyDates={keyDates}
+                   visitPrepKit={visitPrepKit}
+                   contactLog={contactLog}
+                   researchNotes={researchNotes}
+                   onNotesChange={setResearchNotes}
+                   onSaveNotes={handleSaveNotes}
+                   lastDeepDiveAt={lastDeepDiveAt}
+                   onRefreshDeepDive={handleRefreshDeepDive}
+                 />
               );
             })()}
             <SchoolDetailPanel
