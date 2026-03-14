@@ -42,6 +42,7 @@ import { useSchoolFiltering } from '@/components/hooks/useSchoolFiltering';
 import { useMessageHandler } from '@/components/hooks/useMessageHandler';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import ResearchNotepad from '@/components/ui/ResearchNotepad';
+import { getSchoolsWithDeepDive } from '../components/utils/deepDiveUtils';
 
 const PLAN_NAMES = { FREE: 'free', BASIC: 'basic', PREMIUM: 'premium', PRO: 'pro', ENTERPRISE: 'enterprise' };
 
@@ -186,6 +187,9 @@ export default function Consultant() {
 
   // T047: Auto-refresh animation trigger
   const [schoolsAnimKey, setSchoolsAnimKey] = useState(0);
+
+  // E39-S8: Memoized set of schools with deep dive analysis
+  const schoolsWithDeepDive = useMemo(() => getSchoolsWithDeepDive(messages), [messages]);
 
   // Journey Steps: fetch when selected school changes
   const [schoolJourney, setSchoolJourney] = useState(null);
