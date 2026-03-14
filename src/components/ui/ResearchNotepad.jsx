@@ -357,7 +357,21 @@ function PremiumLockBadge() {
   );
 }
 
-export default function ResearchNotepad({ loading = false, schoolData, fitScore, fitLabel, tradeOffs, chatBubbles, preferences, aiInsight, journeySteps, keyDates, visitPrepKit, contactLog, researchNotes, onNotesChange, onSaveNotes }) {
+function timeAgo(isoString) {
+  if (!isoString) return null;
+  const now = new Date();
+  const then = new Date(isoString);
+  const diffMs = now - then;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+}
+
+export default function ResearchNotepad({ loading = false, schoolData, fitScore, fitLabel, tradeOffs, chatBubbles, preferences, aiInsight, journeySteps, keyDates, visitPrepKit, contactLog, researchNotes, onNotesChange, onSaveNotes, lastDeepDiveAt, onRefreshDeepDive }) {
   const school = schoolData || MOCK_SCHOOL;
   const score = fitScore ?? MOCK_FIT_SCORE;
   const label = fitLabel || 'STRONG MATCH';
@@ -370,6 +384,7 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
   const [deepDiveOpen, setDeepDiveOpen] = useState(true);
   const [localNotes, setLocalNotes] = useState('');
   const [saved, setSaved] = useState(false);
+  const [showRefreshConfirm, setShowRefreshConfirm] = useState(false);
 
   // Controlled vs uncontrolled: use props if provided, else local state
   const isControlled = onNotesChange != null;
@@ -432,7 +447,7 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
         <button
           onClick={() => setOpen(o => !o)}
           style={{
-            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start',
             padding: '18px 22px 16px 58px',
             background: 'linear-gradient(180deg, #f5edd4 0%, #fffdf5 100%)',
             border: 'none', borderBottom: open ? '1px solid #e8dfc0' : 'none',
@@ -440,18 +455,66 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
             position: 'relative', zIndex: 2,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#2d1e0e' }}>
-              My Research on {school.name}
-            </span>
-            <span style={{
-              background: '#d4a017', color: '#fff', fontSize: 11, fontWeight: 700,
-              padding: '2px 9px', borderRadius: 10, letterSpacing: 0.3,
-            }}>
-              Deep Dive
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#2d1e0e' }}>
+                My Research on {school.name}
+              </span>
+              <span style={{
+                background: '#d4a017', color: '#fff', fontSize: 11, fontWeight: 700,
+                padding: '2px 9px', borderRadius: 10, letterSpacing: 0.3,
+              }}>
+                Deep Dive
+              </span>
+            </div>
+            <span style={{ color: '#a89060' }}><ChevronIcon open={open} /></span>
           </div>
-          <span style={{ color: '#a89060' }}><ChevronIcon open={open} /></span>
+          {lastDeepDiveAt && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, paddingLeft: 0 }}>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 500,
+                color: (() => {
+                  const days = Math.floor((new Date() - new Date(lastDeepDiveAt)) / 86400000);
+                  if (days >= 60) return '#dc2626';
+                  if (days >= 30) return '#d97706';
+                  return '#6b7280';
+                })(),
+              }}>
+                {(() => {
+                  const days = Math.floor((new Date() - new Date(lastDeepDiveAt)) / 86400000);
+                  if (days >= 60) return `⚠ Data may be outdated — updated ${timeAgo(lastDeepDiveAt)}`;
+                  if (days >= 30) return `⚠ Updated ${timeAgo(lastDeepDiveAt)}`;
+                  return `Updated ${timeAgo(lastDeepDiveAt)}`;
+                })()}
+              </span>
+              {onRefreshDeepDive && Math.floor((new Date() - new Date(lastDeepDiveAt)) / 86400000) >= 30 && !showRefreshConfirm && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowRefreshConfirm(true); }}
+                  style={{ fontSize: 11, color: '#0d9488', background: 'none', border: '1px solid #0d9488', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  Refresh
+                </button>
+              )}
+              {showRefreshConfirm && (
+                <span style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: '#6b7280' }}>Re-analyze this school?</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onRefreshDeepDive(); setShowRefreshConfirm(false); }}
+                    style={{ fontSize: 11, color: '#fff', background: '#0d9488', border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowRefreshConfirm(false); }}
+                    style={{ fontSize: 11, color: '#6b7280', background: 'none', border: '1px solid #d4c9a8', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
         </button>
 
         {open && (
