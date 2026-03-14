@@ -296,7 +296,7 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
                         {step.label}
                       </span>
                     </div>
-                    {i < MOCK_JOURNEY.length - 1 && (
+                    {i < journey.length - 1 && (
                       <div style={{
                         flex: 1, height: 2, marginBottom: 14, maxWidth: 28,
                         background: step.status === 'completed' ? '#86efac' : '#e2e8f0',
