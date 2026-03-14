@@ -463,6 +463,11 @@ async function performSearch(req) {
       schools = schools.filter(s => !s.distanceKm || s.distanceKm <= maxDistanceKm);
     }
 
+    if (schools.length === 0 && schoolsToRank.length > 0) {
+      console.log('[S151-WC2] Post-scoring distance filter killed all results - falling back');
+      schools = scored.sort((a, b) => b.score - a.score).map(s => s.school);
+    }
+
     // E26-S2: Composite sort - score primary, distance penalty secondary
     schools.sort((a, b) => {
       const scoreA = (a._matchScore || 0) - ((a.distanceKm || 0) * 0.1);
