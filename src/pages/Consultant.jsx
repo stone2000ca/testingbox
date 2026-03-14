@@ -1132,13 +1132,14 @@ export default function Consultant() {
     }, DOSSIER_AUTO_OPEN_DELAY_MS);
   }, [messages, isTyping]);
 
-  // E39-S4a: Rehydrate deepDiveAnalysis from persisted messages on session restore
+  // E39-S4a: Rehydrate deepDiveAnalysis from persisted messages on school switch
   useEffect(() => {
-    // Don't overwrite if already populated for this school
-    if (deepDiveAnalysis?.schoolId === selectedSchool?.id) return;
     // Don't run while AI is still typing
     if (isTyping) return;
-    if (!selectedSchool?.id || !messages.length) return;
+    if (!selectedSchool?.id || !messages.length) {
+      setDeepDiveAnalysis(null);
+      return;
+    }
 
     // Scan messages in reverse for the most recent deep dive for this school
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -1154,7 +1155,7 @@ export default function Consultant() {
       }
     }
     setDeepDiveAnalysis(null);
-  }, [messages, isTyping, selectedSchool?.id, deepDiveAnalysis]);
+  }, [messages, isTyping, selectedSchool?.id]);
 
   // E39-S4b: Rehydrate visitPrepKit from persisted messages on session restore
   useEffect(() => {
