@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 import Navbar from "@/components/navigation/Navbar";
 import { base44 } from '@/api/base44Client';
 import SchoolCardUnified from '@/components/schools/SchoolCardUnified';
-import ResearchNotepad from '@/components/ui/ResearchNotepad';
 
 export default function Home() {
   const [schools, setSchools] = useState([]);
