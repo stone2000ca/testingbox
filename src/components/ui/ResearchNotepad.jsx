@@ -405,7 +405,6 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
       {/* Parchment wrapper */}
       <div style={{
         background: '#fffdf5',
-        borderRadius: 12,
         boxShadow: '0 4px 20px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
         position: 'relative',
         overflow: 'hidden',
@@ -439,7 +438,7 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
             padding: '18px 22px 16px 58px',
             background: 'linear-gradient(180deg, #f5edd4 0%, #fffdf5 100%)',
             border: 'none', borderBottom: open ? '1px solid #e8dfc0' : 'none',
-            cursor: 'pointer', textAlign: 'left', borderRadius: open ? '12px 12px 0 0' : 12,
+            cursor: 'pointer', textAlign: 'left', borderRadius: 0,
             position: 'relative', zIndex: 2,
           }}
         >
@@ -484,6 +483,8 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
                       }}>
                         {step.status === 'completed'
                           ? <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          : step.status === 'active'
+                          ? <NsDiamond />
                           : i + 1
                         }
                       </div>
@@ -669,46 +670,6 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
                 >
                   Save Notes
                 </button>
-              </div>
-            </div>
-
-            {/* ── School Footer Card ────────────────────────────── */}
-            <div style={{
-              margin: '0 20px 20px',
-              background: '#f5edd4',
-              border: '1px solid #d4c9a8',
-              borderRadius: 10,
-              padding: '14px 16px',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#2d1e0e' }}>{school.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
-                    <MapPinIcon />
-                    <span style={{ fontSize: 11.5, color: '#64748b' }}>{school.location}</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <NsDiamond />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#0d9488', textTransform: 'uppercase', letterSpacing: 0.4 }}>
-                    NextSchool
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[
-                  { label: 'Students', val: stats.students },
-                  { label: 'Teacher Ratio', val: stats.teacherRatio },
-                  { label: 'Tuition', val: stats.tuition },
-                ].map((stat, i) => (
-                  <div key={i} style={{
-                    flex: 1, background: '#fff', border: '1px solid #e8dfc0', borderRadius: 7,
-                    padding: '7px 10px', textAlign: 'center',
-                  }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0d9488' }}>{stat.val}</div>
-                    <div style={{ fontSize: 10, color: '#a89060', fontWeight: 600, marginTop: 1 }}>{stat.label}</div>
-                  </div>
-                ))}
               </div>
             </div>
 
