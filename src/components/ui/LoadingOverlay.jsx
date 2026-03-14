@@ -87,7 +87,7 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
       if (wasVisible.current) {
         if (minReady.current) { 
           setFlashActive(true);
-          setTimeout(() => onTransitionComplete?.(), 450);
+          setTimeout(() => onCompleteRef.current?.(), 450);
         }
 
         else { pending.current = true; }
@@ -108,7 +108,7 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
       if (pending.current) { 
           pending.current = false; 
           setFlashActive(true);
-          setTimeout(() => onTransitionComplete?.(), 450);
+          setTimeout(() => onCompleteRef.current?.(), 450);
         }
     }, MIN_LOADER_MS);
     t(() => setTimedOut(true), TIMEOUT_MS);
@@ -142,7 +142,7 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
           <div style={{fontSize:48,marginBottom:16}}>⏳</div>
           <h3 style={{color:'#334155',marginBottom:8}}>Taking longer than expected</h3>
           <p style={{color:'#64748b',marginBottom:24}}>The search is still running. You can wait or try again.</p>
-          <button onClick={() => onTransitionComplete?.()} style={{background:TEAL,color:'#fff',border:'none',borderRadius:8,padding:'10px 28px',fontSize:15,cursor:'pointer'}}>Try Again</button>
+          <button onClick={() => onCompleteRef.current?.()} style={{background:TEAL,color:'#fff',border:'none',borderRadius:8,padding:'10px 28px',fontSize:15,cursor:'pointer'}}>Try Again</button>
         </div>
       </div>
     );
