@@ -1175,11 +1175,13 @@ export default function Consultant() {
     setVisitPrepKit(null);
   }, [messages, isTyping, selectedSchool?.id]);
 
-  // E39-S4c: Rehydrate actionPlan from persisted messages on session restore
+  // E39-S4c: Rehydrate actionPlan from persisted messages on school switch
   useEffect(() => {
-    if (actionPlan?.schoolId === selectedSchool?.id) return;
     if (isTyping) return;
-    if (!selectedSchool?.id || !messages.length) return;
+    if (!selectedSchool?.id || !messages.length) {
+      setActionPlan(null);
+      return;
+    }
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
       if (msg.role === 'assistant' && msg.actionPlan && msg.actionPlan.schoolId === selectedSchool.id) {
@@ -1189,7 +1191,7 @@ export default function Consultant() {
       }
     }
     setActionPlan(null);
-  }, [messages, isTyping, selectedSchool?.id, actionPlan]);
+  }, [messages, isTyping, selectedSchool?.id]);
 
   // E39-S4d: Rehydrate fitReEvaluation from persisted messages on session restore
   useEffect(() => {
