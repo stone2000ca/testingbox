@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import School from '@/entities/School';
 import SchoolJourney from '@/entities/SchoolJourney';
