@@ -76,6 +76,8 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
   const minReady = useRef(false);
   const pending = useRef(false);
   const wasVisible = useRef(false);
+  const onCompleteRef = useRef(onTransitionComplete);
+  onCompleteRef.current = onTransitionComplete;
 
   const clear = useCallback(() => { timers.current.forEach(clearTimeout); timers.current = []; }, []);
   const t = useCallback((fn, ms) => { const id = setTimeout(fn, ms); timers.current.push(id); return id; }, []);
