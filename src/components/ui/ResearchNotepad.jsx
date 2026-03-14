@@ -186,8 +186,8 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
     setTimeout(() => setSaved(false), 2000);
   };
 
-  // Fit score circle (conic-gradient 92%)
-  const fitPct = 92;
+  // Fit score circle
+  const fitPct = score;
   const fitDeg = Math.round(fitPct * 3.6);
 
   return (
