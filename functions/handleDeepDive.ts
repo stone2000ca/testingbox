@@ -538,7 +538,7 @@ Generate the DEEPDIVE card for this family-school match.`;
       } catch (parseError) {
         console.log('[MERGED]: malformed response from InvokeLLM:', parseError.message);
         aiMessage = typeof mergedResponse === 'string' ? mergedResponse : (mergedResponse?.response || mergedResponse?.message || '');
-        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null };
+        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null, aiInsight: '' };
       }
       if (aiMessage) console.log('[DEEPDIVE] AI card generated via InvokeLLM (merged)');
     } catch (llmError) {
