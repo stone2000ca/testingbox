@@ -227,13 +227,13 @@ async function performSearch(req) {
 
   let aliasedCities = [];
   let aliasedProvinces = [];
-  if (region) {
-    const regionLower = region.toLowerCase().trim();
-    const alias = regionAliases[regionLower];
-    if (alias) {
-      if (alias.cities) aliasedCities = alias.cities;
-      if (alias.provinces) aliasedProvinces = alias.provinces;
-    }
+  // S151-P0: Check BOTH region AND city against regionAliases
+  const aliasKey = (region || city || '').toLowerCase().trim();
+  const alias = regionAliases[aliasKey];
+  if (alias) {
+    if (alias.cities) aliasedCities = alias.cities;
+    if (alias.provinces) aliasedProvinces = alias.provinces;
+    console.log(`[S151] Region alias matched: "${aliasKey}" -> ${aliasedCities.length} cities`);
   }
 
   if (aliasedCities.length > 0) {
@@ -266,9 +266,8 @@ async function performSearch(req) {
     if (cityMatches.length === 0 && (resolvedLat || finalLat)) {
       console.log(`[CITY FILTER] Falling back to coordinate-based with 75km cap`);
       locationFiltered = locationFiltered.filter(s => {
-        // F3 FIX: exclude schools without coordinates in coord-based fallback (was: return true)
-        // Schools without lat/lng could be from any region and slip through a city-scoped search
-        if (!s.lat || !s.lng) return false;
+        // S151-P0: include schools without coordinates so they aren't silently discarded
+        if (!s.lat || !s.lng) return true;
         const dist = calculateDistance(finalLat, finalLng, s.lat, s.lng);
         return dist <= 75;
       });
