@@ -93,6 +93,7 @@ export default function DebugPanel({ debugState }) {
               <TabsTrigger value="state">State Inspector</TabsTrigger>
               <TabsTrigger value="entities" onClick={handleEntityTabSelect}>Entity Viewer</TabsTrigger>
               <TabsTrigger value="llmlog" onClick={handleLlmLogTabSelect}>LLM Log</TabsTrigger>
+              <TabsTrigger value="notepad">Notepad</TabsTrigger>
             </TabsList>
 
             {/* Tab 1: State Inspector */}
@@ -199,6 +200,49 @@ export default function DebugPanel({ debugState }) {
                   </table>
                 </div>
               )}
+            </TabsContent>
+
+            {/* Tab 4: Notepad */}
+            <TabsContent value="notepad" className="flex-1 overflow-y-auto p-4 space-y-3">
+              {/* Deep Dive Data */}
+              <NotepadSection label="Deep Dive Data">
+                <NotepadField label="schoolId" value={debugState?.deepDiveAnalysis?.schoolId || 'null'} />
+                <NotepadField label="fitScore" value={debugState?.deepDiveAnalysis?.fitScore ?? 'null'} />
+                <NotepadField label="fitLabel" value={debugState?.deepDiveAnalysis?.fitLabel || 'null'} />
+                <NotepadField label="tradeOffs" value={`${debugState?.deepDiveAnalysis?.tradeOffs?.length || 0} items`} />
+                <NotepadField label="aiInsight" value={debugState?.deepDiveAnalysis?.aiInsight ? `${debugState.deepDiveAnalysis.aiInsight.length} chars` : 'null'} />
+              </NotepadSection>
+
+              {/* Action Plan */}
+              <NotepadSection label="Action Plan">
+                <NotepadField label="loaded" value={!!debugState?.actionPlan ? 'true' : 'false'} />
+                <NotepadField label="events" value={debugState?.actionPlan?.keyDates?.length || 0} />
+                <NotepadField label="questions" value={debugState?.actionPlan?.followUpQuestions?.length || 0} />
+              </NotepadSection>
+
+              {/* Visit Prep Kit */}
+              <NotepadSection label="Visit Prep Kit">
+                <NotepadField label="loaded" value={!!debugState?.visitPrepKit ? 'true' : 'false'} />
+                <NotepadField label="isLocked" value={debugState?.visitPrepKit?.__gated ? 'true' : 'false'} />
+              </NotepadSection>
+
+              {/* Journey Steps */}
+              <NotepadSection label="Journey Steps">
+                {debugState?.journeySteps && debugState.journeySteps.length > 0 ? (
+                  debugState.journeySteps.map((step, idx) => (
+                    <NotepadField key={idx} label={step.label} value={step.status} />
+                  ))
+                ) : (
+                  <p className="text-xs text-amber-700">No journey steps available</p>
+                )}
+              </NotepadSection>
+
+              {/* Navigation */}
+              <NotepadSection label="Navigation">
+                <NotepadField label="selectedSchool" value={debugState?.selectedSchool?.name || 'null'} />
+                <NotepadField label="selectedSchoolId" value={debugState?.selectedSchool?.id || 'null'} />
+                <NotepadField label="schoolsWithDeepDive" value={debugState?.schoolsWithDeepDive?.length || 0} />
+              </NotepadSection>
             </TabsContent>
           </Tabs>
         </div>
