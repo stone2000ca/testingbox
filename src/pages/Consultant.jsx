@@ -1376,6 +1376,7 @@ export default function Consultant() {
                   preferences={null}
                   keyDates={keyDates}
                   visitPrepKit={visitPrepKit}
+                  contactLog={contactLog}
                 />
               );
             })()}

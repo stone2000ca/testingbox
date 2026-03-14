@@ -366,7 +366,7 @@ function PremiumLockBadge() {
   );
 }
 
-export default function ResearchNotepad({ loading = false, schoolData, fitScore, fitLabel, tradeOffs, chatBubbles, preferences, aiInsight, journeySteps, schoolStats, keyDates, visitPrepKit }) {
+export default function ResearchNotepad({ loading = false, schoolData, fitScore, fitLabel, tradeOffs, chatBubbles, preferences, aiInsight, journeySteps, schoolStats, keyDates, visitPrepKit, contactLog }) {
   const school = schoolData || MOCK_SCHOOL;
   const score = fitScore ?? MOCK_FIT_SCORE;
   const label = fitLabel || 'STRONG MATCH';
