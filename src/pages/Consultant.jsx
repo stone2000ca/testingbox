@@ -1521,6 +1521,20 @@ export default function Consultant() {
                   researchNotes={researchNotes}
                   onNotesChange={setResearchNotes}
                   onSaveNotes={handleSaveNotes}
+                  lastDeepDiveAt={(() => {
+                    for (let i = messages.length - 1; i >= 0; i--) {
+                      if (messages[i]?.deepDiveAnalysis?.schoolId === deepDiveAnalysis?.schoolId) {
+                        return messages[i]?.created_date || messages[i]?.timestamp || new Date().toISOString();
+                      }
+                    }
+                    return null;
+                  })()}
+                  onRefreshDeepDive={() => {
+                    if (deepDiveAnalysis?.schoolId) {
+                      const schoolName = deepDiveAnalysis?.schoolName || selectedSchool?.name || 'this school';
+                      handleSendMessage(`Tell me about ${schoolName}`, deepDiveAnalysis.schoolId);
+                    }
+                  }}
                 />
               );
             })()}
