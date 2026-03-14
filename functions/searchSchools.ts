@@ -460,7 +460,7 @@ async function performSearch(req) {
     });
 
     if (maxDistanceKm) {
-      schools = schools.filter(s => s.distanceKm && s.distanceKm <= maxDistanceKm);
+      schools = schools.filter(s => !s.distanceKm || s.distanceKm <= maxDistanceKm);
     }
 
     // E26-S2: Composite sort - score primary, distance penalty secondary
