@@ -494,19 +494,21 @@ export const useMessageHandler = ({
         }
       }
 
+      const analyzedSchoolId = explicitSchoolId || response.data?.deepDiveAnalysis?.schoolId || selectedSchool?.id || null;
+
       const aiMessage = {
         role: 'assistant',
         content: aiMessageContent,
         timestamp: new Date().toISOString(),
-        deepDiveAnalysis: response.data?.deepDiveAnalysis ? { ...response.data.deepDiveAnalysis, schoolId: selectedSchool?.id } : null,
+        deepDiveAnalysis: response.data?.deepDiveAnalysis ? { ...response.data.deepDiveAnalysis, schoolId: analyzedSchoolId } : null,
         visitPrepKit: response.data?.visitPrepKit
-          ? { ...response.data.visitPrepKit, schoolId: selectedSchool?.id }
+          ? { ...response.data.visitPrepKit, schoolId: analyzedSchoolId }
           : null,
         actionPlan: response.data?.actionPlan
-          ? { ...response.data.actionPlan, schoolId: selectedSchool?.id }
+          ? { ...response.data.actionPlan, schoolId: analyzedSchoolId }
           : null,
         fitReEvaluation: response.data?.fitReEvaluation
-          ? { ...response.data.fitReEvaluation, schoolId: selectedSchool?.id }
+          ? { ...response.data.fitReEvaluation, schoolId: analyzedSchoolId }
           : null,
         actions: response.data?.actions || [],
       };
