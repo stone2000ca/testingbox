@@ -419,7 +419,7 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
                         AI Insight
                       </div>
                       <div style={{ fontSize: 12.5, color: '#134e4a', lineHeight: 1.55 }}>
-                        {MOCK_AI_INSIGHT}
+                        {insight}
                       </div>
                     </div>
                   </div>
