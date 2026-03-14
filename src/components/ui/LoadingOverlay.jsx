@@ -120,7 +120,7 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
     timers.current.push(factInterval);
 
     return clear;
-  }, [isVisible, onTransitionComplete, t, clear]);
+  }, [isVisible, t, clear]);
 
   useEffect(() => clear, [clear]);
 
