@@ -269,7 +269,7 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
               borderBottom: '1px solid #e8dfc0',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                {MOCK_JOURNEY.map((step, i) => (
+                {journey.map((step, i) => (
                   <React.Fragment key={i}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flex: 1 }}>
                       <div style={{
