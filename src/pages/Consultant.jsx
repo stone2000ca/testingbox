@@ -1153,6 +1153,7 @@ export default function Consultant() {
         return;
       }
     }
+    setDeepDiveAnalysis(null);
   }, [messages, isTyping, selectedSchool?.id, deepDiveAnalysis]);
 
   // E39-S4b: Rehydrate visitPrepKit from persisted messages on session restore
@@ -1168,6 +1169,7 @@ export default function Consultant() {
         return;
       }
     }
+    setVisitPrepKit(null);
   }, [messages, isTyping, selectedSchool?.id, visitPrepKit]);
 
   // E39-S4c: Rehydrate actionPlan from persisted messages on session restore
@@ -1183,6 +1185,7 @@ export default function Consultant() {
         return;
       }
     }
+    setActionPlan(null);
   }, [messages, isTyping, selectedSchool?.id, actionPlan]);
 
   // E39-S4d: Rehydrate fitReEvaluation from persisted messages on session restore
@@ -1198,6 +1201,7 @@ export default function Consultant() {
         return;
       }
     }
+    setFitReEvaluation(null);
   }, [messages, isTyping, selectedSchool?.id, fitReEvaluation]);
 
   // E32-003: Action processor - executes UI actions from backend
