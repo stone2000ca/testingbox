@@ -13,10 +13,9 @@ const MOCK_SCHOOL = {
 const MOCK_JOURNEY = [
   { label: 'Match Found',  status: 'completed' },
   { label: 'Deep Dive',    status: 'active'    },
-  { label: 'Visit Prep',   status: 'pending'   },
   { label: 'Book Tour',    status: 'pending'   },
+  { label: 'Debrief Tour', status: 'pending'   },
   { label: 'Apply',        status: 'pending'   },
-  { label: 'Decision',     status: 'pending'   },
 ];
 
 const MOCK_CHAT_BUBBLES = [
@@ -99,14 +98,6 @@ const NsDiamond = () => (
   </svg>
 );
 
-const MapPinIcon = () => (
-  <svg viewBox="0 0 24 24" width="13" height="13" fill="none"
-    stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-    <circle cx="12" cy="10" r="3" />
-  </svg>
-);
-
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const shimmerStyle = {
@@ -118,7 +109,7 @@ const shimmerStyle = {
 
 function LoadingSkeleton() {
   return (
-    <div style={{ padding: 24, background: '#fffdf5', borderRadius: 12, maxWidth: 660, margin: '0 auto' }}>
+    <div style={{ padding: 24, background: '#fffdf5', maxWidth: 660, margin: '0 auto' }}>
       <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
       <div style={{ ...shimmerStyle, height: 28, width: '60%', marginBottom: 20 }} />
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
@@ -366,7 +357,7 @@ function PremiumLockBadge() {
   );
 }
 
-export default function ResearchNotepad({ loading = false, schoolData, fitScore, fitLabel, tradeOffs, chatBubbles, preferences, aiInsight, journeySteps, schoolStats, keyDates, visitPrepKit, contactLog, researchNotes, onNotesChange, onSaveNotes }) {
+export default function ResearchNotepad({ loading = false, schoolData, fitScore, fitLabel, tradeOffs, chatBubbles, preferences, aiInsight, journeySteps, keyDates, visitPrepKit, contactLog, researchNotes, onNotesChange, onSaveNotes }) {
   const school = schoolData || MOCK_SCHOOL;
   const score = fitScore ?? MOCK_FIT_SCORE;
   const label = fitLabel || 'STRONG MATCH';
@@ -375,7 +366,6 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
   const insight = aiInsight || MOCK_AI_INSIGHT;
   // Normalise journeySteps: accept {label,status} (live) or {label,status:'completed'|'active'|'pending'} (mock)
   const journey = journeySteps || MOCK_JOURNEY;
-  const stats = schoolStats || { students: school.students, teacherRatio: school.teacherRatio, tuition: school.tuition };
   const [open, setOpen] = useState(true);
   const [deepDiveOpen, setDeepDiveOpen] = useState(true);
   const [localNotes, setLocalNotes] = useState('');
