@@ -171,6 +171,9 @@ export default function Consultant() {
   // Visit Prep Kit data
   const [visitPrepKit, setVisitPrepKit] = useState(null);
 
+  // Contact Log data
+  const [contactLog, setContactLog] = useState([]);
+
   // Action Plan data
   const [actionPlan, setActionPlan] = useState(null);
 

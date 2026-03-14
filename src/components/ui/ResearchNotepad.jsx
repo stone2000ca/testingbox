@@ -600,21 +600,7 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
 
             {/* ── Contact Log ───────────────────────────────────── */}
             <CollapsibleSection icon={<PhoneIcon />} label="Contact Log" color="#64748b">
-              <div style={{ fontSize: 12.5, color: '#5a4030', lineHeight: 1.6 }}>
-                <div style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '1px solid #f5edd4', alignItems: 'flex-start' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#0d9488', marginTop: 5, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontWeight: 600 }}>Email sent to Admissions</div>
-                    <div style={{ color: '#a89060', fontSize: 11 }}>Oct 22, 2025 — Awaiting reply</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 10, padding: '8px 0', alignItems: 'flex-start' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#cbd5e1', marginTop: 5, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontWeight: 600, color: '#94a3b8' }}>No other contacts yet</div>
-                  </div>
-                </div>
-              </div>
+              <ContactLogContent contactLog={contactLog} />
             </CollapsibleSection>
 
             {/* ── My Notes ──────────────────────────────────────── */}
