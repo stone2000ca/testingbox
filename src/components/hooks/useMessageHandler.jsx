@@ -499,8 +499,15 @@ export const useMessageHandler = ({
         content: aiMessageContent,
         timestamp: new Date().toISOString(),
         deepDiveAnalysis: response.data?.deepDiveAnalysis ? { ...response.data.deepDiveAnalysis, schoolId: selectedSchool?.id } : null,
-        visitPrepKit: response.data?.visitPrepKit || null,
-        fitReEvaluation: response.data?.fitReEvaluation || null,
+        visitPrepKit: response.data?.visitPrepKit
+          ? { ...response.data.visitPrepKit, schoolId: selectedSchool?.id }
+          : null,
+        actionPlan: response.data?.actionPlan
+          ? { ...response.data.actionPlan, schoolId: selectedSchool?.id }
+          : null,
+        fitReEvaluation: response.data?.fitReEvaluation
+          ? { ...response.data.fitReEvaluation, schoolId: selectedSchool?.id }
+          : null,
         actions: response.data?.actions || [],
       };
 
