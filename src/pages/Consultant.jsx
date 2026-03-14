@@ -1157,11 +1157,13 @@ export default function Consultant() {
     setDeepDiveAnalysis(null);
   }, [messages, isTyping, selectedSchool?.id]);
 
-  // E39-S4b: Rehydrate visitPrepKit from persisted messages on session restore
+  // E39-S4b: Rehydrate visitPrepKit from persisted messages on school switch
   useEffect(() => {
-    if (visitPrepKit?.schoolId === selectedSchool?.id) return;
     if (isTyping) return;
-    if (!selectedSchool?.id || !messages.length) return;
+    if (!selectedSchool?.id || !messages.length) {
+      setVisitPrepKit(null);
+      return;
+    }
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
       if (msg.role === 'assistant' && msg.visitPrepKit && msg.visitPrepKit.schoolId === selectedSchool.id) {
@@ -1171,7 +1173,7 @@ export default function Consultant() {
       }
     }
     setVisitPrepKit(null);
-  }, [messages, isTyping, selectedSchool?.id, visitPrepKit]);
+  }, [messages, isTyping, selectedSchool?.id]);
 
   // E39-S4c: Rehydrate actionPlan from persisted messages on session restore
   useEffect(() => {
