@@ -197,9 +197,6 @@ export default function LoadingOverlay({ visible = true, statusMessage = 'Findin
             }}
           />
 
-          {/* DEBUG: Verify content below orbit */}
-          <div style={{color:'red',fontSize:'20px',marginTop:'20px'}}>STEPS SHOULD BE HERE</div>
-
           {/* Center Logo */}
           <div
             style={{
