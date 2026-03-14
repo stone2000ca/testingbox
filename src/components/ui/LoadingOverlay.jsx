@@ -138,7 +138,7 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
           </div>
             {DOT_CONFIG.map((d,i)=>(
               <div key={i} style={{position:'absolute',top:'50%',left:'50%',width:0,height:0,animation:`dotOrbit${d.direction} ${d.duration}s linear infinite`,animationDelay:`${d.delayOffset}s`}}>
-                <div style={{position:'absolute',transform:`translateX(${d.radius}px) translateY(-15px)`}}>
+                <div style={{position:'absolute',transform:`translateX(${d.radius}px) translate(-5px, -5px)`}}>
                   <div style={{width:10,height:10,background:GOLD,borderRadius:'50%',boxShadow:'0 0 6px rgba(212,160,23,.4)',animation:'dotPulse 2s ease-in-out infinite',animationDelay:`${i*0.4}s`}}/>
                 </div>
               </div>
