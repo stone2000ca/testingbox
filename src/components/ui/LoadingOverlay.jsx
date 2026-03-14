@@ -142,7 +142,7 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
 
   return (
     <div style={{position:'fixed',inset:0,zIndex:10000,background:BG,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column'}}>
-      {flashActive && <div style={{position:'fixed',inset:0,background:TEAL,zIndex:10001,animation:'tealFlash 0.45s ease-out forwards'}}/>}
+
       <style>{KEYFRAMES}</style>
       <div style={{textAlign:'center',maxWidth:420,width:'100%',padding:'0 20px'}}>
         {/* Status Badge */}
