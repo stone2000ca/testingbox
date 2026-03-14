@@ -1122,6 +1122,11 @@ export default function Consultant() {
     const schoolId = lastMsg.deepDiveAnalysis.schoolId;
     if (!schoolId || deepDiveAutoAddedRef.current.has(schoolId)) return;
     deepDiveAutoAddedRef.current.add(schoolId);
+    setPendingDeepDiveSchoolIds(prev => {
+      const next = new Set(prev);
+      next.delete(schoolId);
+      return next;
+    });
     const DOSSIER_AUTO_OPEN_DELAY_MS = 800;
     const alreadyShortlisted = (user?.shortlist || []).includes(schoolId);
     const wasRemoved = (removedSchoolIds || []).includes(schoolId);
