@@ -1136,8 +1136,12 @@ export default function Consultant() {
       toast(`${schoolName} added to your shortlist`, { duration: 3000 });
     }
     setTimeout(() => {
-      setAutoExpandSchoolId(schoolId);
-      setActivePanel('shortlist');
+      // E39-S10: Navigate to school profile instead of shortlist panel
+      const schoolName = lastMsg.deepDiveAnalysis.schoolName || schoolAnalyses?.[schoolId]?.schoolName || 'School';
+      const minimalSchool = { id: schoolId, name: schoolName };
+      setSelectedSchool(minimalSchool);
+      setCurrentView('detail');
+      setActivePanel(null);
     }, DOSSIER_AUTO_OPEN_DELAY_MS);
   }, [messages, isTyping]);
 
