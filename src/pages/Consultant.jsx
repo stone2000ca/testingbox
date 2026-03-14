@@ -1176,8 +1176,7 @@ export default function Consultant() {
 
       {/* E37: Loading overlay on brief confirmation with 5-second minimum */}
       <LoadingOverlay 
-        visible={showLoadingOverlay && !(briefConfirmTimeRef.current && Date.now() - briefConfirmTimeRef.current > 5000 && !isTyping)}
-        statusMessage="Finding Your Matches..."
+        isVisible={showLoadingOverlay}
         onTransitionComplete={() => {
           setBriefStatus(null);
           setIsTyping(false);
