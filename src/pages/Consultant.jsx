@@ -1773,6 +1773,13 @@ export default function Consultant() {
         isDebugMode={isDebugMode}
         extractedEntitiesData={extractedEntitiesData}
         currentConversation={currentConversation}
+        deepDiveAnalysis={deepDiveAnalysis}
+        actionPlan={actionPlan}
+        visitPrepKit={visitPrepKit}
+        fitReEvaluation={fitReEvaluation}
+        journeySteps={journeySteps}
+        selectedSchool={selectedSchool}
+        schoolsWithDeepDive={schoolsWithDeepDive}
       />
 
       {/* Shortlist Panel */}
