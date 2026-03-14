@@ -40,6 +40,7 @@ import TourRequestModal from '../components/schools/TourRequestModal';
 import { useSchoolFiltering } from '@/components/hooks/useSchoolFiltering';
 import { useMessageHandler } from '@/components/hooks/useMessageHandler';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
+import ResearchNotepad from '@/components/ui/ResearchNotepad';
 
 const PLAN_NAMES = { FREE: 'free', BASIC: 'basic', PREMIUM: 'premium', PRO: 'pro', ENTERPRISE: 'enterprise' };
 
