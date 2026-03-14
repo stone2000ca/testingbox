@@ -1427,6 +1427,7 @@ export default function Consultant() {
                   aiInsight={deepDiveAnalysis.aiInsight}
                   chatBubbles={null}
                   preferences={null}
+                  journeySteps={journeySteps}
                   keyDates={keyDates}
                   visitPrepKit={visitPrepKit}
                   contactLog={contactLog}
