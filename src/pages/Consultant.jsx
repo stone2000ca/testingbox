@@ -1409,7 +1409,7 @@ export default function Consultant() {
               return (
                 <ResearchNotepad
                   schoolData={{
-                    name: selectedSchool.name || selectedSchool.schoolName,
+                    name: selectedSchool.name || selectedSchool.schoolName || 'Unknown School',
                     location: `${selectedSchool.city || ''}, ${selectedSchool.provinceState || selectedSchool.province || ''}`.trim().replace(/^,\s*/, ''),
                     grades: selectedSchool.gradesServed || `${selectedSchool.lowestGrade || 'K'}-${selectedSchool.highestGrade || '12'}`,
                     type: selectedSchool.genderPolicy || selectedSchool.schoolType || '',
