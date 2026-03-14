@@ -38,8 +38,7 @@ const MOCK_PREFERENCES = {
   ],
 };
 
-const MOCK_AI_INSIGHT =
-  "UCC is an exceptionally strong academic fit for Ethan. The main trade-off is the all-boys environment — worth discussing as a family whether the programme strength outweighs that preference.";
+const MOCK_AI_INSIGHT = "UCC is an exceptionally strong academic fit for Ethan. The main trade-off is the all-boys environment — worth discussing as a family whether the programme strength outweighs that preference.";
 
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
 
