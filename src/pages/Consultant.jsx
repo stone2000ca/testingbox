@@ -1351,6 +1351,7 @@ export default function Consultant() {
               isPremium={isPremium}
               onUpgrade={() => setShowUpgradeModal(true)}
             />
+            </>
           ) : currentState === STATES.RESULTS && schools.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-6 text-center">
               <div className="max-w-md">
