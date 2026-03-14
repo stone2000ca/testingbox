@@ -187,29 +187,40 @@ export default function Consultant() {
   const [schoolsAnimKey, setSchoolsAnimKey] = useState(0);
 
   // Journey Steps: fetch when selected school changes
-  const [journeySteps, setJourneySteps] = useState(null);
+  const [schoolJourney, setSchoolJourney] = useState(null);
   useEffect(() => {
     if (!selectedSchool?.id || !isAuthenticated || !user?.id) {
-      setJourneySteps(null);
+      setSchoolJourney(null);
       return;
     }
     (async () => {
       try {
         const journeys = await base44.entities.FamilyJourney.filter({ userId: user.id, isArchived: false });
-        if (!journeys.length) { setJourneySteps(null); return; }
+        if (!journeys.length) { setSchoolJourney(null); return; }
         const journey = journeys.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
         const schoolJourneys = await base44.entities.SchoolJourney.filter({ familyJourneyId: journey.id, schoolId: selectedSchool.id });
         const sj = schoolJourneys[0] || null;
-        setJourneySteps([
-          { label: 'Match Found',  status: 'completed' },
-          { label: 'Deep Dive',    status: 'active' },
-          { label: 'Book Tour',    status: 'pending' },
-          { label: 'Debrief Tour', status: 'pending' },
-          { label: 'Apply',        status: 'pending' },
-        ]);
-      } catch { setJourneySteps(null); }
+        setSchoolJourney(sj);
+      } catch { setSchoolJourney(null); }
     })();
   }, [selectedSchool?.id, isAuthenticated, user?.id]);
+
+  const journeySteps = useMemo(() => {
+    if (!selectedSchool?.id) return null;
+    const steps = [
+      { label: 'Match Found', done: true },
+      { label: 'Deep Dive', done: !!deepDiveAnalysis },
+      { label: 'Book Tour', done: false },
+      { label: 'Debrief Tour', done: false },
+      { label: 'Apply', done: false },
+    ];
+    let activeFound = false;
+    return steps.map(s => {
+      if (s.done) return { label: s.label, status: 'completed' };
+      if (!activeFound) { activeFound = true; return { label: s.label, status: 'active' }; }
+      return { label: s.label, status: 'pending' };
+    });
+  }, [selectedSchool?.id, deepDiveAnalysis, schoolJourney]);
 
   // Research Notes: fetch when selected school changes
   useEffect(() => {
