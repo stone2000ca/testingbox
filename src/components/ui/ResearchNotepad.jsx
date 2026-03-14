@@ -351,7 +351,7 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
                         </div>
                       </div>
                       <span style={{ fontSize: 10, fontWeight: 700, color: '#0d9488', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        Strong Match
+                        {label}
                       </span>
                     </div>
 
