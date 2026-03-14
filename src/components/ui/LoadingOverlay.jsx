@@ -87,7 +87,7 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
       if (wasVisible.current) {
         if (minReady.current) { 
           setFlashActive(true);
-          setTimeout(() => onCompleteRef.current?.(), 450);
+          setTimeout(() => { onCompleteRef.current?.(); setFlashActive(false); wasVisible.current = false; }, 700);
         }
 
         else { pending.current = true; }
@@ -108,7 +108,7 @@ export default function LoadingOverlay({ isVisible, onTransitionComplete }) {
       if (pending.current) { 
           pending.current = false; 
           setFlashActive(true);
-          setTimeout(() => onCompleteRef.current?.(), 450);
+          setTimeout(() => { onCompleteRef.current?.(); setFlashActive(false); wasVisible.current = false; }, 700);
         }
     }, MIN_LOADER_MS);
     t(() => setTimedOut(true), TIMEOUT_MS);
