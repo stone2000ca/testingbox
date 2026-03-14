@@ -1132,6 +1132,29 @@ export default function Consultant() {
     }, DOSSIER_AUTO_OPEN_DELAY_MS);
   }, [messages, isTyping]);
 
+  // E39-S4a: Rehydrate deepDiveAnalysis from persisted messages on session restore
+  useEffect(() => {
+    // Don't overwrite if already populated for this school
+    if (deepDiveAnalysis?.schoolId === selectedSchool?.id) return;
+    // Don't run while AI is still typing
+    if (isTyping) return;
+    if (!selectedSchool?.id || !messages.length) return;
+
+    // Scan messages in reverse for the most recent deep dive for this school
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (
+        msg.role === 'assistant' &&
+        msg.deepDiveAnalysis &&
+        msg.deepDiveAnalysis.schoolId === selectedSchool.id
+      ) {
+        console.log('[E39-S4a] Rehydrating deepDiveAnalysis from message', i);
+        setDeepDiveAnalysis(msg.deepDiveAnalysis);
+        return;
+      }
+    }
+  }, [messages, isTyping, selectedSchool?.id, deepDiveAnalysis]);
+
   // E32-003: Action processor - executes UI actions from backend
   useEffect(() => {
     if (isTyping) return;
