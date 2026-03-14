@@ -200,7 +200,8 @@ export const useMessageHandler = ({
       // DEEPDIVE: Store structured analysis card data
       // Only update if a new one is returned; only clear when leaving DEEP_DIVE state entirely
       if (response.data?.deepDiveAnalysis) {
-        setDeepDiveAnalysis(response.data.deepDiveAnalysis);
+        const diveSchoolId = response.data?.deepDiveAnalysis?.schoolId || selectedSchool?.id || null;
+        setDeepDiveAnalysis({ ...response.data.deepDiveAnalysis, schoolId: diveSchoolId });
       } else if (response.data?.state === 'DEEP_DIVE' && response.data?.deepDiveAnalysis === null && artifactCache && selectedSchool?.id) {
         // WC6: Hydrate from cache if no new analysis in DEEP_DIVE state
         const cacheKey = `${selectedSchool.id}_deep_dive_analysis`;
