@@ -333,7 +333,7 @@ async function performSearch(req) {
        if (!isNaN(sLow) && !isNaN(sHigh)) {
          const distanceOutsideRange = parsedMinGrade < sLow ? sLow - parsedMinGrade : (parsedMinGrade > sHigh ? parsedMinGrade - sHigh : 0);
          // F4 FIX: exclude if >= 2 grades outside (was > 2 which allowed Gr0-2 for Grade4 child)
-         if (distanceOutsideRange > 1) {
+         if (distanceOutsideRange > 0) {
            console.log(`[GRADE FILTER] Excluded ${school.name}: grades ${sLow}-${sHigh}, need ${parsedMinGrade} (${distanceOutsideRange} grades outside range)`);
            return false;
          }
