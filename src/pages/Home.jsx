@@ -146,6 +146,13 @@ export default function Home() {
       </section>
 
 
+      {/* TEMP: ResearchNotepad visual verification */}
+      <section className="py-12 bg-slate-100">
+        <div className="max-w-3xl mx-auto px-4">
+          <ResearchNotepad />
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
       <section className="py-12 sm:py-20 lg:py-28 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
