@@ -310,12 +310,11 @@ function timeAgo(isoString) {
   return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 }
 
-export default function ResearchNotepad({ loading = false, schoolData, fitScore, fitLabel, tradeOffs, chatBubbles, preferences, aiInsight, journeySteps, keyDates, visitPrepKit, contactLog, researchNotes, onNotesChange, onSaveNotes, lastDeepDiveAt, onRefreshDeepDive }) {
+export default function ResearchNotepad({ loading = false, schoolData, fitScore, fitLabel, tradeOffs, priorityMatches, aiInsight, journeySteps, keyDates, visitPrepKit, contactLog, researchNotes, onNotesChange, onSaveNotes, lastDeepDiveAt, onRefreshDeepDive }) {
   const school = schoolData || null;
   const score = fitScore ?? null;
   const label = fitLabel || null;
-  const bubbles = chatBubbles || null;
-  const prefs = preferences || null;
+  const priorityList = priorityMatches || [];
   const insight = aiInsight || null;
   const journey = journeySteps || [];
   const [open, setOpen] = useState(true);
@@ -558,64 +557,46 @@ export default function ResearchNotepad({ loading = false, schoolData, fitScore,
                       </span>
                     </div>
 
-                    {/* NS chat bubbles */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {bubbles && bubbles.length > 0 ? bubbles.map((text, i) => (
-                        <div key={i} style={{
-                          background: '#0d9488', color: '#fff', fontSize: 12, lineHeight: 1.5,
-                          padding: '8px 12px', borderRadius: '12px 12px 12px 2px',
-                          boxShadow: '0 1px 4px rgba(13,148,136,0.2)',
-                        }}>
-                          {text}
-                        </div>
-                      )) : (
-                        <div style={{ fontSize: 12.5, color: '#a89060', fontStyle: 'italic', padding: '8px 0' }}>
-                          Run a Deep Dive to see analysis
-                        </div>
+                  </div>
+
+                  <div className="rounded-xl border bg-card p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold">How It Fits Your Brief</span>
+                      {priorityList.length > 0 && (
+                        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {priorityList.length} priorities
+                        </span>
                       )}
                     </div>
-                  </div>
-
-                  {/* Two-column preference grid */}
-                  {prefs ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-                    {/* Matches column */}
-                    <div style={{
-                      background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 12px',
-                    }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 }}>
-                        ✓ Matches Your Priorities
+                    {priorityList.length > 0 ? (
+                      <div className="space-y-2">
+                        {priorityList.map((item, index) => {
+                          const statusVal = item.status || 'partial';
+                          const dotBg = statusVal === 'match' ? 'bg-emerald-500' : statusVal === 'flag' ? 'bg-red-500' : 'bg-amber-500';
+                          const textColor = statusVal === 'match' ? 'text-emerald-600' : statusVal === 'flag' ? 'text-red-600' : 'text-amber-600';
+                          const statusLabel = statusVal === 'match' ? 'Match' : statusVal === 'flag' ? 'Flag' : 'Partial';
+                          return (
+                            <div key={index} className="flex items-start gap-2">
+                              <span className={`mt-1 inline-flex h-2.5 w-2.5 rounded-full ${dotBg}`} />
+                              <div className="flex-1 space-y-0.5">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs font-medium">{item.priority}</span>
+                                  <span className={`text-[11px] font-medium ${textColor}`}>{statusLabel}</span>
+                                </div>
+                                {item.detail && (
+                                  <p className="text-xs text-muted-foreground">{item.detail}</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      {(prefs.matches || []).map((item, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 6 }}>
-                          <span style={{ marginTop: 1, flexShrink: 0 }}><CheckIcon /></span>
-                          <div>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: '#166534' }}>{item.label}</div>
-                            <div style={{ fontSize: 10.5, color: '#4ade80', fontWeight: 500 }}>{item.detail}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Flags column */}
-                    <div style={{
-                      background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 12px',
-                    }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#b45309', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 }}>
-                        ⚑ Things to Consider
-                      </div>
-                      {(prefs.flags || []).map((item, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 6 }}>
-                          <span style={{ marginTop: 1, flexShrink: 0 }}><FlagIcon /></span>
-                          <div>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>{item.label}</div>
-                            <div style={{ fontSize: 10.5, color: '#d97706', fontWeight: 500 }}>{item.detail}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Run a Deep Dive to see how this school lines up with your Brief priorities.
+                      </p>
+                    )}
                   </div>
-                  ) : null}
 
                   {/* AI Insight box */}
                   <div style={{
