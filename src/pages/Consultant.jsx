@@ -445,8 +445,6 @@ export default function Consultant() {
   // E18c-001: Debug panel
   const isDebugMode = new URLSearchParams(window.location.search).get('debug') === 'true';
 
-  useSEOAndReminders({ sessionId, checkAuth });
-
   // WC5: Session loading from URL param
   useEffect(() => {
     if (sessionIdParam && !sessionParamProcessedRef.current && isAuthenticated && user) {
