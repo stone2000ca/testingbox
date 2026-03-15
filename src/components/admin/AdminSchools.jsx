@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
@@ -206,8 +205,8 @@ export default function AdminSchools() {
                   <td className="p-4 text-sm text-slate-600">{school.city}</td>
                   <td className="p-4 text-sm text-slate-600">{school.region}</td>
                   <td className="p-4">
-                    <Badge className={tierColors[school.subscriptionTier || 'free']}>
-                      {(school.subscriptionTier || 'free').toUpperCase()}
+                    <Badge className={tierColors[school.schoolTier || 'free']}>
+                      {(school.schoolTier || 'free').toUpperCase()}
                     </Badge>
                   </td>
                   <td className="p-4">
