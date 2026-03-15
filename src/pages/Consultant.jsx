@@ -743,44 +743,6 @@ export default function Consultant() {
     }
   };
 
-  const resetChatState = () => {
-    // E40-S4: Full chat-scoped state reset — called on consultant select and new conversation
-    setMessages([]);
-    setCurrentConversation({ conversationContext: {} });
-    setBriefStatus(null);
-    setOnboardingPhase(null);
-    setActiveJourney(null);
-    setSchools([]);
-    setSelectedSchool(null);
-    setDeepDiveAnalysis(null);
-    setVisitPrepKit(null);
-    setActionPlan(null);
-    setFitReEvaluation(null);
-    setFamilyProfile(null);
-    setExtractedEntitiesData(null);
-    setSchoolAnalyses({});
-    setArtifactCache({});
-    setShortlistData([]);
-    setRemovedSchoolIds([]);
-    setPendingDeepDiveSchoolIds(new Set());
-    setShowResponseChips(false);
-    setComparisonData(null);
-    setComparisonMatrix(null);
-    setExtraSchools([]);
-    setExtraSchoolsPage(1);
-    setExtraSchoolsHasMore(true);
-    setExtraSchoolsLoading(false);
-    setExtraSchoolsError(null);
-    setPriorityOverrides({});
-    setVisitedSchoolIds([]);
-    setResearchNotes('');
-    setSchoolJourney(null);
-    setContactLog([]);
-    setHydrationSource(null);
-    setSchoolsAnimKey(0);
-    setCurrentView('chat');
-  };
-
   const handleSelectConsultant = (consultantName) => {
     setSelectedConsultant(consultantName);
     // Track consultant selection
@@ -790,8 +752,14 @@ export default function Consultant() {
       sessionId
     }).catch(err => console.error('Failed to track:', err));
 
-    resetChatState();
-
+    // CRITICAL: Complete state reset for fresh conversation
+    setCurrentConversation({ conversationContext: {} });
+    setSchools([]);
+    setBriefStatus(null);
+    setOnboardingPhase(null);
+    setActiveJourney(null);
+    setCurrentView('chat');
+    
     // Initialize first message with consultant's greeting
     const greeting = {
       role: 'assistant',
