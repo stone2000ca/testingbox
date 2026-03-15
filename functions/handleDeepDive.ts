@@ -552,7 +552,7 @@ Generate the DEEPDIVE card for this family-school match.`;
       } catch (parseError) {
         console.log('[MERGED]: malformed response from InvokeLLM:', parseError.message);
         aiMessage = typeof mergedResponse === 'string' ? mergedResponse : (mergedResponse?.response || mergedResponse?.message || '');
-        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null, aiInsight: '' };
+        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null, aiInsight: '', priorityMatches: [] };
       }
       if (aiMessage) console.log('[DEEPDIVE] AI card generated via InvokeLLM (merged)');
     } catch (llmError) {
@@ -578,13 +578,13 @@ Generate the DEEPDIVE card for this family-school match.`;
           if (parsed.schoolAnalysis) {
             deepDiveAnalysis = parsed.schoolAnalysis;
           } else {
-            deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null, aiInsight: '' };
+            deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null, aiInsight: '', priorityMatches: [] };
           }
         }
       } catch (openrouterError) {
         console.error('[DEEPDIVE] OpenRouter fallback failed:', openrouterError.message);
         aiMessage = `**Great Fit for ${childDisplayName}**\n\n**Why ${selectedSchool.name} for ${childDisplayName}**\n${selectedSchool.description?.substring(0, 150) || 'School details available upon request.'}\n\n**Cost Reality**\nTuition: ${compressedSchoolData.tuitionFee}/year\n\nWhat would you like to know more about?`;
-        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null, aiInsight: '' };
+        deepDiveAnalysis = { fitLabel: 'worth_exploring', fitScore: 50, tradeOffs: [], dataGaps: [], visitQuestions: [], financialSummary: null, aiInsight: '', priorityMatches: [] };
       }
     }
 
