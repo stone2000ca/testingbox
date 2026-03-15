@@ -1542,8 +1542,7 @@ export default function Consultant() {
                   fitLabel={deepDiveAnalysis.fitLabel}
                   tradeOffs={deepDiveAnalysis.tradeOffs}
                   aiInsight={deepDiveAnalysis.aiInsight}
-                  chatBubbles={null}
-                  preferences={null}
+                  priorityMatches={deepDiveAnalysis.priorityMatches || []}
                   journeySteps={journeySteps}
                   keyDates={keyDates}
                   visitPrepKit={visitPrepKit}
