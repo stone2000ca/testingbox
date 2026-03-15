@@ -43,6 +43,7 @@ import { useMessageHandler } from '@/components/hooks/useMessageHandler';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import ResearchNotepad from '@/components/ui/ResearchNotepad';
 import { getSchoolsWithDeepDive } from '../components/utils/deepDiveUtils';
+import { useSEOAndReminders } from '@/components/hooks/useSEOAndReminders';
 
 const PLAN_NAMES = { FREE: 'free', BASIC: 'basic', PREMIUM: 'premium', PRO: 'pro', ENTERPRISE: 'enterprise' };
 
