@@ -378,7 +378,7 @@ export default function SchoolDossierCard({
           const hasDeepDive = schoolsWithDeepDive?.has(school.id);
           return (
             <button
-              onClick={handleAnalyzeCTA}
+              onClick={hasDeepDive ? () => onViewSchool(school.id) : handleAnalyzeCTA}
               className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold py-2 rounded mt-2 transition-colors"
               style={hasDeepDive ? {
                 background: '#0d9488',

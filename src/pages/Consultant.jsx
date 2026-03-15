@@ -1822,6 +1822,7 @@ export default function Consultant() {
               handleViewSchoolDetail(id);
               setShowShortlistPanel(false);
             }}
+            schoolsWithDeepDive={schoolsWithDeepDive}
           />
         </>
       )}
