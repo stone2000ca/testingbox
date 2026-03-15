@@ -948,9 +948,11 @@ export default function Consultant() {
       trackEvent('school_clicked', { metadata: { schoolName: school.name } });
       setSelectedSchool(school);
       setCurrentView('detail');
-      setConfirmingSchool(school);
-      // Auto-scroll chat to bottom so user sees the deep-dive prompt
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      if (!skipConfirmation) {
+        setConfirmingSchool(school);
+        // Auto-scroll chat to bottom so user sees the deep-dive prompt
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
     }
   };
 
